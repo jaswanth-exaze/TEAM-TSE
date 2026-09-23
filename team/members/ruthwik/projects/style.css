@@ -1,0 +1,131 @@
+body {
+    background-image: url("../images/projects-bg.jpg");
+    background-size: cover;
+    box-sizing: border-box;
+    padding: 10px;
+    margin: 10px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.header-container,
+.main-container,
+.project-box,
+.box-sub-container1,
+.box-sub-container2,
+.box-sub-container3 {
+    display: flex;
+}
+
+.header-container {
+    justify-content: center;
+}
+
+.projects-head-font {
+    font-family: "Cabin Sketch", sans-serif;
+    color: white;
+    font-size: 40px;
+}
+
+.main-container {
+    margin: 10px;
+    flex-direction: column;
+}
+
+.project-box {
+    background-color: white;
+    border-radius: 15px;
+    margin-top: 20px;
+    padding: 10px;
+    column-gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.project-image {
+    height: 180px;
+    width: 180px;
+    border-radius: 15px;
+    border: 1px solid black;
+}
+
+/* .project-image:hover{
+    transform: rotate(-3deg);
+} */
+.box-sub-container2 {
+    flex-direction: column;
+    column-gap: 1px;
+}
+
+.box-project-heading {
+    font-family: "Merienda", cursive;
+    margin-block-start: 0em;
+    margin-block-end: 0.5em;
+}
+
+.box-project-para {
+    margin-block-start: 0.5em;
+    margin-block-end: 0.5em;
+}
+
+.box-project-button {
+    color: white;
+    height: 30px;
+    width: 80px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-block-start: 0.5em;
+    background: linear-gradient(130deg, rgb(206, 27, 241)12%, blue, rgb(0, 183, 255));
+    background-size: 400% 300%;
+    animation: colorGradient 4s ease infinite;
+}
+
+@keyframes colorGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.click-text-ani {
+    animation: moveUpDown 2s infinite ease-in-out;
+    margin-block-start: 0.5em;
+    margin-block-end: 0.5em;
+}
+
+@keyframes moveUpDown {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+@media (max-width:520px) {
+    .box-project-para {
+        display: none;
+    }
+
+    .project-image {
+        height: 100px;
+        width: 100px;
+
+    }
+
+}
