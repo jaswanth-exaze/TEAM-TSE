@@ -4,6 +4,13 @@ body {
     background-size: cover;
     padding: 5px;
     box-sizing: border-box;
+    max-width: 100%;
+}
+html,body{
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
 .header-container,
@@ -174,25 +181,13 @@ body {
 .lkin-link {
     color: white;
     text-decoration: none;
-}
-
-.git-link {
     height: 35px;
     width: 90px;
     background: linear-gradient(130deg, rgb(11, 101, 236), rgb(162, 6, 235));
-    font-size: 20px;
-    border-radius: 15px;
-}
-
-.lkin-link {
-    height: 35px;
-    width: 90px;
-    background: linear-gradient(130deg, rgb(11, 101, 236), rgb(162, 6, 235));
-    font-size: 20px;
     border-radius: 15px;
 }
 
 .git-link:hover,
-.lkin-link {
+.lkin-link:hover {
     transform: scale(1.1);
 }
