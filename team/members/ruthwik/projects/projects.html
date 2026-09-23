@@ -5,12 +5,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ruthwik Projects</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./script.js" defer></script>
+    <!-- Font Links -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@300..900&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <h1>My Projects</h1>
-    <a href="./Landing Pages/landingPagesPrj.html">Landing Page</a>
-    <a href="./odin-recipes/recipesPrj.html">Recipes Project</a>
+    <header class="header-container">
+        <h1 class="projects-head-font">My Projects</h1>
+    </header>
+
+    <div class="main-container">
+        <div class="project-box">
+            <img class="project-image" src="../images/odinRecipes.png" alt="Odin Recipes">
+            <div class="box-sub-container2">
+                <h3 class="box-project-heading">Odin Recipes</h3>
+                <p class="box-project-para">A multi-page recipe website developed using HTML and CSS to showcase
+                    different recipes in an organized and visually appealing format. Each recipe includes ingredients,
+                    step-by-step cooking instructions, images, and relevant recipe information. The project focuses on
+                    HTML structure, CSS styling, navigation, image handling, lists, links, and page layout, helping
+                    build a strong foundation in frontend web development.</p>
+                <h4 class="click-text-ani">Click to see the project</h4>
+                <div class="box-sub-container3">
+                    <button id="btn1" class="box-project-button">Click</button>
+                </div>
+            </div>
+        </div>
+        <div class="project-box">
+            <img class="project-image" src="../images/landingPages.png" alt="Landing Pages">
+            <div class="box-sub-container2">
+                <h3 class="box-project-heading">Landing pages</h3>
+                <p class="box-project-para">A static landing page developed using HTML and CSS with a structured
+                    navigation bar, hero section, content sections, call-to-action buttons, and footer. The project
+                    focuses on webpage structure, CSS styling, typography, colors, spacing, alignment, backgrounds, and
+                    visual presentation. It demonstrates the ability to create a clean and attractive webpage while
+                    practicing fundamental frontend development concepts.</p>
+                <h4 class="click-text-ani">Click to see the project</h4>
+                <div class="box-sub-container3">
+                    <button id="btn2" class="box-project-button">Click</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
