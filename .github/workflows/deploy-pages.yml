@@ -40,11 +40,17 @@ jobs:
             --exclude='/.github/' \
             --exclude='/courses/' \
             --exclude='/_site/' \
+            --exclude='/_site-check/' \
             ./ _site/
+          touch _site/.nojekyll
 
       - name: Install course app dependencies
         working-directory: courses
         run: npm ci
+
+      - name: Check dependency security advisories
+        working-directory: courses
+        run: npm audit --audit-level=high
 
       - name: Build course app into the published site
         working-directory: courses
@@ -53,6 +59,16 @@ jobs:
       - name: Verify compiled course output
         working-directory: courses
         run: |
+          test -f ../_site/index.html
+          test -f ../_site/about.html
+          test -f ../_site/team.html
+          test -f ../_site/css/style.css
+          test -f ../_site/js/main.js
+          test -f ../_site/js/logo-morph.js
+          test -f "../_site/exaze-logo (1).png"
+          test -f ../_site/team/members/index.json
+          test -f ../_site/.nojekyll
+          test ! -e ../_site/_site-check
           test -f ../_site/courses/index.html
           test -d ../_site/courses/assets
           test -f ../_site/courses/sql-visual-lab/index.html
@@ -65,13 +81,14 @@ jobs:
           test -f ../_site/courses/sql-visual-lab/schema.sql
           test -f ../_site/courses/sql-visual-lab/challenges.json
           grep -Eq '<script[^>]+src="\./assets/index-[^"]+\.js"' ../_site/courses/index.html
+          grep -Eq '<link[^>]+href="\./assets/index-[^"]+\.css"' ../_site/courses/index.html
           if grep -q 'src/main.jsx' ../_site/courses/index.html; then
             echo "Course output still references the uncompiled JSX entry point."
             exit 1
           fi
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        uses: actions/upload-pages-artifact@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
         with:
           path: _site
 

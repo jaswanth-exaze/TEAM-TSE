@@ -77,8 +77,9 @@ npm run dev
 The workflow in `.github/workflows/deploy-pages.yml` publishes the static site
 and builds the course app into `/courses/` whenever changes are pushed to `main`. In the
 repository's **Settings > Pages**, set **Build and deployment > Source** to
-**GitHub Actions**. The course app uses relative asset paths so it works under the
-repository's GitHub Pages URL.
+**GitHub Actions**. The published project site is available at
+<https://jaswanth-exaze.github.io/TEAM-TSE/>. The course app uses a relative
+asset base and hash-based routes so it also works under the repository path.
 
 ## How to contribute
 

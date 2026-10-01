@@ -130,39 +130,60 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
   const move = 900;
   const step = hold + move;
   const total = step * (sequence.length - 1);
+  const lastTransition = sequence.length - 2;
   const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
   let elapsed = 0;
   let startedAt = 0;
   let animationFrame = null;
+  let animationGeneration = 0;
+  let motionRunning = false;
   let inViewport = !("IntersectionObserver" in window);
   let pageVisible = !document.hidden;
 
-  function stop() {
-    if (animationFrame === null) return;
-    cancelAnimationFrame(animationFrame);
-    animationFrame = null;
-    elapsed = (elapsed + performance.now() - startedAt) % total;
+  function wrapTime(value) {
+    if (!Number.isFinite(value)) return 0;
+    return ((value % total) + total) % total;
   }
 
-  function frame(timestamp) {
+  function stop() {
+    if (!motionRunning && animationFrame === null) return;
+    motionRunning = false;
+    animationGeneration += 1;
+    if (animationFrame !== null) cancelAnimationFrame(animationFrame);
     animationFrame = null;
-    const time = (elapsed + timestamp - startedAt) % total;
-    const index = Math.min(Math.floor(time / step), 3);
+    elapsed = wrapTime(elapsed + Math.max(0, performance.now() - startedAt));
+  }
+
+  function frame(timestamp, generation) {
+    // A canceled animation callback can still be queued in a browser. Ignore
+    // callbacks from an earlier visibility/intersection lifecycle.
+    if (!motionRunning || generation !== animationGeneration) return;
+    animationFrame = null;
+    const now = Number.isFinite(timestamp) ? timestamp : performance.now();
+    const time = wrapTime(elapsed + now - startedAt);
+    const index = Math.min(Math.floor(time / step), lastTransition);
     const localTime = time - index * step;
     const inHold = localTime < hold;
-    const progress = inHold ? 0 : (localTime - hold) / move;
-    const from = sequence[index];
-    const to = sequence[index + 1];
-    draw(shapes[from], shapes[to], progress, index % 2 ? -1 : 1);
+    const progress = inHold ? 0 : clamp((localTime - hold) / move);
+    const from = sequence[index] || "logo";
+    const to = sequence[index + 1] || "logo";
+    // Keep the render loop safe if the sequence is edited later or timing
+    // data becomes invalid. The brand mark is the stable visual fallback.
+    const fromShape = shapes[from] || shapes.logo;
+    const toShape = shapes[to] || shapes.logo;
+    draw(fromShape, toShape, progress, index % 2 ? -1 : 1);
     presentStage(from, to, progress, from === "logo" && inHold);
-    animationFrame = requestAnimationFrame(frame);
+    animationFrame = requestAnimationFrame((nextTimestamp) => frame(nextTimestamp, generation));
   }
 
   function syncMotion() {
     const shouldAnimate = !motionPreference.matches && pageVisible && inViewport;
-    if (shouldAnimate && animationFrame === null) {
+    if (shouldAnimate && !motionRunning) {
+      motionRunning = true;
+      animationGeneration += 1;
       startedAt = performance.now();
-      animationFrame = requestAnimationFrame(frame);
+      const generation = animationGeneration;
+      animationFrame = requestAnimationFrame((timestamp) => frame(timestamp, generation));
     } else if (!shouldAnimate) {
       stop();
       if (motionPreference.matches) {
