@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0A0F1E">
+    <meta name="description" content="Practise Linux commands in a safe, persistent simulated terminal from the Exaze TSE Learning Hub.">
+    <title>Linux Practice | Exaze · TSE Learning Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/styles.css">
+  </head>
+  <body data-page="practice">
+    <a class="skip-link" href="#practiceMain">Skip to the practice area</a>
+    <div class="lab-shell">
+      <aside id="topicDrawer" class="sidebar" tabindex="-1" aria-label="Linux topic navigation">
+        <a class="brand sidebar-brand" href="./index.html" aria-label="Linux Practice Lab overview">
+          <span class="brand-logo" aria-hidden="true">TSE</span>
+          <span><strong>Linux Practice Lab</strong><small>Exaze · TSE Learning Hub</small></span>
+        </a>
+
+        <section class="progress-card" aria-label="Overall course progress">
+          <div class="progress-card-top"><strong id="sidePercent">0%</strong><span id="sideDone">0 of 75 questions</span></div>
+          <div class="progress-track" role="progressbar" aria-label="Questions complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="sideProgress"></i></div>
+          <p id="sidePoints">0 of 750 points earned</p>
+        </section>
+
+        <div class="topic-list-heading"><span>15 topics · open in any order</span></div>
+        <nav id="topicNav" class="topic-nav" aria-label="All Linux topics"></nav>
+
+        <footer class="sidebar-footer">
+          <a href="../#/course/linux-commands">← Back to Linux course</a>
+          <a id="freePracticeNav" href="./lab.html?topic=2&amp;q=1&amp;practice=1">Free practice shell</a>
+          <button id="resetLab" class="text-button" type="button">Reset lab and progress</button>
+        </footer>
+      </aside>
+
+      <button id="drawerBackdrop" class="drawer-backdrop" type="button" aria-label="Close topic menu" hidden></button>
+      <button id="infoBackdrop" class="info-backdrop" type="button" aria-label="Close question help" hidden></button>
+
+      <main id="practiceMain" class="practice-main">
+        <header class="practice-topbar">
+          <button id="menuTopics" class="menu-button" type="button" aria-expanded="false" aria-controls="topicDrawer"><span class="mobile-mini-logo" aria-hidden="true">TSE</span><span class="menu-label">Linux Lab</span><span class="menu-glyph" aria-hidden="true">☰</span><span class="visually-hidden">Open topics</span></button>
+          <p id="topicBreadcrumb" class="breadcrumb">Topic 1 of 15 / <b>Directory Structure</b></p>
+          <div class="practice-stats" aria-label="Your progress">
+            <span class="stat-chip"><b id="topDone">0 / 75</b> done</span>
+            <span class="stat-chip"><b id="topPoints">0 / 750</b> pts</span>
+            <span class="stat-chip saved-chip"><i aria-hidden="true"></i>Local simulation</span>
+          </div>
+        </header>
+
+        <div class="mobile-progress">
+          <div><span id="mobileTopic">Directory Structure</span><span id="mobileQuestion">Question 1 of 5</span></div>
+          <div class="progress-track"><i id="mobileTopicProgress"></i></div>
+        </div>
+
+        <section class="topic-heading" aria-labelledby="topicTitle">
+          <h1 id="topicTitle">Directory Structure</h1>
+          <p id="topicSummary"></p>
+        </section>
+        <nav id="questionStepper" class="question-stepper" aria-label="Questions in this topic"></nav>
+
+        <div class="practice-grid">
+          <div class="practice-column">
+            <section class="question-card" aria-labelledby="questionTitle">
+              <div class="question-card-head">
+                <div><h2 id="questionTitle"></h2><p id="questionMeta"></p></div>
+                <span class="points-badge">10 points</span>
+              </div>
+              <div class="task-box"><span>Your task</span><p id="questionTask"></p></div>
+              <div id="commandAnatomy" class="command-anatomy" aria-label="Command anatomy"></div>
+            </section>
+
+            <section class="terminal" aria-label="Simulated Linux terminal">
+              <header class="terminal-header">
+                <span class="traffic-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+                <b>tse-lab</b><span>bash · practice machine</span>
+                <button id="clearTerminal" class="terminal-clear" type="button">Clear</button>
+              </header>
+              <div id="terminalOutput" class="terminal-output" role="log" aria-live="polite" aria-relevant="additions text"></div>
+              <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+              <form id="terminalForm" class="terminal-input-row" autocomplete="off">
+                <label class="terminal-prompt" for="commandInput"><span id="shellPrompt">user@tse-lab:~$</span></label>
+                <input id="commandInput" name="command" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Enter a Linux command" placeholder="Type a command…">
+                <button class="button primary run-button" type="submit">Run <kbd>Enter</kbd></button>
+              </form>
+            </section>
+
+            <div class="mobile-quick-keys" aria-label="Terminal quick keys">
+              <button type="button" data-key="Tab">Tab</button><button type="button" data-key="ArrowUp">↑</button><button type="button" data-key="ArrowDown">↓</button><button type="button" data-key="~">~</button><button type="button" data-key="/">/</button><button type="button" data-key="Ctrl">Ctrl</button>
+            </div>
+
+            <div class="action-row">
+              <button id="skipQuestion" class="button secondary" type="button">Skip for now</button>
+              <span class="history-help">↑ ↓ browse command history</span>
+              <button id="showSolution" class="button secondary" type="button">Show solution</button>
+              <button id="nextQuestion" class="button primary" type="button" disabled>Next question →</button>
+            </div>
+          </div>
+
+          <aside id="infoPanels" class="info-column" aria-label="Question help and reference">
+            <div class="mobile-panel-head"><strong>Question help</strong><button id="closePanels" type="button" aria-label="Close question help">×</button></div>
+            <section class="info-panel hints-panel" aria-labelledby="hintsHeading">
+              <div class="panel-heading"><h2 id="hintsHeading">Need a nudge?</h2><span>Hints cost no points</span></div>
+              <div id="hintList" class="hint-list"></div>
+            </section>
+            <section class="info-panel checklist-panel" aria-labelledby="checklistHeading">
+              <div class="panel-heading"><h2 id="checklistHeading">Done when</h2><span>auto-checked</span></div>
+              <ul id="checklist" class="checklist"></ul>
+            </section>
+            <section class="info-panel filesystem-panel" aria-labelledby="filesystemHeading">
+              <div class="panel-heading"><h2 id="filesystemHeading">Filesystem map</h2><span>where things live</span></div>
+              <div id="filesystemMap" class="filesystem-map" aria-live="polite"></div>
+            </section>
+            <div class="mobile-sheet-actions">
+              <button id="mobileSkip" class="button secondary" type="button">Skip for now</button>
+              <button id="mobileSolution" class="button secondary" type="button">Show solution</button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mobile-action-row">
+          <button id="mobileHint" class="button secondary" type="button" aria-expanded="false" aria-controls="infoPanels">Hint</button>
+          <button id="mobileNext" class="button secondary" type="button" hidden>Next <span aria-hidden="true">→</span></button>
+          <button id="mobileRun" class="button primary" type="button">Run command <kbd>Enter</kbd></button>
+        </div>
+      </main>
+    </div>
+    <dialog id="editorDialog" class="editor-dialog" aria-labelledby="editorHeading">
+      <form id="editorForm" method="dialog">
+        <div class="editor-dialog-head"><div><p>Built-in editor</p><h2 id="editorHeading">Editing <code id="editorTitle"></code></h2></div><button id="editorCancel" class="button secondary" type="button">Cancel</button></div>
+        <label class="visually-hidden" for="editorText">File contents</label>
+        <textarea id="editorText" spellcheck="false"></textarea>
+        <div class="editor-dialog-actions"><span>Save with Ctrl+O or use the button.</span><button class="button primary" type="submit">Save file</button></div>
+      </form>
+    </dialog>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

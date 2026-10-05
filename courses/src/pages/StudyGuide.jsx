@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getModule } from '../data/modules'
 import { getCourseSyllabus } from '../data/course-catalog'
-import { getSqlVisualLabHref } from '../lib/paths'
+import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 
 function readCompletedTopics(progressKey) {
@@ -295,6 +295,7 @@ function SyllabusOnlyReader({ module, course }) {
         <Link to="/" className="text-sm font-medium text-white/75 transition hover:text-white">← Course library</Link>
         <nav aria-label="Course tools" className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {course.examPlanOverviewHref && <Link to={course.examPlanOverviewHref} className="text-sm text-white/75 transition hover:text-white">Practice exams</Link>}
+          {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="text-sm font-medium text-amber-200 transition hover:text-amber-100">Linux practice lab</a>}
           <Link to={`/quiz/${module.id}`} className="text-sm text-white/75 transition hover:text-white">Practice quiz</Link>
         </nav>
       </div>
@@ -307,9 +308,14 @@ function SyllabusOnlyReader({ module, course }) {
         </div>
         <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-white sm:text-5xl">{course.title}</h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-white/75">{course.subtitle}</p>
-        <a href={`#${course.parts[0]?.id}`} className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--action-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--action-primary-fg)] transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
+        <div className="mt-6 flex flex-wrap gap-3">
+          {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-200/25 bg-amber-200/[0.08] px-4 py-2.5 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-200/40 hover:bg-amber-200/[0.13] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200">
+            Open Linux Practice Lab <span aria-hidden="true">↗</span>
+          </a>}
+          <a href={`#${course.parts[0]?.id}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--action-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--action-primary-fg)] transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
           Browse {course.parts[0]?.label || 'syllabus'} <span aria-hidden="true">↓</span>
-        </a>
+          </a>
+        </div>
       </header>
 
       <nav aria-label="Jump to a syllabus section" className="sticky top-2 z-20 mt-5 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-[var(--panel-bg)]/95 p-2 shadow-lg backdrop-blur-sm">

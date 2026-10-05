@@ -1,0 +1,2767 @@
+{
+  "title": "Linux Practice Lab",
+  "totalQuestions": 75,
+  "pointsPerQuestion": 10,
+  "totalPoints": 750,
+  "topics": [
+    {
+      "number": 1,
+      "id": "directory-structure",
+      "title": "Directory Structure",
+      "commands": [
+        "/",
+        "/etc",
+        "/home",
+        "/var",
+        "/tmp",
+        "/bin",
+        "/proc"
+      ],
+      "summary": "Learn where Linux keeps commands, configuration, user data, logs, and temporary files.",
+      "questions": [
+        {
+          "id": "directory-structure-01",
+          "topic": "directory-structure",
+          "topicNumber": 1,
+          "title": "Explore the filesystem root",
+          "goal": "A new platform teammate needs a reliable orientation to the Linux host before joining the support rotation.",
+          "task": "Prepare a high-level inventory of the server's top-level areas so the teammate knows where configuration, user data, and logs are kept.",
+          "story": "A new platform teammate needs a reliable orientation to the Linux host before joining the support rotation.",
+          "anatomy": [
+            {
+              "value": "ls",
+              "explanation": "list directory contents"
+            },
+            {
+              "value": "/",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Start from the part of the standard Linux tree that owns this kind of information.",
+            "Configuration, personal files, logs, and web content each have conventional locations.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "ls /",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "etc/",
+              "label": "Output includes: etc/"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "directory-structure-02",
+          "topic": "directory-structure",
+          "topicNumber": 1,
+          "title": "Read the host identity",
+          "goal": "During incident triage, the team needs to confirm which machine is being investigated.",
+          "task": "Report the host name recorded in the system's configuration rather than inferring it from the network.",
+          "story": "During incident triage, the team needs to confirm which machine is being investigated.",
+          "anatomy": [
+            {
+              "value": "cat",
+              "explanation": "read a file"
+            },
+            {
+              "value": "/etc/hostname",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Configuration, personal files, logs, and web content each have conventional locations.",
+            "Check the requested path or inventory against the handoff requirement before finishing.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "cat /etc/hostname",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "tse-lab",
+              "label": "Output includes: tse-lab"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "directory-structure-03",
+          "topic": "directory-structure",
+          "topicNumber": 1,
+          "title": "Find the system logs",
+          "goal": "A service issue has reached the operations queue, and the investigator needs to know which logs are available.",
+          "task": "Prepare an inventory of the log files that could help with the initial diagnosis.",
+          "story": "A service issue has reached the operations queue, and the investigator needs to know which logs are available.",
+          "anatomy": [
+            {
+              "value": "ls",
+              "explanation": "list directory contents"
+            },
+            {
+              "value": "/var/log",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Check the requested path or inventory against the handoff requirement before finishing.",
+            "Start from the part of the standard Linux tree that owns this kind of information.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "ls /var/log",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "auth.log",
+              "label": "Output includes: auth.log"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "directory-structure-04",
+          "topic": "directory-structure",
+          "topicNumber": 1,
+          "title": "Make a workspace",
+          "goal": "The release team needs a dedicated workspace for its first Linux practice week.",
+          "task": "Make the complete ~/projects/linux-practice/week-1 folder path available, including any missing parent folders.",
+          "story": "The release team needs a dedicated workspace for its first Linux practice week.",
+          "anatomy": [
+            {
+              "value": "mkdir",
+              "explanation": "create a directory"
+            },
+            {
+              "value": "-p",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Start from the part of the standard Linux tree that owns this kind of information.",
+            "Configuration, personal files, logs, and web content each have conventional locations.",
+            "Confirm this destination exists as a directory: /home/user/projects/linux-practice/week-1"
+          ],
+          "solution": "mkdir -p ~/projects/linux-practice/week-1",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/linux-practice/week-1",
+              "exists": true,
+              "nodeType": "dir",
+              "label": "Directory exists: /home/user/projects/linux-practice/week-1"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "directory-structure-05",
+          "topic": "directory-structure",
+          "topicNumber": 1,
+          "title": "Locate the web root",
+          "goal": "A deployment handoff needs to tell the web team where the default site publishes its content.",
+          "task": "Inspect the default Nginx site configuration and report the configured document root.",
+          "story": "A deployment handoff needs to tell the web team where the default site publishes its content.",
+          "anatomy": [
+            {
+              "value": "cat",
+              "explanation": "read a file"
+            },
+            {
+              "value": "/etc/nginx/sites-available/default",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Configuration, personal files, logs, and web content each have conventional locations.",
+            "Check the requested path or inventory against the handoff requirement before finishing.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "cat /etc/nginx/sites-available/default",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "/var/www/html",
+              "label": "Output includes: /var/www/html"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "id": "navigation",
+      "title": "Navigation",
+      "commands": [
+        "pwd",
+        "cd",
+        "ls"
+      ],
+      "summary": "Move through directories, use home shortcuts, and inspect hidden files.",
+      "questions": [
+        {
+          "id": "navigation-01",
+          "topic": "navigation",
+          "topicNumber": 2,
+          "title": "Check your starting directory",
+          "goal": "A maintenance record must start with the shell's current location.",
+          "task": "Record the full directory where this terminal session begins before doing any other work.",
+          "story": "A maintenance record must start with the shell's current location.",
+          "anatomy": [
+            {
+              "value": "pwd",
+              "explanation": "show the current directory"
+            }
+          ],
+          "hints": [
+            "The shell keeps a current working location for this session.",
+            "The home shortcut refers to the active user's personal directory.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "pwd",
+          "checks": [
+            {
+              "type": "output",
+              "equals": "/home/user",
+              "label": "Output includes: /home/user"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "navigation-02",
+          "topic": "navigation",
+          "topicNumber": 2,
+          "title": "Visit the log directory",
+          "goal": "An incident responder needs to review the system logs and record the final working location.",
+          "task": "Move into /var/log and confirm the exact directory reached.",
+          "story": "An incident responder needs to review the system logs and record the final working location.",
+          "anatomy": [
+            {
+              "value": "cd",
+              "explanation": "change directory"
+            },
+            {
+              "value": "/var/log",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The home shortcut refers to the active user's personal directory.",
+            "When the task involves returning, the shell can remember the location you visited before.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "cd /var/log && pwd",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "cwd"
+              ],
+              "equals": "/var/log",
+              "label": "Machine state updated: cwd"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "navigation-03",
+          "topic": "navigation",
+          "topicNumber": 2,
+          "title": "Use the home shortcut",
+          "goal": "An onboarding checklist is waiting in the current user's document workspace.",
+          "task": "Move into ~/Documents so you can review the teammate's checklist there.",
+          "story": "An onboarding checklist is waiting in the current user's document workspace.",
+          "anatomy": [
+            {
+              "value": "cd",
+              "explanation": "change directory"
+            },
+            {
+              "value": "~/Documents",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "When the task involves returning, the shell can remember the location you visited before.",
+            "The shell keeps a current working location for this session.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "cd ~/Documents",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "cwd"
+              ],
+              "equals": "/home/user/Documents",
+              "label": "Machine state updated: cwd"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "navigation-04",
+          "topic": "navigation",
+          "topicNumber": 2,
+          "title": "Return to the previous directory",
+          "goal": "After checking a note in Documents, the operator needs to return to the workspace that was active before the review.",
+          "task": "Visit ~/Documents, return to the prior working directory, and confirm where the session ended.",
+          "story": "After checking a note in Documents, the operator needs to return to the workspace that was active before the review.",
+          "anatomy": [
+            {
+              "value": "cd",
+              "explanation": "change directory"
+            },
+            {
+              "value": "~/Documents",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The shell keeps a current working location for this session.",
+            "The home shortcut refers to the active user's personal directory.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "cd ~/Documents && cd -",
+          "checks": [
+            {
+              "type": "output",
+              "startsWith": "/",
+              "label": "Output includes: /"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "navigation-05",
+          "topic": "navigation",
+          "topicNumber": 2,
+          "title": "Show hidden home files",
+          "goal": "A workstation handoff needs to include personal shell settings as well as ordinary home-folder items.",
+          "task": "Prepare a complete listing of the home directory that includes hidden configuration entries.",
+          "story": "A workstation handoff needs to include personal shell settings as well as ordinary home-folder items.",
+          "anatomy": [
+            {
+              "value": "ls",
+              "explanation": "list directory contents"
+            },
+            {
+              "value": "-la",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "The home shortcut refers to the active user's personal directory.",
+            "When the task involves returning, the shell can remember the location you visited before.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "ls -la ~",
+          "checks": [
+            {
+              "type": "output",
+              "includes": ".bashrc",
+              "label": "Output includes: .bashrc"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "id": "file-operations",
+      "title": "File Operations",
+      "commands": [
+        "touch",
+        "mkdir",
+        "cp",
+        "mv",
+        "rm"
+      ],
+      "summary": "Create, copy, move, rename, and safely remove items in your practice filesystem.",
+      "questions": [
+        {
+          "id": "file-operations-01",
+          "topic": "file-operations",
+          "topicNumber": 3,
+          "title": "Create a file",
+          "goal": "The next support shift needs an empty marker showing that its handoff folder is ready.",
+          "task": "Create a blank file at ~/Documents/first-session.txt without adding any contents.",
+          "story": "The next support shift needs an empty marker showing that its handoff folder is ready.",
+          "anatomy": [
+            {
+              "value": "touch",
+              "explanation": "create a file"
+            },
+            {
+              "value": "~/Documents/first-session.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Decide whether the final state needs a new item, a duplicate, a rename, or cleanup.",
+            "Check both the source and destination when moving or copying existing material.",
+            "Confirm the requested file exists at: /home/user/Documents/first-session.txt"
+          ],
+          "solution": "touch ~/Documents/first-session.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/first-session.txt",
+              "exists": true,
+              "nodeType": "file",
+              "label": "File exists: /home/user/Documents/first-session.txt"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-operations-02",
+          "topic": "file-operations",
+          "topicNumber": 3,
+          "title": "Create nested folders",
+          "goal": "The weekly reporting job needs a nested destination that has not been prepared yet.",
+          "task": "Create ~/projects/ops/reports and make sure every missing parent directory is included.",
+          "story": "The weekly reporting job needs a nested destination that has not been prepared yet.",
+          "anatomy": [
+            {
+              "value": "mkdir",
+              "explanation": "create a directory"
+            },
+            {
+              "value": "-p",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Check both the source and destination when moving or copying existing material.",
+            "Confirm the requested final path and whether the original should remain.",
+            "Confirm this destination exists as a directory: /home/user/projects/ops/reports"
+          ],
+          "solution": "mkdir -p ~/projects/ops/reports",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/ops/reports",
+              "exists": true,
+              "nodeType": "dir",
+              "label": "Directory exists: /home/user/projects/ops/reports"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-operations-03",
+          "topic": "file-operations",
+          "topicNumber": 3,
+          "title": "Copy a useful reference",
+          "goal": "A reviewer wants a copy of the website documentation in their Documents folder.",
+          "task": "Duplicate the project README.md as ~/Documents/website-README.md while keeping the original in place.",
+          "story": "A reviewer wants a copy of the website documentation in their Documents folder.",
+          "anatomy": [
+            {
+              "value": "cp",
+              "explanation": "copy a file"
+            },
+            {
+              "value": "~/projects/website/README.md",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Confirm the requested final path and whether the original should remain.",
+            "Decide whether the final state needs a new item, a duplicate, a rename, or cleanup.",
+            "Confirm the requested file exists at: /home/user/Documents/website-README.md"
+          ],
+          "solution": "cp ~/projects/website/README.md ~/Documents/website-README.md",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/website-README.md",
+              "exists": true,
+              "contains": "Practice website",
+              "label": "File contains: /home/user/Documents/website-README.md - Practice website"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-operations-04",
+          "topic": "file-operations",
+          "topicNumber": 3,
+          "title": "Move a downloaded report",
+          "goal": "Incoming release notes have been reviewed and are ready to be filed with the team's documents.",
+          "task": "Move incoming-notes.txt from Downloads into Documents and give it the final name final-release-notes.txt.",
+          "story": "Incoming release notes have been reviewed and are ready to be filed with the team's documents.",
+          "anatomy": [
+            {
+              "value": "mv",
+              "explanation": "move or rename a path"
+            },
+            {
+              "value": "~/Downloads/incoming-notes.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Decide whether the final state needs a new item, a duplicate, a rename, or cleanup.",
+            "Check both the source and destination when moving or copying existing material.",
+            "Confirm the requested file exists at: /home/user/Documents/final-release-notes.txt"
+          ],
+          "solution": "mv ~/Downloads/incoming-notes.txt ~/Documents/final-release-notes.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/final-release-notes.txt",
+              "exists": true,
+              "contains": "Release notes",
+              "label": "File contains: /home/user/Documents/final-release-notes.txt - Release notes"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-operations-05",
+          "topic": "file-operations",
+          "topicNumber": 3,
+          "title": "Remove a temporary file",
+          "goal": "A one-use marker is needed during a review and should be removed when cleanup is complete.",
+          "task": "Create ~/Documents/remove-me.txt, then leave that exact path absent after the review.",
+          "story": "A one-use marker is needed during a review and should be removed when cleanup is complete.",
+          "anatomy": [
+            {
+              "value": "touch",
+              "explanation": "create a file"
+            },
+            {
+              "value": "~/Documents/remove-me.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Check both the source and destination when moving or copying existing material.",
+            "Confirm the requested final path and whether the original should remain.",
+            "The cleanup is complete when this path is absent: /home/user/Documents/remove-me.txt"
+          ],
+          "solution": "touch ~/Documents/remove-me.txt && rm ~/Documents/remove-me.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/remove-me.txt",
+              "exists": false,
+              "label": "Path does not exist: /home/user/Documents/remove-me.txt"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "id": "viewing-files",
+      "title": "Viewing Files",
+      "commands": [
+        "cat",
+        "less",
+        "head",
+        "tail"
+      ],
+      "summary": "Read whole files, inspect the beginning or end, and count lines.",
+      "questions": [
+        {
+          "id": "viewing-files-01",
+          "topic": "viewing-files",
+          "topicNumber": 4,
+          "title": "Read your notes",
+          "goal": "An operator needs the complete guidance in the shared notes before changing any files.",
+          "task": "Read all of ~/Documents/notes.txt so the permissions and path instructions are available for the handoff.",
+          "story": "An operator needs the complete guidance in the shared notes before changing any files.",
+          "anatomy": [
+            {
+              "value": "cat",
+              "explanation": "read a file"
+            },
+            {
+              "value": "~/Documents/notes.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The task distinguishes a complete read from a short preview or a count.",
+            "For recent records, the newest entries are at the end of the file.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "cat ~/Documents/notes.txt",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Review permissions",
+              "label": "Output includes: Review permissions"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "viewing-files-02",
+          "topic": "viewing-files",
+          "topicNumber": 4,
+          "title": "Preview the first line",
+          "goal": "The report owner only needs the opening line for a short status message.",
+          "task": "Show the first line of Downloads/weekly-report.txt without repeating the rest of the report.",
+          "story": "The report owner only needs the opening line for a short status message.",
+          "anatomy": [
+            {
+              "value": "head",
+              "explanation": "read the start of a file"
+            },
+            {
+              "value": "-n",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "For recent records, the newest entries are at the end of the file.",
+            "Use the requested file and verify that the output contains only the needed amount.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "head -n 1 ~/Downloads/weekly-report.txt",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Week 1: navigation and files",
+              "label": "Output includes: Week 1: navigation and files"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "viewing-files-03",
+          "topic": "viewing-files",
+          "topicNumber": 4,
+          "title": "Inspect recent web requests",
+          "goal": "The web team is tracing a recent incident and needs the newest access records.",
+          "task": "Provide exactly the two most recent lines from the Nginx access log.",
+          "story": "The web team is tracing a recent incident and needs the newest access records.",
+          "anatomy": [
+            {
+              "value": "tail",
+              "explanation": "read the end of a file"
+            },
+            {
+              "value": "-n",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Use the requested file and verify that the output contains only the needed amount.",
+            "The task distinguishes a complete read from a short preview or a count.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "tail -n 2 /var/log/nginx/access.log",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "GET /health",
+              "label": "Output includes: GET /health"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "viewing-files-04",
+          "topic": "viewing-files",
+          "topicNumber": 4,
+          "title": "Count note lines",
+          "goal": "A documentation audit needs a compact measure of the team's notes.",
+          "task": "Report the number of lines in ~/Documents/notes.txt without printing the full document.",
+          "story": "A documentation audit needs a compact measure of the team's notes.",
+          "anatomy": [
+            {
+              "value": "wc",
+              "explanation": "count file content"
+            },
+            {
+              "value": "-l",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "The task distinguishes a complete read from a short preview or a count.",
+            "For recent records, the newest entries are at the end of the file.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "wc -l ~/Documents/notes.txt",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "3",
+              "label": "Output includes: 3"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "viewing-files-05",
+          "topic": "viewing-files",
+          "topicNumber": 4,
+          "title": "Read host mappings",
+          "goal": "A connectivity handoff needs the local host-to-address records for the training machines.",
+          "task": "Review the host mapping configuration and include the entries for the lab hosts.",
+          "story": "A connectivity handoff needs the local host-to-address records for the training machines.",
+          "anatomy": [
+            {
+              "value": "less",
+              "explanation": "view a file"
+            },
+            {
+              "value": "/etc/hosts",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "For recent records, the newest entries are at the end of the file.",
+            "Use the requested file and verify that the output contains only the needed amount.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "less /etc/hosts",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "web01",
+              "label": "Output includes: web01"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "id": "text-editing",
+      "title": "Text Editing",
+      "commands": [
+        "nano"
+      ],
+      "summary": "Use the built-in editor to create and update configuration and project files.",
+      "questions": [
+        {
+          "id": "text-editing-01",
+          "topic": "text-editing",
+          "topicNumber": 5,
+          "title": "Write an incident note",
+          "goal": "The support team needs a saved record that the incident service check is complete.",
+          "task": "Create ~/Documents/incident-note.txt with the line Service check complete and save it for the next shift.",
+          "story": "The support team needs a saved record that the incident service check is complete.",
+          "anatomy": [
+            {
+              "value": "nano",
+              "explanation": "edit a file"
+            },
+            {
+              "value": "~/Documents/incident-note.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The practice machine provides a built-in way to edit text files.",
+            "The requested sentence is the content that needs to be saved.",
+            "Confirm the requested file exists at: /home/user/Documents/incident-note.txt"
+          ],
+          "solution": "nano ~/Documents/incident-note.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/incident-note.txt",
+              "exists": true,
+              "contains": "Service check complete",
+              "label": "File contains: /home/user/Documents/incident-note.txt - Service check complete"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "text-editing-02",
+          "topic": "text-editing",
+          "topicNumber": 5,
+          "title": "Create a deployment checklist",
+          "goal": "The release engineer needs a reminder beside the deployment scripts.",
+          "task": "Create ~/projects/scripts/deploy-checklist.txt containing Verify backup before release.",
+          "story": "The release engineer needs a reminder beside the deployment scripts.",
+          "anatomy": [
+            {
+              "value": "nano",
+              "explanation": "edit a file"
+            },
+            {
+              "value": "~/projects/scripts/deploy-checklist.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The requested sentence is the content that needs to be saved.",
+            "Save the file at the exact destination so the lab can check its contents.",
+            "Confirm the requested file exists at: /home/user/projects/scripts/deploy-checklist.txt"
+          ],
+          "solution": "nano ~/projects/scripts/deploy-checklist.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/scripts/deploy-checklist.txt",
+              "exists": true,
+              "contains": "Verify backup before release",
+              "label": "File contains: /home/user/projects/scripts/deploy-checklist.txt - Verify backup before release"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "text-editing-03",
+          "topic": "text-editing",
+          "topicNumber": 5,
+          "title": "Create a staging page",
+          "goal": "The web team needs a staging marker in its existing site project.",
+          "task": "Create ~/projects/website/staging.html with the text Staging environment.",
+          "story": "The web team needs a staging marker in its existing site project.",
+          "anatomy": [
+            {
+              "value": "nano",
+              "explanation": "edit a file"
+            },
+            {
+              "value": "~/projects/website/staging.html",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Save the file at the exact destination so the lab can check its contents.",
+            "The practice machine provides a built-in way to edit text files.",
+            "Confirm the requested file exists at: /home/user/projects/website/staging.html"
+          ],
+          "solution": "nano ~/projects/website/staging.html",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/website/staging.html",
+              "exists": true,
+              "contains": "Staging environment",
+              "label": "File contains: /home/user/projects/website/staging.html - Staging environment"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "text-editing-04",
+          "topic": "text-editing",
+          "topicNumber": 5,
+          "title": "Make a personal shell note",
+          "goal": "The next operator should know which editor is configured for this workstation.",
+          "task": "Leave the next operator a note at ~/editor-reminder.txt confirming that this workstation has a configured default editor.",
+          "story": "The next operator should know which editor is configured for this workstation.",
+          "anatomy": [
+            {
+              "value": "nano",
+              "explanation": "edit a file"
+            },
+            {
+              "value": "~/editor-reminder.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The practice machine provides a built-in way to edit text files.",
+            "The requested sentence is the content that needs to be saved.",
+            "Confirm the requested file exists at: /home/user/editor-reminder.txt"
+          ],
+          "solution": "nano ~/editor-reminder.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/editor-reminder.txt",
+              "exists": true,
+              "contains": "Default editor is configured",
+              "label": "File contains: /home/user/editor-reminder.txt - Default editor is configured"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "text-editing-05",
+          "topic": "text-editing",
+          "topicNumber": 5,
+          "title": "Document the backup routine",
+          "goal": "The backup routine needs a short explanation in the operations runbook.",
+          "task": "Create ~/projects/scripts/backup-notes.txt containing Backups run nightly.",
+          "story": "The backup routine needs a short explanation in the operations runbook.",
+          "anatomy": [
+            {
+              "value": "nano",
+              "explanation": "edit a file"
+            },
+            {
+              "value": "~/projects/scripts/backup-notes.txt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The requested sentence is the content that needs to be saved.",
+            "Save the file at the exact destination so the lab can check its contents.",
+            "Confirm the requested file exists at: /home/user/projects/scripts/backup-notes.txt"
+          ],
+          "solution": "nano ~/projects/scripts/backup-notes.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/scripts/backup-notes.txt",
+              "exists": true,
+              "contains": "Backups run nightly",
+              "label": "File contains: /home/user/projects/scripts/backup-notes.txt - Backups run nightly"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "id": "permissions",
+      "title": "Permissions",
+      "commands": [
+        "chmod"
+      ],
+      "summary": "Read and update owner, group, and other permission bits with chmod.",
+      "questions": [
+        {
+          "id": "permissions-01",
+          "topic": "permissions",
+          "topicNumber": 6,
+          "title": "Make a script executable",
+          "goal": "The release owner needs to run the existing backup script without changing access for teammates.",
+          "task": "Add execute access for the owner of ~/projects/scripts/backup.sh and preserve the other permission bits.",
+          "story": "The release owner needs to run the existing backup script without changing access for teammates.",
+          "anatomy": [
+            {
+              "value": "chmod",
+              "explanation": "change permissions"
+            },
+            {
+              "value": "u+x",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Linux access is divided among the owner, the group, and everyone else.",
+            "Translate the team's policy into the specific read, write, or run access each group needs.",
+            "Confirm the requested file exists at: /home/user/projects/scripts/backup.sh"
+          ],
+          "solution": "chmod u+x ~/projects/scripts/backup.sh",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/scripts/backup.sh",
+              "exists": true,
+              "ownerExecutable": true,
+              "label": "File exists: /home/user/projects/scripts/backup.sh"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "permissions-02",
+          "topic": "permissions",
+          "topicNumber": 6,
+          "title": "Set private file permissions",
+          "goal": "The staff inventory contains private details that should be accessible only to its owner.",
+          "task": "Set ~/Documents/inventory.csv to mode 600 so its owner can read and edit it while other accounts have no access.",
+          "story": "The staff inventory contains private details that should be accessible only to its owner.",
+          "anatomy": [
+            {
+              "value": "chmod",
+              "explanation": "change permissions"
+            },
+            {
+              "value": "600",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Translate the team's policy into the specific read, write, or run access each group needs.",
+            "Check the final permission state without broadening unrelated access.",
+            "Confirm the requested file exists at: /home/user/Documents/inventory.csv"
+          ],
+          "solution": "chmod 600 ~/Documents/inventory.csv",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/inventory.csv",
+              "exists": true,
+              "mode": "600",
+              "label": "Permissions 600: /home/user/Documents/inventory.csv"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "permissions-03",
+          "topic": "permissions",
+          "topicNumber": 6,
+          "title": "Lock down a folder",
+          "goal": "Case materials need a new private folder in the user's Documents area.",
+          "task": "Create ~/Documents/private and set mode 700 so only its owner has access.",
+          "story": "Case materials need a new private folder in the user's Documents area.",
+          "anatomy": [
+            {
+              "value": "mkdir",
+              "explanation": "create a directory"
+            },
+            {
+              "value": "-p",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Check the final permission state without broadening unrelated access.",
+            "Linux access is divided among the owner, the group, and everyone else.",
+            "Confirm this destination exists as a directory: /home/user/Documents/private"
+          ],
+          "solution": "mkdir -p ~/Documents/private && chmod 700 ~/Documents/private",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/private",
+              "exists": true,
+              "nodeType": "dir",
+              "mode": "700",
+              "label": "Permissions 700: /home/user/Documents/private"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "permissions-04",
+          "topic": "permissions",
+          "topicNumber": 6,
+          "title": "Set a shared read-only script mode",
+          "goal": "The deployment team must be able to read and run the backup script, while only its owner may edit it.",
+          "task": "Set ~/projects/scripts/backup.sh to mode 755.",
+          "story": "The deployment team must be able to read and run the backup script, while only its owner may edit it.",
+          "anatomy": [
+            {
+              "value": "chmod",
+              "explanation": "change permissions"
+            },
+            {
+              "value": "755",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Linux access is divided among the owner, the group, and everyone else.",
+            "Translate the team's policy into the specific read, write, or run access each group needs.",
+            "Confirm the requested file exists at: /home/user/projects/scripts/backup.sh"
+          ],
+          "solution": "chmod 755 ~/projects/scripts/backup.sh",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/projects/scripts/backup.sh",
+              "exists": true,
+              "mode": "755",
+              "label": "Permissions 755: /home/user/projects/scripts/backup.sh"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "permissions-05",
+          "topic": "permissions",
+          "topicNumber": 6,
+          "title": "Remove public write access",
+          "goal": "The operations note should remain available to readers but protected from edits by other accounts.",
+          "task": "Set ~/Documents/notes.txt to mode 644 so the owner can edit and everyone else can only read it.",
+          "story": "The operations note should remain available to readers but protected from edits by other accounts.",
+          "anatomy": [
+            {
+              "value": "chmod",
+              "explanation": "change permissions"
+            },
+            {
+              "value": "644",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Translate the team's policy into the specific read, write, or run access each group needs.",
+            "Check the final permission state without broadening unrelated access.",
+            "Confirm the requested file exists at: /home/user/Documents/notes.txt"
+          ],
+          "solution": "chmod 644 ~/Documents/notes.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/notes.txt",
+              "exists": true,
+              "mode": "644",
+              "label": "Permissions 644: /home/user/Documents/notes.txt"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 7,
+      "id": "searching",
+      "title": "Searching",
+      "commands": [
+        "find",
+        "grep"
+      ],
+      "summary": "Find paths by name and search file contents with grep.",
+      "questions": [
+        {
+          "id": "searching-01",
+          "topic": "searching",
+          "topicNumber": 7,
+          "title": "Find Markdown files",
+          "goal": "The documentation lead is preparing a review and needs every Markdown file in the user's home tree.",
+          "task": "Find files with names ending in .md anywhere under /home/user, including nested project folders.",
+          "story": "The documentation lead is preparing a review and needs every Markdown file in the user's home tree.",
+          "anatomy": [
+            {
+              "value": "find",
+              "explanation": "search for paths"
+            },
+            {
+              "value": "/home/user",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Limit the search to the folder named in the request.",
+            "Match the requested filename pattern or phrase, not unrelated entries.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "find /home/user -type f -name \"*.md\"",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "README.md",
+              "label": "Output includes: README.md"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "searching-02",
+          "topic": "searching",
+          "topicNumber": 7,
+          "title": "Search notes for permissions",
+          "goal": "Before changing shared files, an operator needs the note that explains permission practices.",
+          "task": "Find the line containing permissions in ~/Documents/notes.txt and include its surrounding text.",
+          "story": "Before changing shared files, an operator needs the note that explains permission practices.",
+          "anatomy": [
+            {
+              "value": "grep",
+              "explanation": "search file content"
+            },
+            {
+              "value": "permissions",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Match the requested filename pattern or phrase, not unrelated entries.",
+            "Keep enough of each match in the result for the reviewer to identify it.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "grep permissions ~/Documents/notes.txt",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Review permissions",
+              "label": "Output includes: Review permissions"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "searching-03",
+          "topic": "searching",
+          "topicNumber": 7,
+          "title": "Find text files in Downloads",
+          "goal": "The operations team needs an inventory of text reports available to download.",
+          "task": "Find every regular file named with the .txt extension under ~/Downloads.",
+          "story": "The operations team needs an inventory of text reports available to download.",
+          "anatomy": [
+            {
+              "value": "find",
+              "explanation": "search for paths"
+            },
+            {
+              "value": "~/Downloads",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Keep enough of each match in the result for the reviewer to identify it.",
+            "Limit the search to the folder named in the request.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "find ~/Downloads -type f -name \"*.txt\"",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "weekly-report.txt",
+              "label": "Output includes: weekly-report.txt"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "searching-04",
+          "topic": "searching",
+          "topicNumber": 7,
+          "title": "Search logs for failed logins",
+          "goal": "The security team is investigating suspicious access attempts from the morning shift.",
+          "task": "Return the entries containing Failed password from /var/log/auth.log, including their timestamps and source addresses.",
+          "story": "The security team is investigating suspicious access attempts from the morning shift.",
+          "anatomy": [
+            {
+              "value": "sudo",
+              "explanation": "run with administrator privileges"
+            },
+            {
+              "value": "grep",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Limit the search to the folder named in the request.",
+            "Match the requested filename pattern or phrase, not unrelated entries.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "sudo grep \"Failed password\" /var/log/auth.log",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Failed password",
+              "label": "Output includes: Failed password"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "searching-05",
+          "topic": "searching",
+          "topicNumber": 7,
+          "title": "Find the health check response",
+          "goal": "The web team needs to verify that health checks reached the service during the incident.",
+          "task": "Return the Nginx access-log entries that contain the /health endpoint.",
+          "story": "The web team needs to verify that health checks reached the service during the incident.",
+          "anatomy": [
+            {
+              "value": "grep",
+              "explanation": "search file content"
+            },
+            {
+              "value": "/health",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Match the requested filename pattern or phrase, not unrelated entries.",
+            "Keep enough of each match in the result for the reviewer to identify it.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "grep /health /var/log/nginx/access.log",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "/health",
+              "label": "Output includes: /health"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "id": "pipes-redirection",
+      "title": "Pipes & Redirection",
+      "commands": [
+        "|",
+        ">",
+        ">>"
+      ],
+      "summary": "Connect commands and save or append their output to files.",
+      "questions": [
+        {
+          "id": "pipes-redirection-01",
+          "topic": "pipes-redirection",
+          "topicNumber": 8,
+          "title": "Filter a CSV through a pipe",
+          "goal": "The staffing analyst needs a focused extract of the Platform team from the inventory.",
+          "task": "Show only the Platform rows from ~/Documents/inventory.csv and leave the source file unchanged.",
+          "story": "The staffing analyst needs a focused extract of the Platform team from the inventory.",
+          "anatomy": [
+            {
+              "value": "cat",
+              "explanation": "read a file"
+            },
+            {
+              "value": "~/Documents/inventory.csv",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Think about whether information should be filtered, ordered, saved, appended, or shown in two places.",
+            "Preserve existing file contents when the request adds a new log entry.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "cat ~/Documents/inventory.csv | grep Platform",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Asha,Platform",
+              "label": "Output includes: Asha,Platform"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "pipes-redirection-02",
+          "topic": "pipes-redirection",
+          "topicNumber": 8,
+          "title": "Redirect command output",
+          "goal": "The deployment handoff needs one current status line in the shared status file.",
+          "task": "Save deployment complete to ~/Documents/deploy-status.txt, replacing any older contents at that path.",
+          "story": "The deployment handoff needs one current status line in the shared status file.",
+          "anatomy": [
+            {
+              "value": "echo",
+              "explanation": "print text"
+            },
+            {
+              "value": "\"deployment complete\"",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Preserve existing file contents when the request adds a new log entry.",
+            "Check both the visible result and any file the task asks you to leave behind.",
+            "Confirm the requested file exists at: /home/user/Documents/deploy-status.txt"
+          ],
+          "solution": "echo \"deployment complete\" > ~/Documents/deploy-status.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/deploy-status.txt",
+              "exists": true,
+              "contains": "deployment complete",
+              "label": "File contains: /home/user/Documents/deploy-status.txt - deployment complete"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "pipes-redirection-03",
+          "topic": "pipes-redirection",
+          "topicNumber": 8,
+          "title": "Append to a log",
+          "goal": "The practice log is an audit trail and must retain its previous entry.",
+          "task": "Add second check passed to the end of ~/Documents/practice.log without replacing existing contents.",
+          "story": "The practice log is an audit trail and must retain its previous entry.",
+          "anatomy": [
+            {
+              "value": "echo",
+              "explanation": "print text"
+            },
+            {
+              "value": "\"second check passed\"",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Check both the visible result and any file the task asks you to leave behind.",
+            "Think about whether information should be filtered, ordered, saved, appended, or shown in two places.",
+            "Confirm the requested file exists at: /home/user/Documents/practice.log"
+          ],
+          "solution": "echo \"second check passed\" >> ~/Documents/practice.log",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/practice.log",
+              "exists": true,
+              "contains": "second check passed",
+              "label": "File contains: /home/user/Documents/practice.log - second check passed"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "pipes-redirection-04",
+          "topic": "pipes-redirection",
+          "topicNumber": 8,
+          "title": "Sort the inventory preview",
+          "goal": "The reviewer needs a short, alphabetized preview of the inventory.",
+          "task": "Sort the lines in ~/Documents/inventory.csv and show only the first two lines of the ordered result.",
+          "story": "The reviewer needs a short, alphabetized preview of the inventory.",
+          "anatomy": [
+            {
+              "value": "sort",
+              "explanation": "the Linux command"
+            },
+            {
+              "value": "~/Documents/inventory.csv",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Think about whether information should be filtered, ordered, saved, appended, or shown in two places.",
+            "Preserve existing file contents when the request adds a new log entry.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "sort ~/Documents/inventory.csv | head -n 2",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Asha,Platform",
+              "label": "Output includes: Asha,Platform"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "pipes-redirection-05",
+          "topic": "pipes-redirection",
+          "topicNumber": 8,
+          "title": "Confirm and save the handoff status",
+          "goal": "The handoff reviewer needs to see the completion status and find it saved for later.",
+          "task": "Write handoff ready to ~/Documents/handoff.txt and show the same text in the terminal.",
+          "story": "The handoff reviewer needs to see the completion status and find it saved for later.",
+          "anatomy": [
+            {
+              "value": "echo",
+              "explanation": "print text"
+            },
+            {
+              "value": "\"handoff ready\"",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Preserve existing file contents when the request adds a new log entry.",
+            "Check both the visible result and any file the task asks you to leave behind.",
+            "Confirm the requested file exists at: /home/user/Documents/handoff.txt"
+          ],
+          "solution": "echo \"handoff ready\" | tee ~/Documents/handoff.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Documents/handoff.txt",
+              "exists": true,
+              "contains": "handoff ready",
+              "label": "File contains: /home/user/Documents/handoff.txt - handoff ready"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "id": "process-management",
+      "title": "Process Management",
+      "commands": [
+        "ps aux",
+        "top",
+        "kill"
+      ],
+      "summary": "Inspect simulated processes, find process IDs, and stop a practice process.",
+      "questions": [
+        {
+          "id": "process-management-01",
+          "topic": "process-management",
+          "topicNumber": 9,
+          "title": "List every process",
+          "goal": "The capacity review needs a process snapshot covering every account on the host.",
+          "task": "Show all running processes with their owners and full command details.",
+          "story": "The capacity review needs a process snapshot covering every account on the host.",
+          "anatomy": [
+            {
+              "value": "ps",
+              "explanation": "list processes"
+            },
+            {
+              "value": "aux",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The process view includes identifiers, account owners, and running state.",
+            "Inspection tasks are read-only; the stop request names one specific process.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "ps aux",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "nginx",
+              "label": "Output includes: nginx"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "process-management-02",
+          "topic": "process-management",
+          "topicNumber": 9,
+          "title": "Find the web server process",
+          "goal": "The on-call engineer needs the identifier of the active web service process.",
+          "task": "Find and report the process ID associated with Nginx.",
+          "story": "The on-call engineer needs the identifier of the active web service process.",
+          "anatomy": [
+            {
+              "value": "pgrep",
+              "explanation": "find process IDs"
+            },
+            {
+              "value": "nginx",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Inspection tasks are read-only; the stop request names one specific process.",
+            "Use the smallest action that satisfies the approved operations request.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "pgrep nginx",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "632",
+              "label": "Output includes: 632"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "process-management-03",
+          "topic": "process-management",
+          "topicNumber": 9,
+          "title": "Inspect a live process view",
+          "goal": "The capacity team wants a read-only snapshot of current processes and resource use.",
+          "task": "Open the lab's one-time process and resource overview without making any system changes.",
+          "story": "The capacity team wants a read-only snapshot of current processes and resource use.",
+          "anatomy": [
+            {
+              "value": "top",
+              "explanation": "inspect process activity"
+            }
+          ],
+          "hints": [
+            "Use the smallest action that satisfies the approved operations request.",
+            "The process view includes identifiers, account owners, and running state.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "top",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "PID USER",
+              "label": "Output includes: PID USER"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "process-management-04",
+          "topic": "process-management",
+          "topicNumber": 9,
+          "title": "Stop a worker process",
+          "goal": "The operations lead approved a graceful stop of a stalled worker owned by the web service account.",
+          "task": "Send the normal termination signal to process 711 with administrator privileges.",
+          "story": "The operations lead approved a graceful stop of a stalled worker owned by the web service account.",
+          "anatomy": [
+            {
+              "value": "sudo",
+              "explanation": "run with administrator privileges"
+            },
+            {
+              "value": "kill",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The process view includes identifiers, account owners, and running state.",
+            "Inspection tasks are read-only; the stop request names one specific process.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "sudo kill 711",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "processes"
+              ],
+              "predicate": {
+                "field": "pid",
+                "equals": 711,
+                "fieldEquals": "state",
+                "value": "stopped"
+              },
+              "label": "Process 711 is stopped"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "process-management-05",
+          "topic": "process-management",
+          "topicNumber": 9,
+          "title": "Check background job guidance",
+          "goal": "Before leaving the session, the operator needs to report any unfinished background activity in the handoff.",
+          "task": "Review the current shell session for unfinished background activity; an empty result is acceptable.",
+          "story": "Before leaving the session, the operator needs to report any unfinished background activity in the handoff.",
+          "anatomy": [
+            {
+              "value": "jobs",
+              "explanation": "the Linux command"
+            }
+          ],
+          "hints": [
+            "Inspection tasks are read-only; the stop request names one specific process.",
+            "Use the smallest action that satisfies the approved operations request.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "jobs",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Running",
+              "label": "Output includes: Running"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 10,
+      "id": "users-sudo",
+      "title": "Users & Sudo",
+      "commands": [
+        "sudo",
+        "passwd"
+      ],
+      "summary": "Inspect the current identity and practice administrator commands in the simulated system.",
+      "questions": [
+        {
+          "id": "users-sudo-01",
+          "topic": "users-sudo",
+          "topicNumber": 10,
+          "title": "Check the current user",
+          "goal": "A change record must identify the account attached to the current terminal session.",
+          "task": "Report only the active username.",
+          "story": "A change record must identify the account attached to the current terminal session.",
+          "anatomy": [
+            {
+              "value": "whoami",
+              "explanation": "the Linux command"
+            }
+          ],
+          "hints": [
+            "These checks ask for different levels of identity: a name, numeric IDs, policy, or a full account record.",
+            "Account creation changes system state and requires approved administrator access.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "whoami",
+          "checks": [
+            {
+              "type": "output",
+              "equals": "user",
+              "label": "Output includes: user"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "users-sudo-02",
+          "topic": "users-sudo",
+          "topicNumber": 10,
+          "title": "Inspect your numeric identity",
+          "goal": "The access reviewer needs numeric identifiers for the current account and its groups.",
+          "task": "Report the session's user ID, primary group, and supplementary groups.",
+          "story": "The access reviewer needs numeric identifiers for the current account and its groups.",
+          "anatomy": [
+            {
+              "value": "id",
+              "explanation": "the Linux command"
+            }
+          ],
+          "hints": [
+            "Account creation changes system state and requires approved administrator access.",
+            "Verify the resulting account data or home folder when the task creates a user.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "id",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "uid=1000(user)",
+              "label": "Output includes: uid=1000(user)"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "users-sudo-03",
+          "topic": "users-sudo",
+          "topicNumber": 10,
+          "title": "Review administrator access",
+          "goal": "Before a maintenance window, the team needs to confirm the current account's approved elevated actions.",
+          "task": "Display the administrator permissions available to the training user without changing the machine.",
+          "story": "Before a maintenance window, the team needs to confirm the current account's approved elevated actions.",
+          "anatomy": [
+            {
+              "value": "sudo",
+              "explanation": "run with administrator privileges"
+            },
+            {
+              "value": "-l",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Verify the resulting account data or home folder when the task creates a user.",
+            "These checks ask for different levels of identity: a name, numeric IDs, policy, or a full account record.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "sudo -l",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "ALL",
+              "label": "Output includes: ALL"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "users-sudo-04",
+          "topic": "users-sudo",
+          "topicNumber": 10,
+          "title": "Create a practice account",
+          "goal": "The reporting team needs a separate account to own its scheduled output.",
+          "task": "Create the analyst account with a home directory and verify that both were added.",
+          "story": "The reporting team needs a separate account to own its scheduled output.",
+          "anatomy": [
+            {
+              "value": "sudo",
+              "explanation": "run with administrator privileges"
+            },
+            {
+              "value": "useradd",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "These checks ask for different levels of identity: a name, numeric IDs, policy, or a full account record.",
+            "Account creation changes system state and requires approved administrator access.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "sudo useradd -m analyst",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "users"
+              ],
+              "includes": "analyst",
+              "field": "name",
+              "label": "User analyst exists"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "users-sudo-05",
+          "topic": "users-sudo",
+          "topicNumber": 10,
+          "title": "Inspect account records",
+          "goal": "An access audit needs to confirm the deployment account's configured home and shell.",
+          "task": "Return the complete deploy entry from /etc/passwd.",
+          "story": "An access audit needs to confirm the deployment account's configured home and shell.",
+          "anatomy": [
+            {
+              "value": "grep",
+              "explanation": "search file content"
+            },
+            {
+              "value": "\"^deploy:\"",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Account creation changes system state and requires approved administrator access.",
+            "Verify the resulting account data or home folder when the task creates a user.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "grep \"^deploy:\" /etc/passwd",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "deploy:x:1001",
+              "label": "Output includes: deploy:x:1001"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "id": "system-info",
+      "title": "System Info",
+      "commands": [
+        "df -h",
+        "du -sh",
+        "free -h"
+      ],
+      "summary": "Inspect disk, memory, kernel, and host details reported by the simulated machine.",
+      "questions": [
+        {
+          "id": "system-info-01",
+          "topic": "system-info",
+          "topicNumber": 11,
+          "title": "Check mounted disk space",
+          "goal": "The monthly operations report needs capacity figures for mounted storage.",
+          "task": "Report used and available space for mounted filesystems in human-readable units.",
+          "story": "The monthly operations report needs capacity figures for mounted storage.",
+          "anatomy": [
+            {
+              "value": "df",
+              "explanation": "inspect mounted disk space"
+            },
+            {
+              "value": "-h",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Identify which subsystem the request concerns: storage, memory, kernel, hostname, or CPU.",
+            "The machine exposes a summary for each of those areas.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "df -h",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "/mnt/backup",
+              "label": "Output includes: /mnt/backup"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "system-info-02",
+          "topic": "system-info",
+          "topicNumber": 11,
+          "title": "Check memory availability",
+          "goal": "The application team suspects memory pressure and needs a concise host snapshot.",
+          "task": "Report memory and swap totals and availability in human-readable units.",
+          "story": "The application team suspects memory pressure and needs a concise host snapshot.",
+          "anatomy": [
+            {
+              "value": "free",
+              "explanation": "inspect memory"
+            },
+            {
+              "value": "-h",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "The machine exposes a summary for each of those areas.",
+            "Include the exact field or readable unit the handoff asks for.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "free -h",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Mem:",
+              "label": "Output includes: Mem:"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "system-info-03",
+          "topic": "system-info",
+          "topicNumber": 11,
+          "title": "Read kernel details",
+          "goal": "A compatibility ticket needs the practice machine's full kernel signature.",
+          "task": "Provide the complete kernel identification string, including release and architecture.",
+          "story": "A compatibility ticket needs the practice machine's full kernel signature.",
+          "anatomy": [
+            {
+              "value": "uname",
+              "explanation": "inspect kernel information"
+            },
+            {
+              "value": "-a",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Include the exact field or readable unit the handoff asks for.",
+            "Identify which subsystem the request concerns: storage, memory, kernel, hostname, or CPU.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "uname -a",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Linux tse-lab",
+              "label": "Output includes: Linux tse-lab"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "system-info-04",
+          "topic": "system-info",
+          "topicNumber": 11,
+          "title": "Confirm the host name",
+          "goal": "The operations handoff needs the configured name of the practice host.",
+          "task": "Report the static hostname and related host configuration for tse-lab.",
+          "story": "The operations handoff needs the configured name of the practice host.",
+          "anatomy": [
+            {
+              "value": "hostnamectl",
+              "explanation": "inspect host details"
+            }
+          ],
+          "hints": [
+            "Identify which subsystem the request concerns: storage, memory, kernel, hostname, or CPU.",
+            "The machine exposes a summary for each of those areas.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "hostnamectl",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Static hostname: tse-lab",
+              "label": "Output includes: Static hostname: tse-lab"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "system-info-05",
+          "topic": "system-info",
+          "topicNumber": 11,
+          "title": "Check CPU architecture",
+          "goal": "The release engineer needs to select a compatible binary for this machine.",
+          "task": "Identify the CPU architecture reported by the host.",
+          "story": "The release engineer needs to select a compatible binary for this machine.",
+          "anatomy": [
+            {
+              "value": "lscpu",
+              "explanation": "inspect CPU details"
+            }
+          ],
+          "hints": [
+            "The machine exposes a summary for each of those areas.",
+            "Include the exact field or readable unit the handoff asks for.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "lscpu",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "x86_64",
+              "label": "Output includes: x86_64"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 12,
+      "id": "archives",
+      "title": "Archives",
+      "commands": [
+        "tar -czf",
+        "tar -xzf"
+      ],
+      "summary": "Create, inspect, and extract simulated gzip tar archives.",
+      "questions": [
+        {
+          "id": "archives-01",
+          "topic": "archives",
+          "topicNumber": 12,
+          "title": "Archive the project readme",
+          "goal": "The review team needs the website README packaged for a handoff.",
+          "task": "Create ~/Documents/website-backup.tar.gz containing the project's README.md.",
+          "story": "The review team needs the website README packaged for a handoff.",
+          "anatomy": [
+            {
+              "value": "tar",
+              "explanation": "work with an archive"
+            },
+            {
+              "value": "-czf",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "First decide whether the task is to create, inspect, restore, or identify an archive.",
+            "For creation tasks, keep the source and requested destination clear.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "tar -czf ~/Documents/website-backup.tar.gz ~/projects/website/README.md",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "archives"
+              ],
+              "includesKey": "/home/user/Documents/website-backup.tar.gz",
+              "label": "Machine state updated: archives"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "archives-02",
+          "topic": "archives",
+          "topicNumber": 12,
+          "title": "List archive contents",
+          "goal": "Before restoring the supplied backup, the operator needs to confirm which files it contains.",
+          "task": "List the contents of /mnt/backup/weekly-backup.tar.gz without extracting or changing the archive.",
+          "story": "Before restoring the supplied backup, the operator needs to confirm which files it contains.",
+          "anatomy": [
+            {
+              "value": "tar",
+              "explanation": "work with an archive"
+            },
+            {
+              "value": "-tzf",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "For creation tasks, keep the source and requested destination clear.",
+            "For inspection tasks, do not alter or extract the supplied backup.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "tar -tzf /mnt/backup/weekly-backup.tar.gz",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "weekly-report.txt",
+              "label": "Output includes: weekly-report.txt"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "archives-03",
+          "topic": "archives",
+          "topicNumber": 12,
+          "title": "Create a notes archive",
+          "goal": "The monthly handoff needs a compressed copy of the team notes.",
+          "task": "Create ~/Documents/notes.tar.gz containing ~/Documents/notes.txt and leave the original unchanged.",
+          "story": "The monthly handoff needs a compressed copy of the team notes.",
+          "anatomy": [
+            {
+              "value": "tar",
+              "explanation": "work with an archive"
+            },
+            {
+              "value": "-czf",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "For inspection tasks, do not alter or extract the supplied backup.",
+            "First decide whether the task is to create, inspect, restore, or identify an archive.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "tar -czf ~/Documents/notes.tar.gz ~/Documents/notes.txt",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "archives"
+              ],
+              "includesKey": "/home/user/Documents/notes.tar.gz",
+              "label": "Machine state updated: archives"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "archives-04",
+          "topic": "archives",
+          "topicNumber": 12,
+          "title": "Extract a report archive",
+          "goal": "A report was lost from the user's workspace and must be recovered from the supplied backup.",
+          "task": "Restore /mnt/backup/weekly-backup.tar.gz into the current user's home directory and confirm weekly-report.txt is available.",
+          "story": "A report was lost from the user's workspace and must be recovered from the supplied backup.",
+          "anatomy": [
+            {
+              "value": "tar",
+              "explanation": "work with an archive"
+            },
+            {
+              "value": "-xzf",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "First decide whether the task is to create, inspect, restore, or identify an archive.",
+            "For creation tasks, keep the source and requested destination clear.",
+            "Confirm the requested file exists at: /home/user/weekly-report.txt"
+          ],
+          "solution": "tar -xzf /mnt/backup/weekly-backup.tar.gz",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/weekly-report.txt",
+              "exists": true,
+              "contains": "Status: ready",
+              "label": "File contains: /home/user/weekly-report.txt - Status: ready"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "archives-05",
+          "topic": "archives",
+          "topicNumber": 12,
+          "title": "Inspect archive file type",
+          "goal": "The storage team needs to verify the backup's actual format before using it.",
+          "task": "Identify the file type of /mnt/backup/weekly-backup.tar.gz rather than relying on its extension.",
+          "story": "The storage team needs to verify the backup's actual format before using it.",
+          "anatomy": [
+            {
+              "value": "file",
+              "explanation": "identify a file"
+            },
+            {
+              "value": "/mnt/backup/weekly-backup.tar.gz",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "For creation tasks, keep the source and requested destination clear.",
+            "For inspection tasks, do not alter or extract the supplied backup.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "file /mnt/backup/weekly-backup.tar.gz",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "simulated tar archive",
+              "label": "Output includes: simulated tar archive"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 13,
+      "id": "package-management",
+      "title": "Package Management",
+      "commands": [
+        "apt update",
+        "apt install"
+      ],
+      "summary": "Update the simulated package index, search, install, and inspect packages.",
+      "questions": [
+        {
+          "id": "package-management-01",
+          "topic": "package-management",
+          "topicNumber": 13,
+          "title": "Refresh package metadata",
+          "goal": "The approved maintenance window requires current local package records before updates are reviewed.",
+          "task": "Refresh the package catalog metadata without installing or removing software.",
+          "story": "The approved maintenance window requires current local package records before updates are reviewed.",
+          "anatomy": [
+            {
+              "value": "sudo",
+              "explanation": "run with administrator privileges"
+            },
+            {
+              "value": "apt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Package work can inspect catalog data, refresh metadata, or change installed software.",
+            "Installing software and refreshing system records require administrator authorization.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "sudo apt update",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "packageIndexUpdated"
+              ],
+              "equals": true,
+              "label": "Machine state updated: packageIndexUpdated"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "package-management-02",
+          "topic": "package-management",
+          "topicNumber": 13,
+          "title": "Install a monitoring tool",
+          "goal": "The infrastructure team approved a monitoring utility for the on-call staff.",
+          "task": "Install htop with administrator authorization and confirm it appears in the installed package list.",
+          "story": "The infrastructure team approved a monitoring utility for the on-call staff.",
+          "anatomy": [
+            {
+              "value": "sudo",
+              "explanation": "run with administrator privileges"
+            },
+            {
+              "value": "apt",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Installing software and refreshing system records require administrator authorization.",
+            "Confirm the requested package or catalog state after the action.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "sudo apt install htop",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "packages"
+              ],
+              "includes": "htop",
+              "label": "Package htop is installed"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "package-management-03",
+          "topic": "package-management",
+          "topicNumber": 13,
+          "title": "Search for file transfer tools",
+          "goal": "The data team is evaluating a transfer utility and wants to know whether it is available.",
+          "task": "Search the configured package catalog for rsync without installing it.",
+          "story": "The data team is evaluating a transfer utility and wants to know whether it is available.",
+          "anatomy": [
+            {
+              "value": "apt",
+              "explanation": "manage packages"
+            },
+            {
+              "value": "search",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Confirm the requested package or catalog state after the action.",
+            "Package work can inspect catalog data, refresh metadata, or change installed software.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "apt search rsync",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "rsync/noble",
+              "label": "Output includes: rsync/noble"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "package-management-04",
+          "topic": "package-management",
+          "topicNumber": 13,
+          "title": "List installed packages",
+          "goal": "The security review needs an inventory of software already on the host.",
+          "task": "List the installed packages and include the web server package in the result.",
+          "story": "The security review needs an inventory of software already on the host.",
+          "anatomy": [
+            {
+              "value": "apt",
+              "explanation": "manage packages"
+            },
+            {
+              "value": "list",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Package work can inspect catalog data, refresh metadata, or change installed software.",
+            "Installing software and refreshing system records require administrator authorization.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "apt list --installed",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "nginx/noble",
+              "label": "Output includes: nginx/noble"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "package-management-05",
+          "topic": "package-management",
+          "topicNumber": 13,
+          "title": "Verify Nginx package details",
+          "goal": "The operations team is planning a web server update and needs its catalog details.",
+          "task": "Report the Nginx package description and version without changing the installation.",
+          "story": "The operations team is planning a web server update and needs its catalog details.",
+          "anatomy": [
+            {
+              "value": "apt",
+              "explanation": "manage packages"
+            },
+            {
+              "value": "show",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Installing software and refreshing system records require administrator authorization.",
+            "Confirm the requested package or catalog state after the action.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "apt show nginx",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Package: nginx",
+              "label": "Output includes: Package: nginx"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "id": "ssh",
+      "title": "SSH",
+      "commands": [
+        "ssh",
+        "ssh-keygen",
+        "ssh-copy-id"
+      ],
+      "summary": "Connect to simulated training hosts and set up key-based authentication.",
+      "questions": [
+        {
+          "id": "ssh-01",
+          "topic": "ssh",
+          "topicNumber": 14,
+          "title": "Connect to the web host",
+          "goal": "The web team granted the lab user access to a simulated host for a configuration review.",
+          "task": "Open a session as user on web01 and confirm that the host welcomes the account.",
+          "story": "The web team granted the lab user access to a simulated host for a configuration review.",
+          "anatomy": [
+            {
+              "value": "ssh",
+              "explanation": "connect to a remote host"
+            },
+            {
+              "value": "user@web01",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "The lab hosts are simulated; no real server connection is made.",
+            "Key-based access has separate steps for creating a credential, authorizing it, and testing it.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "ssh user@web01",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Welcome to web01",
+              "label": "Output includes: Welcome to web01"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "ssh-02",
+          "topic": "ssh",
+          "topicNumber": 14,
+          "title": "Create a modern login credential",
+          "goal": "The operator needs a modern credential for passwordless access to training hosts.",
+          "task": "Create an Ed25519 key pair in the default hidden credentials folder for this user.",
+          "story": "The operator needs a modern credential for passwordless access to training hosts.",
+          "anatomy": [
+            {
+              "value": "ssh-keygen",
+              "explanation": "create an SSH key"
+            },
+            {
+              "value": "-t",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Key-based access has separate steps for creating a credential, authorizing it, and testing it.",
+            "Check the account and host named in the request at each step.",
+            "Confirm the simulated system record reflects the requested change."
+          ],
+          "solution": "ssh-keygen -t ed25519",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "keys"
+              ],
+              "includesKey": "/home/user/.ssh/id_ed25519.pub",
+              "label": "Machine state updated: keys"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "ssh-03",
+          "topic": "ssh",
+          "topicNumber": 14,
+          "title": "Install your public key remotely",
+          "goal": "The deployment account on web01 should accept this workstation's public credential.",
+          "task": "Create a key pair if needed, authorize its public half for deploy on web01, and verify the remote authorization.",
+          "story": "The deployment account on web01 should accept this workstation's public credential.",
+          "anatomy": [
+            {
+              "value": "ssh-keygen",
+              "explanation": "create an SSH key"
+            },
+            {
+              "value": "-t",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "Check the account and host named in the request at each step.",
+            "The lab hosts are simulated; no real server connection is made.",
+            "Check that the simulated host record reflects the requested transfer or access change."
+          ],
+          "solution": "ssh-keygen -t ed25519 && ssh-copy-id deploy@web01",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "remotes",
+                "web01",
+                "authorizedKeys"
+              ],
+              "minLength": 1,
+              "label": "Machine state updated: remotes.web01.authorizedKeys"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "ssh-04",
+          "topic": "ssh",
+          "topicNumber": 14,
+          "title": "Log in using key authentication",
+          "goal": "The team needs to confirm that credential-based access works on the application host.",
+          "task": "Authorize the existing key for deploy on app01, then open a session as that account.",
+          "story": "The team needs to confirm that credential-based access works on the application host.",
+          "anatomy": [
+            {
+              "value": "ssh-keygen",
+              "explanation": "create an SSH key"
+            },
+            {
+              "value": "-t",
+              "explanation": "an option that changes command behavior"
+            }
+          ],
+          "hints": [
+            "The lab hosts are simulated; no real server connection is made.",
+            "Key-based access has separate steps for creating a credential, authorizing it, and testing it.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "ssh-keygen -t ed25519 && ssh-copy-id deploy@app01 && ssh deploy@app01",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "Welcome to app01",
+              "label": "Output includes: Welcome to app01"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "ssh-05",
+          "topic": "ssh",
+          "topicNumber": 14,
+          "title": "Inspect a remote host mapping",
+          "goal": "A connectivity guide needs the training-network address assigned to db01.",
+          "task": "Find and report the db01 entry from /etc/hosts.",
+          "story": "A connectivity guide needs the training-network address assigned to db01.",
+          "anatomy": [
+            {
+              "value": "grep",
+              "explanation": "search file content"
+            },
+            {
+              "value": "db01",
+              "explanation": "the path, pattern, or value to use"
+            }
+          ],
+          "hints": [
+            "Key-based access has separate steps for creating a credential, authorizing it, and testing it.",
+            "Check the account and host named in the request at each step.",
+            "Compare the result with the specific record or system detail requested."
+          ],
+          "solution": "grep db01 /etc/hosts",
+          "checks": [
+            {
+              "type": "output",
+              "includes": "10.0.0.23 db01",
+              "label": "Output includes: 10.0.0.23 db01"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    },
+    {
+      "number": 15,
+      "id": "file-transfer",
+      "title": "File Transfer",
+      "commands": [
+        "scp"
+      ],
+      "summary": "Copy files between the local simulated machine and remote training hosts with scp.",
+      "questions": [
+        {
+          "id": "file-transfer-01",
+          "topic": "file-transfer",
+          "topicNumber": 15,
+          "title": "Upload a report",
+          "goal": "The web operations team needs the weekly report delivered to its deployment folder.",
+          "task": "Place the local report at /home/deploy/weekly-report.txt on web01.",
+          "story": "The web operations team needs the weekly report delivered to its deployment folder.",
+          "anatomy": [
+            {
+              "value": "scp",
+              "explanation": "the copy tool"
+            },
+            {
+              "value": "~/Downloads/weekly-report.txt",
+              "explanation": "from: your machine"
+            },
+            {
+              "value": "web01:/home/deploy/weekly-report.txt",
+              "explanation": "to: remote host, then path"
+            }
+          ],
+          "hints": [
+            "Identify which path is on this workstation and which belongs to a remote host.",
+            "Transfer direction depends on which endpoint is the source and which is the destination.",
+            "Check that the simulated host record reflects the requested transfer or access change."
+          ],
+          "solution": "scp ~/Downloads/weekly-report.txt deploy@web01:/home/deploy/weekly-report.txt",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "remotes",
+                "web01",
+                "files",
+                "/home/deploy/weekly-report.txt"
+              ],
+              "includes": "Week 1",
+              "label": "Remote file /home/deploy/weekly-report.txt contains the requested data"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-transfer-02",
+          "topic": "file-transfer",
+          "topicNumber": 15,
+          "title": "Download the remote readme",
+          "goal": "A reviewer needs an offline copy of the web host's deployment readme.",
+          "task": "Save web01:/home/deploy/README.txt locally as ~/Downloads/remote-README.txt.",
+          "story": "A reviewer needs an offline copy of the web host's deployment readme.",
+          "anatomy": [
+            {
+              "value": "scp",
+              "explanation": "the copy tool"
+            },
+            {
+              "value": "web01:/home/deploy/README.txt",
+              "explanation": "from: remote host, then path"
+            },
+            {
+              "value": "~/Downloads/remote-README.txt",
+              "explanation": "to: your folder and file name"
+            }
+          ],
+          "hints": [
+            "Transfer direction depends on which endpoint is the source and which is the destination.",
+            "For a directory, include its contents; for a custom port, use the port specified by the host team.",
+            "Confirm the requested file exists at: /home/user/Downloads/remote-README.txt"
+          ],
+          "solution": "scp deploy@web01:/home/deploy/README.txt ~/Downloads/remote-README.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Downloads/remote-README.txt",
+              "exists": true,
+              "contains": "web01 training host",
+              "label": "File contains: /home/user/Downloads/remote-README.txt - web01 training host"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-transfer-03",
+          "topic": "file-transfer",
+          "topicNumber": 15,
+          "title": "Choose a custom SSH port",
+          "goal": "The app team only accepts transfers through its approved SSH port.",
+          "task": "Place the weekly report at /home/deploy/weekly-report.txt on app01 using port 2222.",
+          "story": "The app team only accepts transfers through its approved SSH port.",
+          "anatomy": [
+            {
+              "value": "scp",
+              "explanation": "the copy tool"
+            },
+            {
+              "value": "~/Downloads/weekly-report.txt",
+              "explanation": "from: your machine"
+            },
+            {
+              "value": "app01:/home/deploy/weekly-report.txt",
+              "explanation": "to: remote host, then path"
+            }
+          ],
+          "hints": [
+            "For a directory, include its contents; for a custom port, use the port specified by the host team.",
+            "Identify which path is on this workstation and which belongs to a remote host.",
+            "Check that the simulated host record reflects the requested transfer or access change."
+          ],
+          "solution": "scp -P 2222 ~/Downloads/weekly-report.txt deploy@app01:/home/deploy/weekly-report.txt",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "remotes",
+                "app01",
+                "files",
+                "/home/deploy/weekly-report.txt"
+              ],
+              "includes": "Week 1",
+              "label": "Remote file /home/deploy/weekly-report.txt contains the requested data"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-transfer-04",
+          "topic": "file-transfer",
+          "topicNumber": 15,
+          "title": "Upload a project directory",
+          "goal": "The web project must be available on db01 for a deployment rehearsal.",
+          "task": "Copy the complete ~/projects/website directory to /home/deploy/website on db01, including nested files.",
+          "story": "The web project must be available on db01 for a deployment rehearsal.",
+          "anatomy": [
+            {
+              "value": "scp",
+              "explanation": "the copy tool"
+            },
+            {
+              "value": "~/projects/website",
+              "explanation": "from: your machine"
+            },
+            {
+              "value": "db01:/home/deploy/website",
+              "explanation": "to: remote host, then path"
+            }
+          ],
+          "hints": [
+            "Identify which path is on this workstation and which belongs to a remote host.",
+            "Transfer direction depends on which endpoint is the source and which is the destination.",
+            "Check that the simulated host record reflects the requested transfer or access change."
+          ],
+          "solution": "scp -r ~/projects/website deploy@db01:/home/deploy/website",
+          "checks": [
+            {
+              "type": "state",
+              "path": [
+                "remotes",
+                "db01",
+                "files",
+                "/home/deploy/website/index.html"
+              ],
+              "includes": "TEAM TSE Lab",
+              "label": "Remote file /home/deploy/website/index.html contains the requested data"
+            }
+          ],
+          "points": 10
+        },
+        {
+          "id": "file-transfer-05",
+          "topic": "file-transfer",
+          "topicNumber": 15,
+          "title": "Copy a file between local folders",
+          "goal": "A teammate needs a separate local copy of the handoff document for review.",
+          "task": "Copy ~/Documents/README.txt to ~/Downloads/local-copy.txt and keep the original unchanged.",
+          "story": "A teammate needs a separate local copy of the handoff document for review.",
+          "anatomy": [
+            {
+              "value": "scp",
+              "explanation": "the copy tool"
+            },
+            {
+              "value": "~/Documents/README.txt",
+              "explanation": "from: your machine"
+            },
+            {
+              "value": "~/Downloads/local-copy.txt",
+              "explanation": "to: your folder and file name"
+            }
+          ],
+          "hints": [
+            "Transfer direction depends on which endpoint is the source and which is the destination.",
+            "For a directory, include its contents; for a custom port, use the port specified by the host team.",
+            "Confirm the requested file exists at: /home/user/Downloads/local-copy.txt"
+          ],
+          "solution": "scp ~/Documents/README.txt ~/Downloads/local-copy.txt",
+          "checks": [
+            {
+              "type": "fs",
+              "path": "/home/user/Downloads/local-copy.txt",
+              "exists": true,
+              "contains": "TEAM TSE Linux practice files",
+              "label": "File contains: /home/user/Downloads/local-copy.txt - TEAM TSE Linux practice files"
+            }
+          ],
+          "points": 10
+        }
+      ]
+    }
+  ]
+}

@@ -80,6 +80,13 @@ jobs:
           test -f ../_site/courses/sql-visual-lab/vendor/mysql.umd.js
           test -f ../_site/courses/sql-visual-lab/schema.sql
           test -f ../_site/courses/sql-visual-lab/challenges.json
+          test -f ../_site/courses/linux-lab/index.html
+          test -f ../_site/courses/linux-lab/lab.html
+          test -f ../_site/courses/linux-lab/css/styles.css
+          test -f ../_site/courses/linux-lab/js/app.js
+          test -f ../_site/courses/linux-lab/js/terminal.js
+          test -f ../_site/courses/linux-lab/js/validator.js
+          test -f ../_site/courses/linux-lab/data/questions.json
           grep -Eq '<script[^>]+src="\./assets/index-[^"]+\.js"' ../_site/courses/index.html
           grep -Eq '<link[^>]+href="\./assets/index-[^"]+\.css"' ../_site/courses/index.html
           if grep -q 'src/main.jsx' ../_site/courses/index.html; then

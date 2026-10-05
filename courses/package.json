@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:sql-visual-lab": "node --test public/sql-visual-lab/tests/*.test.js"
+    "test:sql-visual-lab": "node --test public/sql-visual-lab/tests/*.test.js",
+    "test:linux-lab": "node --test tests/linux-lab.test.js"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",

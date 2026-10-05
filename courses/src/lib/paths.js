@@ -8,3 +8,7 @@ export function getHubHomeHref() {
 export function getSqlVisualLabHref() {
   return new URL('sql-visual-lab/', document.baseURI).pathname
 }
+
+export function getLinuxLabHref() {
+  return new URL('linux-lab/', document.baseURI).pathname
+}

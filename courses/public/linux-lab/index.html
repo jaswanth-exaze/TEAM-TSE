@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0A0F1E">
+    <meta name="description" content="Practise 15 Linux topics in a safe, persistent simulated terminal with 75 guided questions.">
+    <title>Linux Practice Lab | Exaze · TSE Learning Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/styles.css">
+  </head>
+  <body data-page="overview">
+    <a class="skip-link" href="#main">Skip to topics</a>
+    <main id="main" class="overview-shell">
+      <header class="overview-top">
+        <a class="brand" href="../#/course/linux-commands" aria-label="Linux Practice Lab from Exaze TSE Learning Hub">
+          <span class="brand-logo" aria-hidden="true">TSE</span>
+          <span><strong>Linux Practice Lab</strong><small>Exaze · TSE Learning Hub</small></span>
+        </a>
+        <div class="overview-stats" aria-label="Your saved progress">
+          <span class="stat-chip"><b id="overviewDone">0 / 75</b> done</span>
+          <span class="stat-chip"><b id="overviewPoints">0 / 750</b> pts</span>
+          <span class="stat-chip saved-chip"><i aria-hidden="true"></i>Progress saved in this browser</span>
+        </div>
+      </header>
+
+      <section class="overview-hero" aria-labelledby="heroTitle">
+        <div class="hero-copy">
+          <h1 id="heroTitle">Learn Linux by typing real commands.</h1>
+          <p>15 topics, 75 guided questions, one safe practice machine. Your files and scores are still here when you come back.</p>
+        </div>
+        <article class="resume-card">
+          <p id="resumeEyebrow">Pick up where you left off</p>
+          <h2 id="resumeTitle">Start with Navigation</h2>
+          <p id="resumeDescription">Begin with the command line basics and find your way around the machine.</p>
+          <div class="resume-actions">
+            <a id="continueLink" class="button primary" href="./lab.html?topic=2&amp;q=1">Continue</a>
+            <a id="freePracticeLink" class="button secondary" href="./lab.html?topic=2&amp;q=1&amp;practice=1">Open free practice shell</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="topic-section" aria-labelledby="topicHeading">
+        <div class="topic-section-head">
+          <h2 id="topicHeading">All topics</h2>
+          <p>Start at 1, or jump to any topic you need</p>
+        </div>
+        <div id="topicGrid" class="topic-grid" aria-live="polite"></div>
+      </section>
+
+      <footer class="overview-footer">
+        <p>Commands run in a browser-based Linux simulation. Your real device and network are not changed.</p>
+        <nav aria-label="Learning Hub links">
+          <a href="../#/course/linux-commands">← Back to Linux course</a>
+          <button id="resetOverview" class="text-button" type="button">Reset lab and progress</button>
+        </nav>
+      </footer>
+    </main>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

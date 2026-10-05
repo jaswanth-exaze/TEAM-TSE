@@ -4,6 +4,7 @@ import ModuleCard from '../components/ModuleCard'
 import { TRACKS } from '../data/modules'
 import { COURSE_MODULES, getCourseSyllabus } from '../data/course-catalog'
 import { getAllProgress } from '../lib/progress'
+import { getLinuxLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 
 function readCompletedLessons(moduleId, topics) {
@@ -33,6 +34,7 @@ export default function Landing() {
 
       return {
         ...module,
+        labHref: module.id === 'linux-commands' ? getLinuxLabHref() : null,
         courseReady: topics.length > 0,
         syllabusAvailable,
         lessonCount: topics.length,
