@@ -9,6 +9,7 @@ export default function ModuleCard({
   courseReady = false,
   syllabusAvailable = false,
   lessonCount = 0,
+  courseProgressLabel,
 }) {
   const checkpoint = progress?.inProgress
   const hasCheckpoint = Boolean(checkpoint?.questions?.length)
@@ -20,7 +21,7 @@ export default function ModuleCard({
       ? `Quiz best: ${best}/${total}`
       : 'Quiz not started'
   const courseStatus = courseReady
-    ? `${lessonCount} lessons`
+    ? courseProgressLabel || `${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`
     : syllabusAvailable
       ? 'Syllabus available'
       : 'Course content pending'

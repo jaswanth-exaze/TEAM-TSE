@@ -4,6 +4,7 @@ import { getModule } from '../data/modules'
 import { getCourseSyllabus } from '../data/course-catalog'
 import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
+import NodeStudyGuide from '../components/NodeStudyGuide'
 
 function readCompletedTopics(progressKey) {
   try {
@@ -485,6 +486,7 @@ export default function StudyGuide() {
 
   if (!module) return <CoursePending module={{ title: 'Course not found', tagline: 'Choose a course from the course library.' }} />
   if (!course) return <CoursePending module={module} />
+  if (moduleId === 'node-js') return <NodeStudyGuide module={module} />
   if (course.syllabusOnly) return <SyllabusOnlyReader module={module} course={course} />
   return <CourseReader module={module} course={course} />
 }

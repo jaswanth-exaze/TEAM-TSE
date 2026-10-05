@@ -1,9 +1,13 @@
 import { loadMysqlActivity, loadMysqlTopic } from './mysql'
+import { loadNodeTopic } from './node-js'
 
 const moduleLoaders = {
   mysql: {
     topic: loadMysqlTopic,
     activity: loadMysqlActivity,
+  },
+  'node-js': {
+    topic: loadNodeTopic,
   },
 }
 

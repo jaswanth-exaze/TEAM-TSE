@@ -2,6 +2,7 @@ import { ALL_MODULES } from './modules'
 import { GIT_SYLLABUS } from './git-course'
 import { HTML_CSS_JAVASCRIPT_SYLLABUS } from './html-css-javascript-course'
 import { LINUX_SYLLABUS } from './linux-course'
+import { NODE_PARTS } from './courses/node-js'
 import { MYSQL_DAILY_UPDATE_TEMPLATE, MYSQL_PARTS, MYSQL_STUDY_RESOURCES } from './mysql-course'
 import { MYSQL_PRACTICE_ACTIVITIES, MYSQL_TOPIC_STATUS } from './courses/mysql'
 
@@ -49,6 +50,20 @@ const COURSE_CONTENT = {
         'After an exam, review the written feedback and recording before your next attempt.',
       ],
     },
+  },
+  'node-js': {
+    title: 'Node.js Course',
+    subtitle: 'A beginner-friendly, build-along guide that takes you from installing Node.js to completing a Task Manager API.',
+    curriculumTitle: '26 beginner lessons in four parts',
+    parts: NODE_PARTS,
+    resources: [
+      { title: 'Node.js Learn', kind: 'Official reference', href: 'https://nodejs.org/en/learn', description: 'Official getting-started guides and explanations of Node.js concepts.' },
+      { title: 'Node.js API documentation', kind: 'Official reference', href: 'https://nodejs.org/api/', description: 'Reference for built-in modules such as HTTP, fs, path, os, url, crypto, events, and process.' },
+      { title: 'Express routing guide', kind: 'Official reference', href: 'https://expressjs.com/en/guide/routing.html', description: 'Official guide to routes, methods, paths, and route handlers.' },
+      { title: 'Express middleware guide', kind: 'Official reference', href: 'https://expressjs.com/en/guide/using-middleware.html', description: 'Official guide to middleware, request flow, static files, and built-in body parsers.' },
+      { title: 'npm documentation', kind: 'Official reference', href: 'https://docs.npmjs.com/', description: 'Reference for package.json, installing packages, and npm scripts.' },
+      { title: 'Postman Learning Center', kind: 'Tutorial', href: 'https://learning.postman.com/docs/getting-started/first-steps/sending-the-first-request/', description: 'Learn how to configure and send HTTP requests in Postman.' },
+    ],
   },
 }
 

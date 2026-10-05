@@ -38,6 +38,7 @@ export default function Landing() {
         courseReady: topics.length > 0,
         syllabusAvailable,
         lessonCount: topics.length,
+        courseProgressLabel: module.id === 'node-js' ? '26 topics' : null,
         completedCount: completed.length,
         continueHref: topics.length
           ? nextTopic
