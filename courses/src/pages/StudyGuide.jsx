@@ -87,7 +87,7 @@ function CourseReader({ module, course }) {
         <nav aria-label="Course tools" className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {course.examRoute && <Link to={course.examRoute} className="text-sm text-white/75 hover:text-white">Practice exams</Link>}
           {module.id === 'mysql' && <a href={getSqlVisualLabHref()} className="text-sm font-medium text-amber-200 hover:text-amber-100">Visual SQL lab</a>}
-          <Link to={`/quiz/${module.id}`} className="text-sm text-white/75 hover:text-white">Quiz</Link>
+          {course.hasQuiz !== false && <Link to={`/quiz/${module.id}`} className="text-sm text-white/75 hover:text-white">Quiz</Link>}
         </nav>
       </div>
 

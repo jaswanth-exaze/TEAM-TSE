@@ -7,6 +7,7 @@ import Results from './pages/Results'
 import StudyGuide from './pages/StudyGuide'
 import LessonPage from './pages/LessonPage'
 import NodeLessonPage from './pages/NodeLessonPage'
+import ExpressLessonPage from './pages/ExpressLessonPage'
 import RestApiLessonPage from './pages/RestApiLessonPage'
 import UnitTestingLessonPage from './pages/UnitTestingLessonPage'
 import MiniChallengePage from './pages/MiniChallengePage'
@@ -70,6 +71,7 @@ export default function App() {
               <Route path="/results/:moduleId" element={<Results />} />
               <Route path="/course/:moduleId" element={<StudyGuide />} />
               <Route path="/course/node-js/topic/:topicId" element={<NodeLessonPage />} />
+              <Route path="/course/express/topic/:topicId" element={<ExpressLessonPage />} />
               <Route path="/course/unit-testing-fundamentals/topic/:topicId" element={<UnitTestingLessonPage />} />
               <Route path="/course/rest-api-fundamentals/topic/:topicId" element={<RestApiLessonPage />} />
               <Route path="/course/:moduleId/topic/:topicId" element={<LessonPage />} />

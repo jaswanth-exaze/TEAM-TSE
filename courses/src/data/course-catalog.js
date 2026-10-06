@@ -3,6 +3,7 @@ import { GIT_SYLLABUS } from './git-course'
 import { HTML_CSS_JAVASCRIPT_SYLLABUS } from './html-css-javascript-course'
 import { LINUX_SYLLABUS } from './linux-course'
 import { NODE_PARTS } from './courses/node-js'
+import { EXPRESS_PARTS } from './courses/express'
 import { REST_API_PARTS } from './courses/rest-api'
 import { UNIT_TESTING_PARTS } from './courses/unit-testing-fundamentals'
 import { MYSQL_DAILY_UPDATE_TEMPLATE, MYSQL_PARTS, MYSQL_STUDY_RESOURCES } from './mysql-course'
@@ -65,6 +66,20 @@ const COURSE_CONTENT = {
       { title: 'Express middleware guide', kind: 'Official reference', href: 'https://expressjs.com/en/guide/using-middleware.html', description: 'Official guide to middleware, request flow, static files, and built-in body parsers.' },
       { title: 'npm documentation', kind: 'Official reference', href: 'https://docs.npmjs.com/', description: 'Reference for package.json, installing packages, and npm scripts.' },
       { title: 'Postman Learning Center', kind: 'Tutorial', href: 'https://learning.postman.com/docs/getting-started/first-steps/sending-the-first-request/', description: 'Learn how to configure and send HTTP requests in Postman.' },
+    ],
+  },
+  express: {
+    title: 'Express.js Fundamentals',
+    subtitle: 'Build Express servers and APIs from setup through routing, middleware, frontend requests, and EJS views.',
+    curriculumTitle: '34 lessons in four learning parts',
+    parts: EXPRESS_PARTS,
+    hasQuiz: false,
+    resources: [
+      { title: 'Express documentation', kind: 'Official reference', href: 'https://expressjs.com/en/4x/api.html', description: 'API reference for Express applications, requests, responses, routers, and middleware.' },
+      { title: 'Express guide', kind: 'Official reference', href: 'https://expressjs.com/en/guide/routing.html', description: 'Learn routing, middleware, error handling, and common Express application patterns.' },
+      { title: 'Node.js environment variables', kind: 'Official reference', href: 'https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs', description: 'Understand how Node.js reads environment variables and local configuration.' },
+      { title: 'EJS documentation', kind: 'Official reference', href: 'https://ejs.co/', description: 'Reference for EJS tags, includes, and rendering templates.' },
+      { title: 'Postman Learning Center', kind: 'Tutorial', href: 'https://learning.postman.com/docs/getting-started/first-steps/sending-the-first-request/', description: 'Learn to configure and send HTTP requests while practising the API lessons.' },
     ],
   },
   'rest-api-fundamentals': {

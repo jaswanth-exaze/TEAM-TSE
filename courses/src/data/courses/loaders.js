@@ -1,5 +1,6 @@
 import { loadMysqlActivity, loadMysqlTopic } from './mysql'
 import { loadNodeTopic } from './node-js'
+import { loadExpressTopic } from './express'
 import { loadRestApiTopic } from './rest-api'
 import { loadUnitTestingTopic } from './unit-testing-fundamentals'
 
@@ -10,6 +11,9 @@ const moduleLoaders = {
   },
   'node-js': {
     topic: loadNodeTopic,
+  },
+  express: {
+    topic: loadExpressTopic,
   },
   'rest-api-fundamentals': {
     topic: loadRestApiTopic,

@@ -86,6 +86,7 @@ export default function Quiz() {
   const mod = getModule(moduleId)
 
   const [questions, setQuestions] = useState(null)
+  const [quizUnavailable, setQuizUnavailable] = useState(false)
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState(null) // string | string[] | null
   const [textValue, setTextValue] = useState('')
@@ -100,11 +101,18 @@ export default function Quiz() {
   useEffect(() => {
     let active = true
     setQuestions(null)
+    setQuizUnavailable(false)
     setIndex(0)
     setScore(0)
     setAnswers([])
     resetQuestionState()
-    quizLoaders[moduleId]?.().then((m) => {
+    const loadQuiz = quizLoaders[moduleId]
+    if (!loadQuiz) {
+      setQuizUnavailable(true)
+      return () => { active = false }
+    }
+
+    loadQuiz().then((m) => {
       if (!active) return
 
       const checkpoint = getModuleProgress(moduleId)?.inProgress
@@ -130,6 +138,8 @@ export default function Quiz() {
           textValue: '',
         })
       }
+    }).catch(() => {
+      if (active) setQuizUnavailable(true)
     })
     return () => {
       active = false
@@ -179,6 +189,18 @@ export default function Quiz() {
         Module not found.{' '}
         <button className="text-indigo-400 underline" onClick={() => navigate('/')}>
           Open course library
+        </button>
+      </div>
+    )
+  }
+
+  if (quizUnavailable) {
+    return (
+      <div className="mx-auto max-w-xl px-6 py-24 text-center">
+        <h1 className="font-display text-2xl font-semibold text-white">Quiz not available</h1>
+        <p className="mt-3 text-sm leading-6 text-white/65">There isn’t a self-check quiz for {mod.title} yet.</p>
+        <button className="mt-5 text-sm text-indigo-200 underline hover:text-indigo-100" onClick={() => navigate(`/course/${moduleId}`)}>
+          Open course lessons
         </button>
       </div>
     )

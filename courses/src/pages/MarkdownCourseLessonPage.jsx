@@ -65,7 +65,7 @@ function OnThisPage({ headings }) {
   </aside>
 }
 
-export default function MarkdownCourseLessonPage({ moduleId, parts, topics, loadTopic }) {
+export default function MarkdownCourseLessonPage({ moduleId, parts, topics, loadTopic, showQuiz = true }) {
   const { topicId } = useParams()
   const module = getModule(moduleId)
   const progressKey = appStorageKey(`study:${moduleId}:v1`)
@@ -135,7 +135,7 @@ export default function MarkdownCourseLessonPage({ moduleId, parts, topics, load
         <span aria-hidden="true" className="text-white/35">/</span>
         <span className="text-white/50">{lesson.title}</span>
       </nav>
-      <Link to={`/quiz/${module.id}`} className="text-sm text-white/65 transition hover:text-white">Practice quiz</Link>
+      {showQuiz && <Link to={`/quiz/${module.id}`} className="text-sm text-white/65 transition hover:text-white">Practice quiz</Link>}
     </div>
 
     <button type="button" onClick={() => setMobileTopicsOpen(true)} aria-expanded={mobileTopicsOpen} className="mb-4 rounded-lg border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm font-medium text-white/85 hover:bg-white/[0.08] lg:hidden">Browse lessons <span className="ml-2 text-white/55">{completed.length}/{topics.length} complete</span></button>

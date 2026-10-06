@@ -13,13 +13,16 @@ export default function ModuleCard({
 }) {
   const checkpoint = progress?.inProgress
   const hasCheckpoint = Boolean(checkpoint?.questions?.length)
+  const hasQuiz = mod.hasQuiz !== false
   const total = progress?.total ?? 0
   const best = progress?.best ?? 0
-  const quizStatus = hasCheckpoint
-    ? 'Quiz in progress'
-    : total
-      ? `Quiz best: ${best}/${total}`
-      : 'Quiz not started'
+  const quizStatus = !hasQuiz
+    ? 'Lessons ready'
+    : hasCheckpoint
+      ? 'Quiz in progress'
+      : total
+        ? `Quiz best: ${best}/${total}`
+        : 'Quiz not started'
   const courseStatus = courseReady
     ? courseProgressLabel || `${lessonCount} ${lessonCount === 1 ? 'lesson' : 'lessons'}`
     : syllabusAvailable
@@ -61,9 +64,9 @@ export default function ModuleCard({
         <span className="truncate text-[11px] text-white/45">{quizStatus}</span>
         <div className="flex items-center gap-1">
           {labHref && <a href={labHref} className="rounded-md px-2 py-1 text-xs font-medium text-amber-200/85 transition hover:bg-amber-200/[0.06] hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-200">Practice lab</a>}
-          <Link to={`/quiz/${mod.id}`} className="shrink-0 rounded-md px-2 py-1 text-xs text-white/55 transition hover:bg-white/[0.06] hover:text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/60">
+          {hasQuiz && <Link to={`/quiz/${mod.id}`} className="shrink-0 rounded-md px-2 py-1 text-xs text-white/55 transition hover:bg-white/[0.06] hover:text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/60">
           Practice quiz
-          </Link>
+          </Link>}
         </div>
       </div>
     </motion.article>
