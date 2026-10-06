@@ -5,6 +5,7 @@ import { getCourseSyllabus } from '../data/course-catalog'
 import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 import NodeStudyGuide from '../components/NodeStudyGuide'
+import HashAnchorLink from '../components/HashAnchorLink'
 
 function readCompletedTopics(progressKey) {
   try {
@@ -37,6 +38,7 @@ function ProgressBar({ done, total }) {
 
 function resourceGroup(resource) {
   if (resource.kind === 'Video') return 'Videos'
+  if (resource.kind === 'Standard') return 'Standards'
   if (/hierarch/i.test(resource.title)) return 'Hierarchies'
   if (/join/i.test(resource.title)) return 'Joins'
   if (resource.kind === 'Official reference') return 'Official'
@@ -73,7 +75,7 @@ function CourseReader({ module, course }) {
     }
   }
 
-  const groupedResources = ['Official', 'Tutorials and notes', 'Joins', 'Hierarchies', 'Videos'].map((group) => ({
+  const groupedResources = ['Official', 'Standards', 'Tutorials and notes', 'Joins', 'Hierarchies', 'Videos'].map((group) => ({
     group,
     resources: course.resources?.filter((resource) => resourceGroup(resource) === group) || [],
   })).filter((item) => item.resources.length)
@@ -116,9 +118,9 @@ function CourseReader({ module, course }) {
         {course.parts.map((part, index) => {
           const cumulativeTopics = course.parts.slice(0, index + 1).flatMap((item) => item.topics)
           const done = cumulativeTopics.filter((topic) => completed.includes(topic.id)).length
-          return <a key={part.id} href={`#${part.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-white/80 hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white">
+          return <HashAnchorLink key={part.id} targetId={part.id} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-white/80 hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white">
             {part.label} <span className="ml-1 text-white/60">{done}/{part.totalTopics || cumulativeTopics.length}</span>
-          </a>
+          </HashAnchorLink>
         })}
       </nav>
 
@@ -152,7 +154,7 @@ function CourseReader({ module, course }) {
             return <section key={part.id} id={part.id} className="scroll-mt-28">
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-indigo-200">{part.label} · {part.newTopics} · {part.totalTopics} total topics</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.15em] text-indigo-200">{part.label} · {part.newTopics ?? part.topics.length} new · {part.totalTopics ?? part.topics.length} total topics</p>
                   <h3 className="mt-1 font-display text-2xl font-semibold text-white">{part.title}</h3>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">{part.summary}</p>
                 </div>
@@ -313,16 +315,16 @@ function SyllabusOnlyReader({ module, course }) {
           {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-200/25 bg-amber-200/[0.08] px-4 py-2.5 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-200/40 hover:bg-amber-200/[0.13] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200">
             Open Linux Practice Lab <span aria-hidden="true">↗</span>
           </a>}
-          <a href={`#${course.parts[0]?.id}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--action-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--action-primary-fg)] transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
+          <HashAnchorLink targetId={course.parts[0]?.id} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--action-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--action-primary-fg)] transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
           Browse {course.parts[0]?.label || 'syllabus'} <span aria-hidden="true">↓</span>
-          </a>
+          </HashAnchorLink>
         </div>
       </header>
 
       <nav aria-label="Jump to a syllabus section" className="sticky top-2 z-20 mt-5 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-[var(--panel-bg)]/95 p-2 shadow-lg backdrop-blur-sm">
-        {course.parts.map((part) => <a key={part.id} href={`#${part.id}`} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white">
+        {course.parts.map((part) => <HashAnchorLink key={part.id} targetId={part.id} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white">
           {part.label} <span className="ml-1 text-white/55">{part.topics.length} {part.entryLabel || course.entryLabel || 'topics'}</span>
-        </a>)}
+        </HashAnchorLink>)}
       </nav>
 
       {course.overview?.length > 0 && <section className="mt-8" aria-labelledby={`overview-${module.id}`}>

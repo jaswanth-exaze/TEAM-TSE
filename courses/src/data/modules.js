@@ -18,7 +18,7 @@ export const TRACKS = [
       { id: 'git', title: 'Git', tagline: 'Branching, merging, rebasing & recovery', icon: 'git', color: '#ff5c5c', questionCount: 40 },
       { id: 'html-css-javascript', title: 'HTML + CSS + JavaScript', tagline: 'The web platform fundamentals', icon: 'code', color: '#f7df1e', questionCount: 40 },
       { id: 'node-js', title: 'Node.js', tagline: 'Event loop, modules & async I/O', icon: 'node', color: '#68a063', questionCount: 40 },
-      { id: 'unit-testing-fundamentals', title: 'Unit Testing Fundamentals', tagline: 'Mocks, stubs, coverage & TDD', icon: 'test', color: '#a06cf7', questionCount: 40 },
+      { id: 'unit-testing-fundamentals', title: 'Unit Testing Fundamentals', tagline: 'Test design, test doubles & TDD', icon: 'test', color: '#a06cf7', questionCount: 40 },
       { id: 'feature-toggle-fundamentals', title: 'Feature Toggle Fundamentals', tagline: 'Rollouts, flags & release strategy', icon: 'toggle', color: '#33c9a3', questionCount: 40 },
       { id: 'rest-api-fundamentals', title: 'REST API Fundamentals', tagline: 'Verbs, status codes & idempotency', icon: 'api', color: '#ff8a5c', questionCount: 40 },
       { id: 'password-salt-hash-fundamenta', title: 'Password Salt + Hash Fundamentals', tagline: 'Hashing, salting & credential security', icon: 'lock', color: '#5cd6ff', questionCount: 40 },

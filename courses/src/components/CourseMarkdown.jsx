@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import HashAnchorLink from './HashAnchorLink'
 
 function slugify(text) {
   return text
@@ -66,7 +67,10 @@ function parseMarkdown(markdown) {
         index += 1
       }
       if (index < lines.length) index += 1
-      blocks.push({ type: 'code', language: fence[1], value: codeLines.join('\n') })
+      const value = codeLines.join('\n')
+      blocks.push(fence[1].toLowerCase() === 'mermaid'
+        ? { type: 'diagram', value }
+        : { type: 'code', language: fence[1], value })
       continue
     }
 
@@ -139,6 +143,7 @@ function InlineMarkdown({ text }) {
     const link = part.match(/^\[([^\]]+)\]\(((?:https?:\/\/|#)[^)]+)\)$/)
     if (link) {
       const external = /^https?:\/\//.test(link[2])
+      if (!external) return <HashAnchorLink key={index} targetId={link[2].slice(1)} className="font-medium text-sky-200 underline decoration-sky-200/40 underline-offset-2 hover:text-sky-100">{link[1]}</HashAnchorLink>
       return <a key={index} href={link[2]} {...(external ? { target: '_blank', rel: 'noreferrer' } : {})} className="font-medium text-sky-200 underline decoration-sky-200/40 underline-offset-2 hover:text-sky-100">{link[1]}</a>
     }
     if (/^https?:\/\//.test(part)) {
@@ -165,6 +170,192 @@ function ListItems({ items }) {
   </li>)
 }
 
+function CodeBlock({ language, value }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return <div className="code-surface my-5 overflow-hidden rounded-xl border border-white/10 bg-[#090c12] shadow-inner">
+    <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] bg-white/[0.025] px-4 py-2">
+      <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/50">{language || 'Code'}</span>
+      <button type="button" onClick={copyCode} className="rounded-md border border-white/10 px-2 py-1 text-[11px] font-medium text-white/65 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white/90" aria-label={`Copy ${language || 'code'} example`}>
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </div>
+    <pre className="overflow-x-auto p-4 text-[13px] leading-6 text-emerald-100/90 sm:p-5 sm:text-sm"><code>{value}</code></pre>
+  </div>
+}
+
+let mermaidLibraryPromise
+let mermaidRenderQueue = Promise.resolve()
+let configuredMermaidTheme
+
+function getMermaidLibrary() {
+  if (!mermaidLibraryPromise) {
+    mermaidLibraryPromise = import('mermaid').then((module) => module.default)
+  }
+  return mermaidLibraryPromise
+}
+
+function mermaidThemeVariables(theme) {
+  if (theme === 'light') return {
+    background: '#f5f7fb',
+    primaryColor: '#e8eef9',
+    primaryTextColor: '#172338',
+    primaryBorderColor: '#526ac4',
+    secondaryColor: '#e6f3ec',
+    secondaryTextColor: '#17382b',
+    secondaryBorderColor: '#438062',
+    tertiaryColor: '#fff2d8',
+    tertiaryTextColor: '#3b2b0b',
+    tertiaryBorderColor: '#a8781b',
+    mainBkg: '#ffffff',
+    textColor: '#172338',
+    lineColor: '#536176',
+    nodeTextColor: '#172338',
+    edgeLabelBackground: '#ffffff',
+    clusterBkg: '#eef2f8',
+    clusterBorder: '#8290a4',
+    actorBkg: '#e8eef9',
+    actorBorder: '#526ac4',
+    actorTextColor: '#172338',
+    actorLineColor: '#64748b',
+    signalColor: '#394b9a',
+    signalTextColor: '#172338',
+    labelBoxBkgColor: '#eef2f8',
+    labelBoxBorderColor: '#526ac4',
+    labelTextColor: '#172338',
+    noteBkgColor: '#fff2cc',
+    noteTextColor: '#372a0b',
+    noteBorderColor: '#b7791f',
+    activationBkgColor: '#dde6f4',
+    activationBorderColor: '#526ac4',
+  }
+
+  return {
+    darkMode: true,
+    background: '#0b0e14',
+    primaryColor: '#243248',
+    primaryTextColor: '#edf2fb',
+    primaryBorderColor: '#90a4c0',
+    secondaryColor: '#1e3b32',
+    secondaryTextColor: '#dcfce7',
+    secondaryBorderColor: '#74b49b',
+    tertiaryColor: '#3a3020',
+    tertiaryTextColor: '#fff4d6',
+    tertiaryBorderColor: '#cfaa60',
+    mainBkg: '#111722',
+    textColor: '#e6e9ef',
+    lineColor: '#94a3b8',
+    nodeTextColor: '#edf2fb',
+    edgeLabelBackground: '#111722',
+    clusterBkg: '#182234',
+    clusterBorder: '#7086a5',
+    actorBkg: '#243248',
+    actorBorder: '#90a4c0',
+    actorTextColor: '#edf2fb',
+    actorLineColor: '#7086a5',
+    signalColor: '#a5b4fc',
+    signalTextColor: '#edf2fb',
+    labelBoxBkgColor: '#111722',
+    labelBoxBorderColor: '#7086a5',
+    labelTextColor: '#edf2fb',
+    noteBkgColor: '#3a3020',
+    noteTextColor: '#fff4d6',
+    noteBorderColor: '#cfaa60',
+    activationBkgColor: '#1e293b',
+    activationBorderColor: '#90a4c0',
+  }
+}
+
+function renderMermaid({ id, definition, theme }) {
+  const render = async () => {
+    const mermaid = await getMermaidLibrary()
+    if (configuredMermaidTheme !== theme) {
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'strict',
+        theme: 'base',
+        themeVariables: mermaidThemeVariables(theme),
+        flowchart: { htmlLabels: true, useMaxWidth: true },
+      })
+      configuredMermaidTheme = theme
+    }
+    return mermaid.render(id, definition)
+  }
+
+  const queuedRender = mermaidRenderQueue.then(render, render)
+  mermaidRenderQueue = queuedRender.then(() => undefined, () => undefined)
+  return queuedRender
+}
+
+function MermaidDiagram({ value }) {
+  const reactId = useId()
+  const id = `course-mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`
+  const captionId = `${id}-caption`
+  const containerRef = useRef(null)
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
+  const [renderState, setRenderState] = useState({ status: 'loading', message: '' })
+
+  useEffect(() => {
+    const root = document.documentElement
+    const updateTheme = () => setTheme(root.dataset.theme === 'light' ? 'light' : 'dark')
+    const observer = new MutationObserver(updateTheme)
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
+    updateTheme()
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    let current = true
+    setRenderState({ status: 'loading', message: '' })
+    if (containerRef.current) containerRef.current.replaceChildren()
+
+    renderMermaid({ id, definition: value, theme }).then(({ svg, bindFunctions }) => {
+      if (!current || !containerRef.current) return
+      containerRef.current.innerHTML = svg
+      bindFunctions?.(containerRef.current)
+      setRenderState({ status: 'ready', message: '' })
+    }).catch((error) => {
+      if (!current) return
+      setRenderState({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Mermaid could not parse this diagram.',
+      })
+    })
+
+    return () => { current = false }
+  }, [id, value, theme])
+
+  return <figure className="course-mermaid my-6 overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+    <figcaption id={captionId} className="border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-white/70">Mermaid diagram</figcaption>
+    <div className="overflow-x-auto">
+      {renderState.status === 'loading' && <p className="min-h-28 px-4 py-10 text-center text-sm text-white/60" role="status">Rendering diagram…</p>}
+      {renderState.status === 'error' && <div className="m-4 rounded-lg border border-rose-300/20 bg-rose-300/[0.05] p-3 text-sm leading-6 text-rose-100" role="alert">
+        <p className="font-semibold">This Mermaid diagram could not be rendered.</p>
+        <p className="mt-1 break-words text-xs text-white/70">{renderState.message}</p>
+      </div>}
+      <div
+        ref={containerRef}
+        className={`course-mermaid-canvas mx-auto min-w-[34rem] p-3 sm:min-w-0 sm:p-5 ${renderState.status === 'ready' ? '' : 'hidden'}`}
+        role="img"
+        aria-labelledby={captionId}
+      />
+    </div>
+    <details className="border-t border-white/10 px-4 py-2.5">
+      <summary className="cursor-pointer text-xs font-medium text-white/65 hover:text-white/90">View Mermaid source</summary>
+      <CodeBlock language="mermaid" value={value} />
+    </details>
+  </figure>
+}
 function MarkdownBlock({ block }) {
   if (block.type === 'heading') {
     const level = block.displayLevel || block.level
@@ -178,10 +369,8 @@ function MarkdownBlock({ block }) {
     return <Tag {...props}><InlineMarkdown text={block.title} /></Tag>
   }
 
-  if (block.type === 'code') return <div className="my-5 overflow-hidden rounded-xl border border-white/10 bg-[#090c12] shadow-inner">
-    {block.language && <div className="border-b border-white/[0.07] bg-white/[0.025] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.12em] text-white/50">{block.language}</div>}
-    <pre className="overflow-x-auto p-4 text-[13px] leading-6 text-emerald-100/90 sm:p-5 sm:text-sm"><code>{block.value}</code></pre>
-  </div>
+  if (block.type === 'code') return <CodeBlock language={block.language} value={block.value} />
+  if (block.type === 'diagram') return <MermaidDiagram value={block.value} />
 
   if (block.type === 'quote') return <blockquote className="my-5 rounded-r-xl border-l-2 border-sky-200/50 bg-sky-200/[0.04] px-4 py-3 text-[15px] leading-7 text-white/75"><InlineMarkdown text={block.value} /></blockquote>
   if (block.type === 'rule') return <hr className="my-8 border-white/10" />
@@ -205,7 +394,7 @@ export function getMarkdownHeadings(markdown) {
     .map(({ id, level, title }) => ({ id, level, title }))
 }
 
-export default function NodeMarkdown({ content, className = '' }) {
+export default function CourseMarkdown({ content, className = '' }) {
   const blocks = useMemo(() => parseMarkdown(content), [content])
   return <div className={className}>{blocks.map((block, index) => <MarkdownBlock key={`${block.type}-${block.id || index}`} block={block} />)}</div>
 }

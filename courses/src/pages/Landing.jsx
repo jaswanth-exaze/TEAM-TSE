@@ -77,7 +77,7 @@ export default function Landing() {
         </p>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/70">
           <span>{allCourses.length} courses</span>
-          <span>{lessonsAvailable} course with lessons</span>
+          <span>{lessonsAvailable} course{lessonsAvailable === 1 ? '' : 's'} with lessons</span>
           <span>Quizzes available for practice</span>
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
@@ -86,6 +86,8 @@ export default function Landing() {
           <Link to="/course/linux-commands" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Linux Commands</Link>
           <Link to="/course/git" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Git</Link>
           <Link to="/course/html-css-javascript" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">HTML + CSS + JavaScript</Link>
+          <Link to="/course/unit-testing-fundamentals" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Unit Testing Fundamentals</Link>
+          <Link to="/course/rest-api-fundamentals" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">REST API Fundamentals</Link>
         </div>
       </header>
 

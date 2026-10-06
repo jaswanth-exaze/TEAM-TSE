@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import NodeMarkdown from './NodeMarkdown'
+import CourseMarkdown from './CourseMarkdown'
 import overviewMarkdown from '../data/courses/node-js/lessons/overview.md?raw'
 import { NODE_PARTS, NODE_TOPICS } from '../data/courses/node-js'
 import { appStorageKey } from '../lib/storage'
@@ -51,7 +51,7 @@ export default function NodeStudyGuide({ module }) {
     </header>
 
     <section className="mb-8 rounded-2xl border border-white/[0.07] bg-white/[0.015] px-4 py-5 sm:px-7 sm:py-7" aria-label="Course introduction">
-      <NodeMarkdown content={overviewMarkdown} />
+      <CourseMarkdown content={overviewMarkdown} />
     </section>
 
     <section aria-labelledby="node-course-content">

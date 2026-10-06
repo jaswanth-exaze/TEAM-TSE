@@ -3,6 +3,8 @@ import { GIT_SYLLABUS } from './git-course'
 import { HTML_CSS_JAVASCRIPT_SYLLABUS } from './html-css-javascript-course'
 import { LINUX_SYLLABUS } from './linux-course'
 import { NODE_PARTS } from './courses/node-js'
+import { REST_API_PARTS } from './courses/rest-api'
+import { UNIT_TESTING_PARTS } from './courses/unit-testing-fundamentals'
 import { MYSQL_DAILY_UPDATE_TEMPLATE, MYSQL_PARTS, MYSQL_STUDY_RESOURCES } from './mysql-course'
 import { MYSQL_PRACTICE_ACTIVITIES, MYSQL_TOPIC_STATUS } from './courses/mysql'
 
@@ -64,6 +66,43 @@ const COURSE_CONTENT = {
       { title: 'npm documentation', kind: 'Official reference', href: 'https://docs.npmjs.com/', description: 'Reference for package.json, installing packages, and npm scripts.' },
       { title: 'Postman Learning Center', kind: 'Tutorial', href: 'https://learning.postman.com/docs/getting-started/first-steps/sending-the-first-request/', description: 'Learn how to configure and send HTTP requests in Postman.' },
     ],
+  },
+  'rest-api-fundamentals': {
+    title: 'REST API Fundamentals',
+    subtitle: 'A structured introduction to REST API design, from HTTP and resources to reliable responses, versioning, and practical checks.',
+    curriculumTitle: '15 lessons in three learning parts',
+    parts: REST_API_PARTS,
+    resources: [
+      { title: 'HTTP Semantics', kind: 'Standard', href: 'https://www.rfc-editor.org/rfc/rfc9110', description: 'The HTTP standard for methods, status codes, fields, and message semantics.' },
+      { title: 'HTTP Semantics: Safe Methods', kind: 'Standard', href: 'https://www.rfc-editor.org/rfc/rfc9110#name-safe-methods', description: 'The standard definition and behavior of safe request methods.' },
+      { title: 'HTTP Semantics: Idempotent Methods', kind: 'Standard', href: 'https://www.rfc-editor.org/rfc/rfc9110#name-idempotent-methods', description: 'The standard definition of idempotent methods and their retry behavior.' },
+      { title: 'Problem Details for HTTP APIs', kind: 'Standard', href: 'https://www.rfc-editor.org/rfc/rfc9457', description: 'A standard format for machine-readable HTTP API error responses.' },
+    ],
+  },
+  'unit-testing-fundamentals': {
+    title: 'Unit Testing Fundamentals',
+    subtitle: 'Learn to design fast, trustworthy tests, isolate dependencies, and improve code through small TDD cycles.',
+    curriculumTitle: '11 lessons in four learning parts',
+    parts: UNIT_TESTING_PARTS,
+    contentNoteTitle: 'Language-independent learning path',
+    contentNote: 'The core ideas apply across languages and test frameworks. The examples focus on test behavior and design rather than framework-specific syntax.',
+    program: {
+      stats: [
+        ['11 lessons', 'Four cumulative learning parts'],
+        ['2 weeks', 'Suggested self-paced plan'],
+        ['15 questions', 'End-of-course review'],
+        ['40 questions', 'Optional course quiz'],
+      ],
+      scheduleTitle: 'A suggested two-week sequence',
+      schedule: [
+        ['Days 1–3', 'Work through test levels, the value of tests, F.I.R.S.T., and testing approaches.'],
+        ['Days 4–5', 'Compare test doubles and learn the limits of in-memory databases.'],
+        ['Days 6–8', 'Study the Three Laws and practise the Red–Green–Refactor cycle.'],
+        ['Days 9–11', 'Compare TDD styles, review tradeoffs, and check common testing mistakes.'],
+        ['Days 12–14', 'Review the reading list, answer the questions from memory, then try the quiz.'],
+      ],
+      scheduleNote: 'Treat this as a flexible guide. Spend extra time on the test types and dependencies that are new to you.',
+    },
   },
 }
 

@@ -1,5 +1,7 @@
 import { loadMysqlActivity, loadMysqlTopic } from './mysql'
 import { loadNodeTopic } from './node-js'
+import { loadRestApiTopic } from './rest-api'
+import { loadUnitTestingTopic } from './unit-testing-fundamentals'
 
 const moduleLoaders = {
   mysql: {
@@ -8,6 +10,12 @@ const moduleLoaders = {
   },
   'node-js': {
     topic: loadNodeTopic,
+  },
+  'rest-api-fundamentals': {
+    topic: loadRestApiTopic,
+  },
+  'unit-testing-fundamentals': {
+    topic: loadUnitTestingTopic,
   },
 }
 

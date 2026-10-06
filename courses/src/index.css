@@ -177,6 +177,18 @@ select {
   --color-rose-400: #fb7185;
 }
 
+.course-mermaid-canvas {
+  width: 100%;
+}
+
+.course-mermaid-canvas > svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
 :root[data-theme="light"] .code-surface .text-white\/20 { color: color-mix(in oklab, var(--color-white) 20%, transparent); }
 :root[data-theme="light"] .code-surface .text-white\/25 { color: color-mix(in oklab, var(--color-white) 25%, transparent); }
 :root[data-theme="light"] .code-surface .text-white\/35 { color: color-mix(in oklab, var(--color-white) 35%, transparent); }
