@@ -26,5 +26,9 @@
     "oxlint": "^1.71.0",
     "tailwindcss": "^4.3.2",
     "vite": "^8.1.1"
+  },
+  "overrides": {
+    "katex": "0.18.2",
+    "source-map-js": "1.2.2"
   }
 }
