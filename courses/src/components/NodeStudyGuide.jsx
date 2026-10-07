@@ -4,6 +4,8 @@ import CourseMarkdown from './CourseMarkdown'
 import overviewMarkdown from '../data/courses/node-js/lessons/overview.md?raw'
 import { NODE_PARTS, NODE_TOPICS } from '../data/courses/node-js'
 import { appStorageKey } from '../lib/storage'
+import ProgressRing from './ProgressRing'
+import StudyResources from './StudyResources'
 
 const progressKey = appStorageKey('study:node-js:v1')
 
@@ -20,33 +22,61 @@ function PartPill({ children }) {
   return <span className="rounded-full border border-indigo-200/20 bg-indigo-200/[0.06] px-2.5 py-1 text-[11px] font-medium text-indigo-100/85">{children}</span>
 }
 
-export default function NodeStudyGuide({ module }) {
+export default function NodeStudyGuide({ module, course }) {
   const [completed] = useState(readCompleted)
   const doneCount = NODE_TOPICS.filter((topic) => completed.includes(topic.id)).length
   const nextTopic = NODE_TOPICS.find((topic) => !completed.includes(topic.id)) || NODE_TOPICS[0]
   const completion = Math.round((doneCount / NODE_TOPICS.length) * 100)
 
   return <main className="learning-surface w-full px-4 py-6 sm:px-6 sm:py-9 lg:px-10 2xl:px-14">
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <Link to="/" className="text-sm font-medium text-white/75 transition hover:text-white">← Home</Link>
+    <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
+      <Link to="/" className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-white">← Course library</Link>
       <nav aria-label="Course links" className="flex flex-wrap items-center gap-4">
-        <Link to={`/quiz/${module.id}`} className="text-sm text-white/70 transition hover:text-white">Optional quiz</Link>
+        <Link to={`/quiz/${module.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:px-5 sm:text-base">
+          <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
+        </Link>
       </nav>
     </div>
 
-    <header className="mb-7 rounded-2xl border border-emerald-200/15 bg-gradient-to-br from-emerald-200/[0.08] via-white/[0.025] to-indigo-200/[0.04] p-5 sm:p-7">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full border border-emerald-200/25 bg-emerald-200/[0.08] px-2.5 py-1 text-xs font-medium text-emerald-100">BEGINNER PROJECT COURSE</span>
-        <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70">Windows &amp; macOS</span>
-        <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70">26 lessons</span>
-      </div>
-      <p className="mt-4 max-w-3xl text-sm leading-6 text-white/75 sm:text-base sm:leading-7">Learn Node.js by building one Task Manager API. Work through each lesson in order, type the examples, and keep extending the same project.</p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+    <header className="relative isolate mb-9 overflow-hidden rounded-3xl border border-white/10 bg-[var(--panel-bg)] shadow-xl shadow-black/10">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 -z-10 h-80 w-80 rounded-full bg-emerald-300/10 blur-3xl" />
+      <div className="grid gap-7 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(250px,0.7fr)] lg:items-center lg:p-10">
         <div>
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-white/65"><span>Your lesson progress</span><span>{doneCount} of {NODE_TOPICS.length} completed</span></div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-label="Node.js course progress" aria-valuemin={0} aria-valuemax={NODE_TOPICS.length} aria-valuenow={doneCount}><div className="h-full rounded-full bg-emerald-300 transition-[width]" style={{ width: `${completion}%` }} /></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/75">
+              <span className="h-2 w-2 rounded-full bg-emerald-300" /> Course material
+            </span>
+            <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70">{module.title}</span>
+            <span className="rounded-full border border-white/15 bg-white/[0.04] px-2.5 py-1 text-xs text-white/70">{NODE_PARTS.length} learning parts</span>
+          </div>
+          <h1 className="mt-5 max-w-3xl font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">Build a Task Manager API with Node.js</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base sm:leading-7">Learn Node.js by extending one project from setup through a working API. Follow the guided lessons, type the examples, and practise each step as you go.</p>
+          <div className="mt-6 flex flex-wrap gap-2 text-xs text-white/65">
+            <span className="rounded-lg border border-white/10 bg-black/10 px-3 py-2">{NODE_TOPICS.length} lessons</span>
+            <span className="rounded-lg border border-white/10 bg-black/10 px-3 py-2">Windows &amp; macOS</span>
+            <span className="rounded-lg border border-white/10 bg-black/10 px-3 py-2">Optional practice quiz</span>
+          </div>
         </div>
-        {nextTopic && <Link to={`/course/${module.id}/topic/${nextTopic.id}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-indigo-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">{doneCount === NODE_TOPICS.length ? 'Review lessons' : doneCount ? 'Continue learning' : 'Start lesson 1'} <span aria-hidden="true">→</span></Link>}
+        <section aria-label="Your course progress" className="rounded-2xl border border-white/10 bg-black/[0.12] p-4 sm:p-5">
+          <div className="flex items-center gap-4">
+            <div className="relative grid h-16 w-16 shrink-0 place-items-center">
+              <ProgressRing percent={completion} size={64} stroke={5} color="#6ee7b7" />
+              <span className="absolute font-display text-sm font-bold text-white">{completion}%</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.13em] text-white/55">Your progress</p>
+              <p className="mt-1 font-display text-xl font-semibold text-white">{doneCount} <span className="text-sm font-medium text-white/55">of {NODE_TOPICS.length} lessons</span></p>
+              <p className="mt-1 text-xs text-white/55">{NODE_TOPICS.length - doneCount} lessons left to explore</p>
+            </div>
+          </div>
+          <div className="mt-5">
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--progress-track)]" role="progressbar" aria-label="Node.js course progress" aria-valuemin={0} aria-valuemax={NODE_TOPICS.length} aria-valuenow={doneCount}>
+              <div className="h-full rounded-full bg-emerald-300 transition-[width] duration-500" style={{ width: `${completion}%` }} />
+            </div>
+            <p className="mt-2 text-sm text-[var(--muted-fg)]">{doneCount} of {NODE_TOPICS.length} lessons complete</p>
+          </div>
+          {nextTopic && <Link to={`/course/${module.id}/topic/${nextTopic.id}`} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-indigo-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">{doneCount === NODE_TOPICS.length ? 'Review lessons' : doneCount ? 'Continue learning' : 'Start lesson 1'} <span aria-hidden="true">→</span></Link>}
+        </section>
       </div>
     </header>
 
@@ -74,8 +104,8 @@ export default function NodeStudyGuide({ module }) {
             {part.topics.map((topic) => {
               const isDone = completed.includes(topic.id)
               return <li key={topic.id}>
-                <Link to={`/course/${module.id}/topic/${topic.id}`} className="group flex h-full min-h-32 gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-4 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.045] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-mono text-xs ${isDone ? 'bg-emerald-200/10 text-emerald-100' : 'bg-indigo-200/[0.08] text-indigo-100'}`} aria-label={isDone ? 'Completed' : `Lesson ${topic.number}`}>
+                <Link to={`/course/${module.id}/topic/${topic.id}`} className="group flex h-full min-h-32 gap-3 rounded-2xl border border-white/10 bg-[var(--panel-bg)] p-4 transition hover:-translate-y-0.5 hover:border-indigo-200/30 hover:shadow-lg hover:shadow-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-bold ${isDone ? 'bg-emerald-200/10 text-emerald-100' : 'bg-indigo-200/[0.08] text-indigo-100'}`} aria-label={isDone ? 'Completed' : `Lesson ${topic.number}`}>
                     {isDone ? '✓' : String(topic.number).padStart(2, '0')}
                   </span>
                   <span className="min-w-0">
@@ -90,5 +120,6 @@ export default function NodeStudyGuide({ module }) {
         </section>)}
       </div>
     </section>
+    <StudyResources resources={course.resources} id="resources-node-js" />
   </main>
 }

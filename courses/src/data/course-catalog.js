@@ -100,6 +100,12 @@ const COURSE_CONTENT = {
     subtitle: 'Learn to design fast, trustworthy tests, isolate dependencies, and improve code through small TDD cycles.',
     curriculumTitle: '11 lessons in four learning parts',
     parts: UNIT_TESTING_PARTS,
+    resources: [
+      { title: 'Martin Fowler: Practical Test Pyramid', kind: 'Article', href: 'https://martinfowler.com/articles/practical-test-pyramid.html', description: 'A practical guide to balancing unit, integration, and end-to-end tests.' },
+      { title: 'Google Testing Blog', kind: 'Article', href: 'https://testing.googleblog.com/', description: 'Engineering perspectives on test design, reliability, and maintainable test suites.' },
+      { title: 'Node.js test runner', kind: 'Official reference', href: 'https://nodejs.org/api/test.html', description: 'Built-in test runner documentation for writing and executing JavaScript tests.' },
+      { title: 'Jest documentation', kind: 'Official reference', href: 'https://jestjs.io/docs/getting-started', description: 'A JavaScript testing framework reference for assertions, mocks, and test execution.' },
+    ],
     contentNoteTitle: 'Language-independent learning path',
     contentNote: 'The core ideas apply across languages and test frameworks. The examples focus on test behavior and design rather than framework-specific syntax.',
     program: {

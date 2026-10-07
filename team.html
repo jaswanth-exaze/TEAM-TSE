@@ -23,7 +23,28 @@
   <header class="site-header">
     <div class="wrap">
       <a href="index.html" class="brand" aria-label="Exaze — TSE Learning Hub">
-        <img class="brand-logo" src="exaze-mark.png" alt="Exaze" width="625" height="721" />
+        <span class="brand-logo-stage" data-logo-morph data-logo-morph-hover data-logo-morph-prefix="nav-">
+        <svg class="brand-logo" id="nav-s" viewBox="0 0 625 720" aria-hidden="true">
+          <defs>
+            <linearGradient id="nav-gb" gradientUnits="userSpaceOnUse" x1="360" y1="20" x2="40" y2="480"><stop offset="0" stop-color="#5BB5E8"/><stop offset=".45" stop-color="#2F7CC0"/><stop offset="1" stop-color="#2F4DA0"/></linearGradient>
+            <linearGradient id="nav-gg" gradientUnits="userSpaceOnUse" x1="520" y1="240" x2="250" y2="660"><stop offset="0" stop-color="#EDEC80"/><stop offset=".4" stop-color="#5DB846"/><stop offset="1" stop-color="#235F33"/></linearGradient>
+            <clipPath id="nav-db"><polygon points="410,-300 1400,-300 1400,1400 -300,1400 -300,410"/></clipPath>
+            <clipPath id="nav-dg"><polygon points="700,-300 1400,-300 1400,1400 -300,1400 -300,700"/></clipPath>
+            <clipPath id="nav-lb"><polygon points="-300,-300 410,-300 -300,410"/></clipPath>
+            <clipPath id="nav-lg"><polygon points="-300,-300 700,-300 -300,700"/></clipPath>
+            <filter id="nav-sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#1b3b6b" flood-opacity=".3"/></filter>
+          </defs>
+          <g id="nav-root"><g filter="url(#nav-sh)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path id="nav-b" d="M325 75C250 150 170 230 95 305C55 345 45 400 70 480" stroke="url(#nav-gb)" stroke-width="118"/>
+            <path id="nav-g" d="M445 285C385 345 300 420 255 465C195 525 215 620 300 655C360 675 410 650 450 610C490 570 520 530 550 490" stroke="url(#nav-gg)" stroke-width="132"/>
+            <path id="nav-m" d="M165 355C165 355 165 355 165 355" stroke="url(#nav-gg)" stroke-width="0"/>
+            <g clip-path="url(#nav-db)"><path id="nav-b2" d="M325 75C250 150 170 230 95 305C55 345 45 400 70 480" stroke="#06143a" stroke-opacity=".16" stroke-width="118"/></g>
+            <g clip-path="url(#nav-dg)"><path id="nav-g2" d="M445 285C385 345 300 420 255 465C195 525 215 620 300 655C360 675 410 650 450 610C490 570 520 530 550 490" stroke="#031a0a" stroke-opacity=".2" stroke-width="132"/><path id="nav-m2" d="M165 355C165 355 165 355 165 355" stroke="#031a0a" stroke-opacity=".2" stroke-width="0"/></g>
+            <g clip-path="url(#nav-lb)"><path id="nav-b3" d="M325 75C250 150 170 230 95 305C55 345 45 400 70 480" stroke="#fff" stroke-opacity=".14" stroke-width="118"/></g>
+            <g clip-path="url(#nav-lg)"><path id="nav-g3" d="M445 285C385 345 300 420 255 465C195 525 215 620 300 655C360 675 410 650 450 610C490 570 520 530 550 490" stroke="#fff" stroke-opacity=".16" stroke-width="132"/><path id="nav-m3" d="M165 355C165 355 165 355 165 355" stroke="#fff" stroke-opacity=".16" stroke-width="0"/></g>
+          </g></g>
+        </svg>
+        </span>
         <span class="brand-program">TSE Learning Hub</span>
       </a>
       <nav class="nav-links" id="nav-links">
@@ -107,6 +128,7 @@ git push origin feature/add-<span class="c-teal">your-name</span>-profile</code>
   </footer>
 
   <script src="js/main.js"></script>
+  <script type="module" src="js/logo-morph.js"></script>
   <script src="js/team.js"></script>
 </body>
 

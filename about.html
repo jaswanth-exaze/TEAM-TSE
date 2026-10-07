@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About — TSE Learning Hub</title>
   <meta name="description"
-    content="What TSE stands for, why the Learning Hub exists, and how Trainee Software Engineers learn by contributing to it." />
+    content="Discover how TSE Learning Hub helps trainees learn software engineering through guided courses, hands-on practice, projects, and quizzes." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#0b1022" />
   <link rel="icon" type="image/png" href="exaze-logo%20(1).png" />
   <link rel="apple-touch-icon" href="exaze-logo%20(1).png" />
   <link
@@ -18,12 +18,33 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 
-<body>
+<body class="hub-experience">
 
   <header class="site-header">
     <div class="wrap">
       <a href="index.html" class="brand" aria-label="Exaze — TSE Learning Hub">
-        <img class="brand-logo" src="exaze-mark.png" alt="Exaze" width="625" height="721" />
+        <span class="brand-logo-stage" data-logo-morph data-logo-morph-hover data-logo-morph-prefix="nav-">
+        <svg class="brand-logo" id="nav-s" viewBox="0 0 625 720" aria-hidden="true">
+          <defs>
+            <linearGradient id="nav-gb" gradientUnits="userSpaceOnUse" x1="360" y1="20" x2="40" y2="480"><stop offset="0" stop-color="#5BB5E8"/><stop offset=".45" stop-color="#2F7CC0"/><stop offset="1" stop-color="#2F4DA0"/></linearGradient>
+            <linearGradient id="nav-gg" gradientUnits="userSpaceOnUse" x1="520" y1="240" x2="250" y2="660"><stop offset="0" stop-color="#EDEC80"/><stop offset=".4" stop-color="#5DB846"/><stop offset="1" stop-color="#235F33"/></linearGradient>
+            <clipPath id="nav-db"><polygon points="410,-300 1400,-300 1400,1400 -300,1400 -300,410"/></clipPath>
+            <clipPath id="nav-dg"><polygon points="700,-300 1400,-300 1400,1400 -300,1400 -300,700"/></clipPath>
+            <clipPath id="nav-lb"><polygon points="-300,-300 410,-300 -300,410"/></clipPath>
+            <clipPath id="nav-lg"><polygon points="-300,-300 700,-300 -300,700"/></clipPath>
+            <filter id="nav-sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#1b3b6b" flood-opacity=".3"/></filter>
+          </defs>
+          <g id="nav-root"><g filter="url(#nav-sh)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path id="nav-b" d="M325 75C250 150 170 230 95 305C55 345 45 400 70 480" stroke="url(#nav-gb)" stroke-width="118"/>
+            <path id="nav-g" d="M445 285C385 345 300 420 255 465C195 525 215 620 300 655C360 675 410 650 450 610C490 570 520 530 550 490" stroke="url(#nav-gg)" stroke-width="132"/>
+            <path id="nav-m" d="M165 355C165 355 165 355 165 355" stroke="url(#nav-gg)" stroke-width="0"/>
+            <g clip-path="url(#nav-db)"><path id="nav-b2" d="M325 75C250 150 170 230 95 305C55 345 45 400 70 480" stroke="#06143a" stroke-opacity=".16" stroke-width="118"/></g>
+            <g clip-path="url(#nav-dg)"><path id="nav-g2" d="M445 285C385 345 300 420 255 465C195 525 215 620 300 655C360 675 410 650 450 610C490 570 520 530 550 490" stroke="#031a0a" stroke-opacity=".2" stroke-width="132"/><path id="nav-m2" d="M165 355C165 355 165 355 165 355" stroke="#031a0a" stroke-opacity=".2" stroke-width="0"/></g>
+            <g clip-path="url(#nav-lb)"><path id="nav-b3" d="M325 75C250 150 170 230 95 305C55 345 45 400 70 480" stroke="#fff" stroke-opacity=".14" stroke-width="118"/></g>
+            <g clip-path="url(#nav-lg)"><path id="nav-g3" d="M445 285C385 345 300 420 255 465C195 525 215 620 300 655C360 675 410 650 450 610C490 570 520 530 550 490" stroke="#fff" stroke-opacity=".16" stroke-width="132"/><path id="nav-m3" d="M165 355C165 355 165 355 165 355" stroke="#fff" stroke-opacity=".16" stroke-width="0"/></g>
+          </g></g>
+        </svg>
+        </span>
         <span class="brand-program">TSE Learning Hub</span>
       </a>
       <nav class="nav-links" id="nav-links">
@@ -46,30 +67,33 @@
 
     <section class="section section--ink" style="padding-bottom:2rem;">
       <div class="wrap">
-        <p class="eyebrow">ABOUT</p>
-        <h1 class="h-display h-2" style="max-width:16ch;">Trainee Software Engineer, spelled out.</h1>
+        <p class="eyebrow">ABOUT THE LEARNING HUB</p>
+        <h1 class="h-display h-2" style="max-width:19ch;">A place for trainees to learn by doing.</h1>
         <p class="lede mt-lg">
-          TSE stands for Trainee Software Engineer. It's the name for
-          anyone on the team who's early in their engineering path and
-          learning by building real, reviewed work rather than isolated
-          exercises.
+          TSE stands for Trainee Software Engineer. This hub supports the
+          learning journey with guided courses, hands-on practice, projects,
+          and optional quizzes to check understanding.
         </p>
+        <div class="hero-actions mt-lg">
+          <a class="btn btn-primary" href="courses/">Explore courses</a>
+          <a class="btn btn-ghost" href="team.html">Meet the team</a>
+        </div>
       </div>
     </section>
 
     <section class="section section--paper">
       <div class="wrap split">
         <div>
-          <p class="eyebrow" style="color:var(--teal);">OUR PURPOSE</p>
-          <h2 class="h-display h-3">Skills stick when the work is real.</h2>
+          <p class="eyebrow">OUR PURPOSE</p>
+          <h2 class="h-display h-3">Learn the idea. Practise the skill. Build confidence.</h2>
         </div>
         <div>
           <p class="lede" style="max-width:58ch;">
-            Tutorials teach syntax. They rarely teach what it feels like to
-            open a pull request, get asked to change something, and push a
-            fix. This team learns software engineering by practicing the
-            whole loop on a project that other people actually use and
-            review — starting with this website.
+            Trainees need more than a list of topics. The hub brings together
+            structured lessons, practice activities, visual labs, and quizzes
+            so learners can move from understanding a concept to applying it.
+            Team projects provide a further opportunity to collaborate and
+            learn through feedback.
           </p>
         </div>
       </div>
@@ -77,26 +101,26 @@
 
     <section class="section section--paper-soft" style="padding-top:0;">
       <div class="wrap">
-        <p class="eyebrow" style="color:var(--teal);">HOW WE LEARN</p>
-        <h2 class="h-display h-3" style="max-width:20ch;">The same loop, every time.</h2>
+        <p class="eyebrow">HOW TO USE THE HUB</p>
+        <h2 class="h-display h-3" style="max-width:20ch;">A flexible loop for steady progress.</h2>
         <div class="flow">
+          <div class="flow-step"><span class="mono">courses</span>
+            <h4>Choose a guided path</h4>
+          </div>
           <div class="flow-step"><span class="mono">learn</span>
-            <h4>Pick a concept</h4>
+            <h4>Work through lessons</h4>
           </div>
           <div class="flow-step"><span class="mono">practice</span>
-            <h4>Try it in isolation</h4>
-          </div>
-          <div class="flow-step"><span class="mono">build</span>
-            <h4>Apply it to the site</h4>
-          </div>
-          <div class="flow-step"><span class="mono">share</span>
-            <h4>Open a pull request</h4>
+            <h4>Try labs and exercises</h4>
           </div>
           <div class="flow-step"><span class="mono">review</span>
-            <h4>Get real feedback</h4>
+            <h4>Check your understanding</h4>
           </div>
-          <div class="flow-step"><span class="mono">improve</span>
-            <h4>Revise and merge</h4>
+          <div class="flow-step"><span class="mono">build</span>
+            <h4>Apply it in a project</h4>
+          </div>
+          <div class="flow-step"><span class="mono">grow</span>
+            <h4>Return to what you want to strengthen</h4>
           </div>
         </div>
       </div>
@@ -104,37 +128,36 @@
 
     <section class="section section--paper">
       <div class="wrap">
-        <p class="eyebrow" style="color:var(--teal);">WHAT WE FOCUS ON</p>
-        <h2 class="h-display h-3" style="max-width:22ch;">The roadmap flexes. The habits don't.</h2>
+        <p class="eyebrow">WHAT YOU CAN EXPLORE</p>
+        <h2 class="h-display h-3" style="max-width:22ch;">Build foundations across the stack.</h2>
         <p class="lede mt-lg" style="max-width:56ch;">
-          The specific technologies a trainee is learning will change over
-          time — that's expected. What stays constant is how the team
-          works.
+          Course material grows with the needs of trainees. Start with a
+          foundation, then follow your curiosity into a deeper topic.
         </p>
         <div class="focus-grid mt-lg">
           <div class="focus-item">
-            <h4>Programming fundamentals</h4>
-            <p>Logic, data, and clean structure before frameworks.</p>
+            <h4>Web and Node.js</h4>
+            <p>Learn browser fundamentals, server-side JavaScript, and APIs.</p>
           </div>
           <div class="focus-item">
-            <h4>Web development</h4>
-            <p>HTML, CSS, and JavaScript, learned on this codebase.</p>
+            <h4>Databases</h4>
+            <p>Practise MySQL queries, relationships, and visual SQL exercises.</p>
           </div>
           <div class="focus-item">
-            <h4>Git &amp; GitHub</h4>
-            <p>Branches, PRs, reviews, and resolving real conflicts.</p>
+            <h4>Testing and quality</h4>
+            <p>Explore unit testing, test design, and iterative improvement.</p>
           </div>
           <div class="focus-item">
-            <h4>Problem solving</h4>
-            <p>Breaking a vague ask into a shippable change.</p>
+            <h4>Authentication</h4>
+            <p>Study password hashing and token-based authentication safely.</p>
           </div>
           <div class="focus-item">
-            <h4>Projects</h4>
-            <p>Small, finished things over large, abandoned ones.</p>
+            <h4>Practice quizzes</h4>
+            <p>Use optional module quizzes to review and find gaps.</p>
           </div>
           <div class="focus-item">
-            <h4>Continuous learning</h4>
-            <p>Daily progress, tracked in the open on your own profile.</p>
+            <h4>Team projects</h4>
+            <p>Apply course concepts with collaboration and code review.</p>
           </div>
         </div>
       </div>
@@ -144,11 +167,10 @@
       <div class="wrap">
         <div class="cta-banner">
           <div>
-            <h3 class="h-display h-4">See who's already building.</h3>
-            <p class="lede" style="margin-top:0.5rem;">Or be the first name on the Team page.</p>
+            <h3 class="h-display h-4">Choose a course and start practising.</h3>
+            <p class="lede" style="margin-top:0.5rem;">Learn at your pace, then try the ideas for yourself.</p>
           </div>
-          <a class="btn btn-primary" style="background:var(--ink);color:var(--paper-text);" href="team.html">Go to Team
-            →</a>
+          <a class="btn btn-primary btn-primary--dark" href="courses/">Browse courses →</a>
         </div>
       </div>
     </section>
@@ -168,6 +190,7 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script type="module" src="js/logo-morph.js"></script>
 </body>
 
 </html>

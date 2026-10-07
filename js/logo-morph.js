@@ -1,5 +1,5 @@
 // Keeps the supplied Exaze-to-TSE SVG morph self-contained and lightweight.
-document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
+export function attachLogoMorph(stage, { interactive = false, idPrefix = "" } = {}) {
   const L = (a, b, c, d) => [a + (c - a) / 3, b + (d - b) / 3, a + (c - a) * 2 / 3, b + (d - b) * 2 / 3, c, d];
   const mid = (a, b) => (a + b) / 2;
 
@@ -66,7 +66,7 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
   const lerp = (from, to, amount) => from.map((value, index) => value + (to[index] - value) * amount);
   const ease = (value) => value * value * value * (value * (value * 6 - 15) + 10);
   const clamp = (value) => Math.min(1, Math.max(0, value));
-  const get = (id) => stage.querySelector(`#${id}`);
+  const get = (id) => stage.querySelector(`#${idPrefix}${id}`);
   const wordmark = stage.querySelector("[data-wordmark]");
   const meanings = stage.querySelector("[data-meanings]");
   const meaningItems = [...stage.querySelectorAll("[data-morph-letter]")];
@@ -90,12 +90,13 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
 
   function showOriginalBrand() {
     get("s").style.opacity = "1";
-    wordmark.style.opacity = "1";
-    meanings.style.opacity = "0";
+    if (wordmark) wordmark.style.opacity = "1";
+    if (meanings) meanings.style.opacity = "0";
     meaningItems.forEach((item) => item.classList.remove("is-active"));
   }
 
   function presentStage(from, to, progress, logoHold) {
+    if (!wordmark || !meanings) return
     const wordmarkOpacity = logoHold
       ? 1
       : from === "logo"
@@ -137,6 +138,8 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
   let animationFrame = null;
   let animationGeneration = 0;
   let motionRunning = false;
+  let pointerActive = false;
+  let focusActive = false;
   let inViewport = !("IntersectionObserver" in window);
   let pageVisible = !document.hidden;
 
@@ -177,7 +180,8 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
   }
 
   function syncMotion() {
-    const shouldAnimate = !motionPreference.matches && pageVisible && inViewport;
+    const isActive = pointerActive || focusActive;
+    const shouldAnimate = !motionPreference.matches && pageVisible && inViewport && (!interactive || isActive);
     if (shouldAnimate && !motionRunning) {
       motionRunning = true;
       animationGeneration += 1;
@@ -186,7 +190,7 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
       animationFrame = requestAnimationFrame((timestamp) => frame(timestamp, generation));
     } else if (!shouldAnimate) {
       stop();
-      if (motionPreference.matches) {
+      if (motionPreference.matches || interactive) {
         draw(shapes.logo, shapes.logo, 0);
         showOriginalBrand();
       }
@@ -196,24 +200,77 @@ document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
   draw(shapes.logo, shapes.logo, 0);
   syncMotion();
 
+  let observer = null;
   if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(([entry]) => {
+    observer = new IntersectionObserver(([entry]) => {
       inViewport = entry.isIntersecting;
       syncMotion();
     }, { threshold: 0.05 });
     observer.observe(stage);
   }
 
-  document.addEventListener("visibilitychange", () => {
+  const onVisibilityChange = () => {
     pageVisible = !document.hidden;
     syncMotion();
-  });
-  window.addEventListener("pageshow", () => {
+  };
+  const onPageShow = () => {
     pageVisible = !document.hidden;
     syncMotion();
-  });
-  window.addEventListener("pagehide", stop);
+  };
+  const onPageHide = () => stop();
+  const onPointerEnter = () => {
+    pointerActive = true;
+    if (interactive) elapsed = 0;
+    syncMotion();
+  };
+  const onPointerLeave = () => {
+    pointerActive = false;
+    syncMotion();
+  };
+  const onFocusIn = () => {
+    focusActive = true;
+    if (interactive) elapsed = 0;
+    syncMotion();
+  };
+  const onFocusOut = (event) => {
+    if (event.relatedTarget && stage.contains(event.relatedTarget)) return;
+    focusActive = false;
+    syncMotion();
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pageshow", onPageShow);
+  window.addEventListener("pagehide", onPageHide);
+  if (interactive) {
+    stage.addEventListener("pointerenter", onPointerEnter);
+    stage.addEventListener("pointerleave", onPointerLeave);
+    stage.addEventListener("focusin", onFocusIn);
+    stage.addEventListener("focusout", onFocusOut);
+  }
 
   if (motionPreference.addEventListener) motionPreference.addEventListener("change", syncMotion);
   else motionPreference.addListener(syncMotion);
+
+  return () => {
+    stop();
+    observer?.disconnect();
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("pageshow", onPageShow);
+    window.removeEventListener("pagehide", onPageHide);
+    if (interactive) {
+      stage.removeEventListener("pointerenter", onPointerEnter);
+      stage.removeEventListener("pointerleave", onPointerLeave);
+      stage.removeEventListener("focusin", onFocusIn);
+      stage.removeEventListener("focusout", onFocusOut);
+    }
+    if (motionPreference.removeEventListener) motionPreference.removeEventListener("change", syncMotion);
+    else motionPreference.removeListener(syncMotion);
+  };
+}
+
+document.querySelectorAll("[data-logo-morph]").forEach((stage) => {
+  attachLogoMorph(stage, {
+    interactive: stage.hasAttribute("data-logo-morph-hover"),
+    idPrefix: stage.dataset.logoMorphPrefix || "",
+  });
 });

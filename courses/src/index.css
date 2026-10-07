@@ -46,6 +46,7 @@
   --action-primary: #d6ddff;
   --action-primary-hover: #c5cffb;
   --action-primary-fg: #172338;
+  --progress-track: rgb(27 43 65 / 18%);
   --action-success: #a9dfc2;
   --action-success-hover: #95d2b2;
   --action-success-fg: #143827;
@@ -87,6 +88,13 @@
   --color-rose-200: #8b3044;
   --color-rose-300: #a13d50;
   --color-rose-400: #aa4053;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 html {

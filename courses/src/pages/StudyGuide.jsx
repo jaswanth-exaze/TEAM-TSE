@@ -6,6 +6,8 @@ import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 import NodeStudyGuide from '../components/NodeStudyGuide'
 import HashAnchorLink from '../components/HashAnchorLink'
+import ProgressRing from '../components/ProgressRing'
+import StudyResources from '../components/StudyResources'
 
 function readCompletedTopics(progressKey) {
   try {
@@ -26,23 +28,14 @@ function Pill({ children, tone = 'default' }) {
   return <span className={`rounded-full border px-2.5 py-1 text-xs ${tones[tone]}`}>{children}</span>
 }
 
-function ProgressBar({ done, total }) {
+function ProgressBar({ done, total, color }) {
   const percentage = total ? Math.round((done / total) * 100) : 0
   return <div>
-    <div className="h-2 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={`${done} of ${total} lessons done`}>
-      <div className="h-full rounded-full bg-emerald-300" style={{ width: `${percentage}%` }} />
+    <div className="h-2 overflow-hidden rounded-full bg-[var(--progress-track)]" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={`${done} of ${total} lessons done`}>
+      <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${percentage}%`, backgroundColor: color }} />
     </div>
-    <p className="mt-2 text-sm text-white/75">{done} of {total} lessons done</p>
+    <p className="mt-2 text-sm text-[var(--muted-fg)]">{done} of {total} lessons complete</p>
   </div>
-}
-
-function resourceGroup(resource) {
-  if (resource.kind === 'Video') return 'Videos'
-  if (resource.kind === 'Standard') return 'Standards'
-  if (/hierarch/i.test(resource.title)) return 'Hierarchies'
-  if (/join/i.test(resource.title)) return 'Joins'
-  if (resource.kind === 'Official reference') return 'Official'
-  return 'Tutorials and notes'
 }
 
 function CourseReader({ module, course }) {
@@ -54,6 +47,7 @@ function CourseReader({ module, course }) {
   const allTopics = course.parts.flatMap((part) => part.topics)
   const completedTopics = allTopics.filter((topic) => completed.includes(topic.id))
   const completedCount = completedTopics.length
+  const progressPercent = allTopics.length ? Math.round((completedCount / allTopics.length) * 100) : 0
   const nextTopic = allTopics.find((topic) => !completed.includes(topic.id)) || allTopics[0]
   const searchValue = search.trim().toLowerCase()
   const visibleTopics = useMemo(() => {
@@ -75,75 +69,105 @@ function CourseReader({ module, course }) {
     }
   }
 
-  const groupedResources = ['Official', 'Standards', 'Tutorials and notes', 'Joins', 'Hierarchies', 'Videos'].map((group) => ({
-    group,
-    resources: course.resources?.filter((resource) => resourceGroup(resource) === group) || [],
-  })).filter((item) => item.resources.length)
-
   return (
-    <main className="learning-surface w-full px-4 py-6 sm:px-6 sm:py-9 lg:px-10 2xl:px-14">
+    <main className="learning-surface mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-9 lg:px-10 2xl:px-14">
       <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
-        <Link to="/" className="text-sm font-medium text-white/75 hover:text-white">← Course library</Link>
+        <Link to="/" className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-white">
+          <span aria-hidden="true">←</span> Course library
+        </Link>
         <nav aria-label="Course tools" className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {course.examRoute && <Link to={course.examRoute} className="text-sm text-white/75 hover:text-white">Practice exams</Link>}
           {module.id === 'mysql' && <a href={getSqlVisualLabHref()} className="text-sm font-medium text-amber-200 hover:text-amber-100">Visual SQL lab</a>}
-          {course.hasQuiz !== false && <Link to={`/quiz/${module.id}`} className="text-sm text-white/75 hover:text-white">Quiz</Link>}
+          {course.hasQuiz !== false && <Link to={`/quiz/${module.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:px-5 sm:text-base">
+            <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
+          </Link>}
         </nav>
       </div>
 
-      <header className="border-b border-white/10 pb-7 sm:pb-9">
-        <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="blue">COURSE MATERIAL</Pill>
-          <Pill>{module.title}</Pill>
-          <Pill>{allTopics.length} topics</Pill>
-        </div>
-        <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-white sm:text-5xl">{course.title || `${module.title} Course`}</h1>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-white/75">{course.subtitle || `Study ${module.title} through in-page lessons, examples, and practice material.`}</p>
-
-        <div className="mt-6 grid gap-5 rounded-xl border border-white/10 bg-white/[0.025] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5">
+      <header className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[var(--panel-bg)] shadow-xl shadow-black/10">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 -z-10 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: `${module.color}24` }} />
+        <div className="grid gap-7 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)] lg:items-center lg:p-10">
           <div>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-white">Course progress</p>
-              <p className="text-sm text-white/70">{course.parts.length} cumulative parts</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/75">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: module.color }} />
+                Course material
+              </span>
+              <Pill>{module.title}</Pill>
+              <Pill>{course.parts.length} learning parts</Pill>
             </div>
-            <ProgressBar done={completedCount} total={allTopics.length} />
+            <h1 className="mt-5 max-w-3xl font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">{course.title || `${module.title} Course`}</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base sm:leading-7">{course.subtitle || `Study ${module.title} through in-page lessons, examples, and practice material.`}</p>
+            <div className="mt-6 flex flex-wrap gap-2 text-xs text-white/65">
+              <span className="rounded-lg border border-white/10 bg-black/10 px-3 py-2">{allTopics.length} lessons</span>
+              <span className="rounded-lg border border-white/10 bg-black/10 px-3 py-2">{course.parts.length} guided parts</span>
+              {course.hasQuiz !== false && <span className="rounded-lg border border-white/10 bg-black/10 px-3 py-2">Practice quiz included</span>}
+            </div>
           </div>
-          {nextTopic && <Link to={`/course/${module.id}/topic/${nextTopic.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-indigo-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-indigo-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
-            {completedCount ? 'Continue learning' : 'Start learning'} <span aria-hidden="true">→</span>
-          </Link>}
+
+          <section aria-label="Your course progress" className="rounded-2xl border border-white/10 bg-black/[0.12] p-4 sm:p-5">
+            <div className="flex items-center gap-4">
+              <div className="relative grid h-16 w-16 shrink-0 place-items-center">
+                <ProgressRing percent={progressPercent} size={64} stroke={5} color={module.color} />
+                <span className="absolute font-display text-sm font-bold text-white">{progressPercent}%</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.13em] text-white/55">Your progress</p>
+                <p className="mt-1 font-display text-xl font-semibold text-white">{completedCount} <span className="text-sm font-medium text-white/55">of {allTopics.length} lessons</span></p>
+                <p className="mt-1 text-xs text-white/55">{allTopics.length - completedCount} lessons left to explore</p>
+              </div>
+            </div>
+            <div className="mt-5">
+              <ProgressBar done={completedCount} total={allTopics.length} color={module.color} />
+            </div>
+            {nextTopic && <Link to={`/course/${module.id}/topic/${nextTopic.id}`} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70" style={{ backgroundColor: module.color, color: '#0b0e14' }}>
+              {completedCount ? 'Continue learning' : 'Start learning'} <span aria-hidden="true">→</span>
+            </Link>}
+          </section>
         </div>
+
+        <nav aria-label="Jump to a syllabus part" className="border-t border-white/10 bg-black/[0.08] px-4 py-3 sm:px-8 lg:px-10">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <span className="mr-1 hidden shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-white/45 sm:inline">Jump to</span>
+            {course.parts.map((part, index) => {
+              const done = part.topics.filter((topic) => completed.includes(topic.id)).length
+              return <HashAnchorLink key={part.id} targetId={part.id} className="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3 text-xs font-medium text-white/75 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white">
+                <span className="grid h-5 w-5 place-items-center rounded-md text-[10px] font-bold" style={{ backgroundColor: `${module.color}25`, color: module.color }}>{String(index + 1).padStart(2, '0')}</span>
+                {part.label}
+                <span className="text-white/45">{done}/{part.topics.length}</span>
+              </HashAnchorLink>
+            })}
+          </div>
+        </nav>
       </header>
 
-      <nav aria-label="Jump to a syllabus part" className="sticky top-2 z-20 mt-5 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-[var(--panel-bg)]/95 p-2 shadow-lg backdrop-blur-sm">
-        {course.parts.map((part, index) => {
-          const cumulativeTopics = course.parts.slice(0, index + 1).flatMap((item) => item.topics)
-          const done = cumulativeTopics.filter((topic) => completed.includes(topic.id)).length
-          return <HashAnchorLink key={part.id} targetId={part.id} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-white/80 hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white">
-            {part.label} <span className="ml-1 text-white/60">{done}/{part.totalTopics || cumulativeTopics.length}</span>
-          </HashAnchorLink>
-        })}
-      </nav>
-
-      <section className="mt-8" aria-labelledby="syllabus-heading">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <section className="mt-9 sm:mt-12" aria-labelledby="syllabus-heading">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-200">Syllabus</p>
-            <h2 id="syllabus-heading" className="mt-1 font-display text-2xl font-semibold text-white">{course.curriculumTitle || 'Course outline'}</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: module.color }}>Learning path</p>
+            <h2 id="syllabus-heading" className="mt-1 font-display text-2xl font-semibold text-white sm:text-3xl">{course.curriculumTitle || 'Course outline'}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">Follow the parts in order or jump straight to a lesson. Your progress is saved on this device.</p>
           </div>
-          <p className="text-sm text-white/70">Choose a topic to open its lesson page.</p>
+          <span className="rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 text-xs font-medium text-white/60">{completedCount}/{allTopics.length} complete</span>
         </div>
 
-        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.025] p-3 sm:flex-row sm:items-center">
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-white/10 bg-[var(--panel-bg)] p-3 sm:flex-row sm:items-center sm:p-3.5">
           <label className="min-w-0 flex-1">
             <span className="sr-only">Search topic title or category</span>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search topic or category" className="w-full rounded-lg border border-white/15 bg-black/15 px-3.5 py-2.5 text-sm text-white/90 outline-none placeholder:text-white/55 focus:border-indigo-200/55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200" />
+            <span className="relative block">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="pointer-events-none absolute left-3.5 top-1/2 h-[17px] w-[17px] -translate-y-1/2 text-white/40">
+                <circle cx="10.8" cy="10.8" r="6.8" />
+                <path d="m16 16 4.2 4.2" strokeLinecap="round" />
+              </svg>
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Find a lesson or topic…" className="w-full rounded-xl border border-white/10 bg-black/[0.12] py-3 pl-10 pr-3.5 text-sm text-white/90 outline-none placeholder:text-white/45 focus:border-indigo-200/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200" />
+            </span>
           </label>
-          <div role="group" aria-label="Filter lessons" className="flex flex-wrap gap-2">
+          <div role="group" aria-label="Filter lessons" className="flex shrink-0 gap-1 rounded-xl border border-white/10 bg-black/[0.12] p-1">
             {[
               ['all', 'All'],
               ['not-started', 'Not started'],
               ['done', 'Done'],
-            ].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} className={`rounded-lg border px-3.5 py-2.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 ${filter === value ? 'border-indigo-200/40 bg-indigo-200/10 text-indigo-100' : 'border-white/15 text-white/75 hover:bg-white/[0.06] hover:text-white'}`}>{label}</button>)}
+            ].map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} className={`min-h-9 rounded-lg px-3 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 ${filter === value ? 'bg-white/10 text-white shadow-sm' : 'text-white/55 hover:bg-white/[0.06] hover:text-white/85'}`}>{label}</button>)}
           </div>
         </div>
 
@@ -166,21 +190,27 @@ function CourseReader({ module, course }) {
                   const isDone = completed.includes(topic.id)
                   const href = topic.lessonStatus === 'reference' ? `/course/${module.id}/topic/count` : `/course/${module.id}/topic/${topic.id}`
                   const isComingSoon = topic.lessonStatus === 'outline'
-                  return <Link key={topic.id} to={href} className="group rounded-xl border border-white/10 bg-white/[0.025] p-4 hover:border-indigo-200/30 hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
-                    <div className="flex items-start gap-3">
-                      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-mono text-sm ${isDone ? 'bg-emerald-300/10 text-emerald-200' : 'bg-indigo-300/10 text-indigo-100'}`} aria-label={isDone ? 'Completed' : `Topic ${topic.number}`}>
+                  return <Link key={topic.id} to={href} className="group relative flex min-h-[132px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[var(--panel-bg)] p-4 transition duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-lg hover:shadow-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:p-4.5">
+                    <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 opacity-0 transition group-hover:opacity-100" style={{ backgroundColor: module.color }} />
+                    <div className="flex items-start gap-3.5">
+                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl font-mono text-xs font-bold ${isDone ? 'bg-emerald-300/10 text-emerald-200' : 'bg-white/[0.055] text-white/70'}`} aria-label={isDone ? 'Completed' : `Lesson ${topic.number}`}>
                         {isDone ? '✓' : String(topic.number).padStart(2, '0')}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h4 className="font-display text-base font-semibold text-white/95 group-hover:text-white">{topic.title}</h4>
-                          {isComingSoon && <Pill tone="amber">Coming soon</Pill>}
-                          {isDone && <Pill tone="green">Done</Pill>}
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-display text-sm font-semibold leading-5 text-white/95 group-hover:text-white">{topic.title}</h4>
+                          <span aria-hidden="true" className="mt-0.5 shrink-0 text-sm text-white/35 transition group-hover:translate-x-0.5 group-hover:text-white/80">↗</span>
                         </div>
-                        <p className="mt-1.5 text-sm leading-6 text-white/70">{topic.category} · {topic.outcome}</p>
-                        {topic.lessonStatus === 'reference' && <p className="mt-2 text-sm text-indigo-100/80">Opens the combined aggregate functions lesson.</p>}
+                        <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-white/55">{topic.outcome || topic.category}</p>
                       </div>
-                      <span aria-hidden="true" className="mt-1 text-white/50 group-hover:text-indigo-100">→</span>
+                    </div>
+                    <div className="mt-auto flex items-center justify-between gap-3 pl-[54px] pt-3">
+                      <span className="truncate text-[11px] font-medium text-white/40">{topic.category || part.label}</span>
+                      {isComingSoon
+                        ? <span className="shrink-0 rounded-full border border-amber-200/15 bg-amber-200/[0.04] px-2 py-1 text-[10px] font-medium text-amber-100/75">Coming soon</span>
+                        : isDone
+                          ? <span className="shrink-0 rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-2 py-1 text-[10px] font-medium text-emerald-100/80">Completed</span>
+                          : <span className="shrink-0 text-[10px] font-semibold text-white/45 transition group-hover:text-white/80">Open lesson</span>}
                     </div>
                   </Link>
                 })}
@@ -244,22 +274,7 @@ function CourseReader({ module, course }) {
         </div>
       </section>}
 
-      {groupedResources.length > 0 && <section className="mt-12" aria-labelledby="resources-heading">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-200">Optional references</p>
-        <h2 id="resources-heading" className="mt-1 font-display text-2xl font-semibold text-white">Study resources</h2>
-        <p className="mt-2 text-sm leading-6 text-white/70">The course lessons remain available on this page; use these links when you want another reference.</p>
-        <div className="mt-5 grid gap-5 xl:grid-cols-2">
-          {groupedResources.map(({ group, resources }) => <section key={group} aria-label={`${group} resources`}>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-white/80">{group}</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {resources.map((resource) => <a key={resource.title} href={resource.href} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-white/[0.025] p-4 hover:border-white/20 hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
-                <div className="flex items-start justify-between gap-3"><h4 className="font-medium leading-6 text-white/90">{resource.title} ↗</h4><Pill>{resource.kind}</Pill></div>
-                <p className="mt-2 text-sm leading-6 text-white/70">{resource.description}</p>
-              </a>)}
-            </div>
-          </section>)}
-        </div>
-      </section>}
+      <StudyResources resources={course.resources} id={`resources-${module.id}`} />
     </main>
   )
 }
@@ -299,7 +314,9 @@ function SyllabusOnlyReader({ module, course }) {
         <nav aria-label="Course tools" className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {course.examPlanOverviewHref && <Link to={course.examPlanOverviewHref} className="text-sm text-white/75 transition hover:text-white">Practice exams</Link>}
           {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="text-sm font-medium text-amber-200 transition hover:text-amber-100">Linux practice lab</a>}
-          <Link to={`/quiz/${module.id}`} className="text-sm text-white/75 transition hover:text-white">Practice quiz</Link>
+          <Link to={`/quiz/${module.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:px-5 sm:text-base">
+            <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
+          </Link>
         </nav>
       </div>
 
@@ -453,17 +470,7 @@ function SyllabusOnlyReader({ module, course }) {
         <p className="mt-2 text-sm leading-6 text-white/75">{course.contentNote}</p>
       </aside>}
 
-      {course.resources?.length > 0 && <section className="mt-10 border-t border-white/10 pt-8" aria-labelledby={`resources-${module.id}`}>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-200">Keep learning</p>
-        <h2 id={`resources-${module.id}`} className="mt-1 font-display text-2xl font-semibold text-white">Study resources</h2>
-        <p className="mt-2 text-sm leading-6 text-white/65">These resources were listed in the syllabus export, but it did not include their URLs.</p>
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {course.resources.map((resource) => <li key={resource.title} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.025] px-3.5 py-3">
-            <span className="text-sm text-white/85">{resource.title}</span>
-            <Pill>{resource.kind}</Pill>
-          </li>)}
-        </ul>
-      </section>}
+      <StudyResources resources={course.resources} id={`resources-${module.id}`} />
     </main>
   )
 }
@@ -488,7 +495,7 @@ export default function StudyGuide() {
 
   if (!module) return <CoursePending module={{ title: 'Course not found', tagline: 'Choose a course from the course library.' }} />
   if (!course) return <CoursePending module={module} />
-  if (moduleId === 'node-js') return <NodeStudyGuide module={module} />
+  if (moduleId === 'node-js') return <NodeStudyGuide module={module} course={course} />
   if (course.syllabusOnly) return <SyllabusOnlyReader module={module} course={course} />
   return <CourseReader module={module} course={course} />
 }

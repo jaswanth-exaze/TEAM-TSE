@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import ModuleCard from '../components/ModuleCard'
 import { TRACKS } from '../data/modules'
 import { COURSE_MODULES, getCourseSyllabus } from '../data/course-catalog'
 import { getAllProgress } from '../lib/progress'
-import { getLinuxLabHref } from '../lib/paths'
+import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 
 function readCompletedLessons(moduleId, topics) {
@@ -34,7 +33,12 @@ export default function Landing() {
 
       return {
         ...module,
-        labHref: module.id === 'linux-commands' ? getLinuxLabHref() : null,
+        labHref: module.id === 'linux-commands'
+          ? getLinuxLabHref()
+          : module.id === 'mysql'
+            ? getSqlVisualLabHref()
+            : null,
+        labLabel: module.id === 'mysql' ? 'Visual SQL lab' : 'Practice lab',
         courseReady: topics.length > 0,
         syllabusAvailable,
         lessonCount: topics.length,
@@ -54,7 +58,6 @@ export default function Landing() {
   })), [])
 
   const allCourses = coursesByTrack.flatMap((track) => track.modules)
-  const lessonsAvailable = allCourses.filter((course) => course.courseReady).length
   const matchingCount = allCourses.filter((course) => {
     const matchesSearch = `${course.title} ${course.tagline}`.toLowerCase().includes(search.trim().toLowerCase())
     const matchesFilter = filter === 'all' || (filter === 'available' ? course.courseReady : !course.courseReady)
@@ -69,26 +72,17 @@ export default function Landing() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
-      <header className="mb-9 border-b border-white/10 pb-7 sm:mb-10 sm:pb-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-200">TEAM TSE learning</p>
-        <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">Course library</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">
-          Learn from the course pages first. Use a quiz whenever you want a quick self-check.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/70">
-          <span>{allCourses.length} courses</span>
-          <span>{lessonsAvailable} course{lessonsAvailable === 1 ? '' : 's'} with lessons</span>
-          <span>Quizzes available for practice</span>
-        </div>
-        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <span className="text-white/55">Browse syllabi:</span>
-          <Link to="/course/mysql" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">MySQL</Link>
-          <Link to="/course/linux-commands" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Linux Commands</Link>
-          <Link to="/course/git" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Git</Link>
-          <Link to="/course/html-css-javascript" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">HTML + CSS + JavaScript</Link>
-          <Link to="/course/express" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Express.js</Link>
-          <Link to="/course/unit-testing-fundamentals" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">Unit Testing Fundamentals</Link>
-          <Link to="/course/rest-api-fundamentals" className="rounded-md border border-white/10 px-3 py-1.5 text-white/80 transition hover:border-indigo-200/30 hover:bg-indigo-200/[0.06] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">REST API Fundamentals</Link>
+      <header className="mb-9 overflow-hidden rounded-3xl border border-white/10 bg-[var(--panel-bg)] shadow-xl shadow-black/10 sm:mb-10">
+        <div className="relative isolate p-5 sm:p-8 lg:p-10">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-28 -z-10 h-80 w-80 rounded-full bg-indigo-300/10 blur-3xl" />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-indigo-200/20 bg-indigo-200/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-100">TSE trainee learning hub</span>
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/65">Learn · practise · grow</span>
+          </div>
+          <h1 className="mt-5 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">Build skills one lesson at a time.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">
+            Start with guided course lessons, apply each idea in practice, then use an optional quiz to check what stayed with you.
+          </p>
         </div>
       </header>
 

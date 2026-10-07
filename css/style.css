@@ -196,6 +196,17 @@ input, textarea { font: inherit; }
   flex: 0 0 auto;
   object-fit: contain;
 }
+.brand-logo-stage {
+  display: inline-flex;
+  width: 32px;
+  height: 36px;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+.brand-logo-stage .brand-logo {
+  width: 32px;
+  height: 36px;
+}
 .brand-program {
   white-space: nowrap;
   line-height: 1.15;
@@ -729,6 +740,85 @@ input, textarea { font: inherit; }
 .site-footer a:hover { color: var(--gold); }
 .footer-links { display: flex; gap: 1.5rem; }
 
+/* ---------- Trainee learning hub pages ---------- */
+.hub-experience {
+  background: #0b1022;
+  color: #e8edf8;
+}
+.hub-experience .section--ink,
+.hub-experience .section--paper,
+.hub-experience .section--paper-soft {
+  background: #0d1731;
+  color: #e8edf8;
+}
+.hub-experience .section--ink {
+  background:
+    radial-gradient(ellipse at 85% 16%, rgba(94, 104, 219, 0.16), transparent 42%),
+    linear-gradient(145deg, #0d1731, #0a1023 75%);
+}
+.hub-experience .hero {
+  background: #0a1023;
+}
+.hub-experience .exaze-ambient {
+  background:
+    radial-gradient(ellipse at 80% 44%, rgba(83, 98, 208, 0.18), transparent 42%),
+    radial-gradient(ellipse at 70% 85%, rgba(41, 138, 149, 0.1), transparent 38%),
+    linear-gradient(90deg, #0a1023 0%, rgba(10, 16, 35, 0.95) 42%, rgba(10, 16, 35, 0.65) 72%, rgba(10, 16, 35, 0.32) 100%),
+    #0a1023;
+}
+.hub-experience .section--paper .lede,
+.hub-experience .section--paper-soft .lede,
+.hub-experience .focus-item p {
+  color: rgba(232, 237, 248, 0.68);
+}
+.hub-experience .section--paper .eyebrow,
+.hub-experience .section--paper-soft .eyebrow,
+.hub-experience .flow-step .mono,
+.hub-experience .focus-item h4 {
+  color: #b7c1ff;
+}
+.hub-experience .flow {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+.hub-experience .flow-step,
+.hub-experience .cta-banner {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #111a32;
+  color: #e8edf8;
+}
+.hub-experience .focus-item {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.hub-experience .cta-banner .lede {
+  color: rgba(232, 237, 248, 0.68);
+}
+.hub-experience .cta-banner .btn-primary--dark {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: #6366f1;
+  color: #fff;
+}
+.hub-experience .cta-banner .btn-primary--dark:hover {
+  background: #818cf8;
+}
+.hub-experience .pipeline-step {
+  background: #111a32;
+}
+.hub-experience .pipeline {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+.brand {
+  position: relative;
+}
+.brand-logo {
+  transition: transform 220ms var(--ease), filter 220ms var(--ease);
+}
+.brand:hover .brand-logo,
+.brand:focus-visible .brand-logo {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 9px rgba(145, 158, 255, 0.5));
+}
 /* ---------- Utility ---------- */
 .mt-lg { margin-top: clamp(2rem, 5vw, 3.5rem); }
 .center { text-align: center; }

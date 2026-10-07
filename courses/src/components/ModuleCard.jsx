@@ -6,6 +6,7 @@ export default function ModuleCard({
   mod,
   progress,
   labHref,
+  labLabel,
   courseReady = false,
   syllabusAvailable = false,
   lessonCount = 0,
@@ -63,7 +64,7 @@ export default function ModuleCard({
       <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-white/[0.08] pt-3">
         <span className="truncate text-[11px] text-white/45">{quizStatus}</span>
         <div className="flex items-center gap-1">
-          {labHref && <a href={labHref} className="rounded-md px-2 py-1 text-xs font-medium text-amber-200/85 transition hover:bg-amber-200/[0.06] hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-200">Practice lab</a>}
+          {labHref && <a href={labHref} className="rounded-md px-2 py-1 text-xs font-medium text-amber-200/85 transition hover:bg-amber-200/[0.06] hover:text-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-200">{labLabel || 'Practice lab'}</a>}
           {hasQuiz && <Link to={`/quiz/${mod.id}`} className="shrink-0 rounded-md px-2 py-1 text-xs text-white/55 transition hover:bg-white/[0.06] hover:text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/60">
           Practice quiz
           </Link>}

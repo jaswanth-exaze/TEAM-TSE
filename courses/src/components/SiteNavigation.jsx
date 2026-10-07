@@ -3,6 +3,8 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { getModule } from '../data/modules'
 import { getHubHomeHref } from '../lib/paths'
 import { ThemeToggle } from './ThemeContext'
+import { attachLogoMorph } from '../../../js/logo-morph.js'
+import ExazeLogoSvg from './ExazeLogoSvg'
 
 const primaryLinkClass = ({ isActive }) => `inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 ${
   isActive
@@ -18,6 +20,8 @@ export default function SiteNavigation() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef(null)
+  const brandRef = useRef(null)
+  const hubHomeHref = getHubHomeHref()
   const activeModuleId = location.pathname.match(/^\/(?:course|study|quiz|results)\/([^/]+)/)?.[1]
   const activeModule = activeModuleId ? getModule(activeModuleId) : null
   const activeCoursePath = activeModule && (
@@ -28,6 +32,11 @@ export default function SiteNavigation() {
   useEffect(() => {
     setMenuOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (!brandRef.current) return undefined
+    return attachLogoMorph(brandRef.current, { interactive: true, idPrefix: 'nav-' })
+  }, [])
 
   useEffect(() => {
     if (!menuOpen) return undefined
@@ -63,8 +72,8 @@ export default function SiteNavigation() {
       </a>
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[var(--page-bg)]/95 text-[var(--page-fg)] shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
-          <a href={getHubHomeHref()} aria-label="TSE Learning Hub home" className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
-            <span className="font-display text-sm font-bold tracking-[0.08em] text-white">EXAZE</span>
+          <a ref={brandRef} href={hubHomeHref} aria-label="TSE Learning Hub home" className="group flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg pr-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
+            <ExazeLogoSvg />
             <span aria-hidden="true" className="h-6 w-px bg-white/20" />
             <span className="truncate text-sm font-semibold text-white/85">TSE Learning Hub</span>
           </a>
