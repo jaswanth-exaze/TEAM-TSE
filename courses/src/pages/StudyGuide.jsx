@@ -313,28 +313,54 @@ function SyllabusOnlyReader({ module, course }) {
         <Link to="/" className="text-sm font-medium text-white/75 transition hover:text-white">← Course library</Link>
         <nav aria-label="Course tools" className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {course.examPlanOverviewHref && <Link to={course.examPlanOverviewHref} className="text-sm text-white/75 transition hover:text-white">Practice exams</Link>}
-          {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="text-sm font-medium text-amber-200 transition hover:text-amber-100">Linux practice lab</a>}
-          <Link to={`/quiz/${module.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:px-5 sm:text-base">
-            <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
-          </Link>
         </nav>
       </div>
 
-      <header className="border-b border-white/10 pb-7 sm:pb-9">
-        <div className="flex flex-wrap items-center gap-2">
-          <Pill tone="blue">COURSE SYLLABUS</Pill>
-          <Pill>{allTopics.length} {course.entryLabel || 'topics'}</Pill>
-          <Pill>{course.durationLabel || `${course.parts.length} weeks`}</Pill>
-        </div>
-        <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-white sm:text-5xl">{course.title}</h1>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-white/75">{course.subtitle}</p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-200/25 bg-amber-200/[0.08] px-4 py-2.5 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-200/40 hover:bg-amber-200/[0.13] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200">
-            Open Linux Practice Lab <span aria-hidden="true">↗</span>
-          </a>}
-          <HashAnchorLink targetId={course.parts[0]?.id} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--action-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--action-primary-fg)] transition-colors hover:bg-[var(--action-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
-          Browse {course.parts[0]?.label || 'syllabus'} <span aria-hidden="true">↓</span>
-          </HashAnchorLink>
+      <header className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-[var(--panel-bg)] shadow-xl shadow-black/10">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 -z-10 h-80 w-80 rounded-full blur-3xl" style={{ backgroundColor: `${module.color}24` }} />
+        <div className="grid gap-7 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(250px,0.58fr)] lg:items-center lg:p-10">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Pill tone="blue">COURSE SYLLABUS</Pill>
+              <Pill>{course.parts.length} learning sections</Pill>
+              <Pill>{allTopics.length} {course.entryLabel || 'topics'}</Pill>
+              <Pill>{course.durationLabel || `${course.parts.length} weeks`}</Pill>
+            </div>
+            <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-white sm:text-5xl">{course.title}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-white/75">{course.subtitle}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to={`/quiz/${module.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-5 py-3 text-base font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
+                <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
+              </Link>
+              {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-200/25 bg-amber-200/[0.08] px-4 py-3 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-200/40 hover:bg-amber-200/[0.13] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200">
+                Open Linux practice lab <span aria-hidden="true">↗</span>
+              </a>}
+              <HashAnchorLink targetId={course.parts[0]?.id} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/85 transition hover:border-white/25 hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
+                Browse {course.parts[0]?.label || 'syllabus'} <span aria-hidden="true">↓</span>
+              </HashAnchorLink>
+            </div>
+          </div>
+
+          <aside className="rounded-2xl border border-white/10 bg-black/[0.16] p-5 sm:p-6" aria-label={`${course.title} at a glance`}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">At a glance</p>
+            <dl className="mt-4 divide-y divide-white/10">
+              <div className="flex items-center justify-between gap-4 py-3 first:pt-0">
+                <dt className="text-sm text-white/60">Study duration</dt>
+                <dd className="text-right text-sm font-semibold text-white">{course.durationLabel || `${course.parts.length} weeks`}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-3">
+                <dt className="text-sm text-white/60">Learning sections</dt>
+                <dd className="text-right text-sm font-semibold text-white">{course.parts.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-3 last:pb-0">
+                <dt className="text-sm text-white/60">Syllabus {course.entryLabel || 'topics'}</dt>
+                <dd className="text-right text-sm font-semibold text-white">{allTopics.length}</dd>
+              </div>
+            </dl>
+            <p className="mt-4 rounded-xl border border-indigo-200/15 bg-indigo-200/[0.05] px-3.5 py-3 text-sm leading-5 text-white/75">
+              Follow each section in order, practise the key ideas, then use the quiz to check your understanding.
+            </p>
+          </aside>
         </div>
       </header>
 

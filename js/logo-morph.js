@@ -67,13 +67,32 @@ export function attachLogoMorph(stage, { interactive = false, idPrefix = "" } = 
   const ease = (value) => value * value * value * (value * (value * 6 - 15) + 10);
   const clamp = (value) => Math.min(1, Math.max(0, value));
   const get = (id) => stage.querySelector(`#${idPrefix}${id}`);
+  const requiredIds = ["b", "g", "root", "s"];
+  const missingRequiredIds = requiredIds.filter((id) => !get(id));
+  if (missingRequiredIds.length > 0) {
+    console.error(
+      `[logo-morph] Skipping stage: missing required SVG elements ${missingRequiredIds.map((id) => `#${idPrefix}${id}`).join(", ")}.`,
+      stage,
+    );
+    return () => {};
+  }
+  const optionalIds = ["b2", "b3", "g2", "g3", "m", "m2", "m3"];
+  const missingOptionalIds = optionalIds.filter((id) => !get(id));
+  if (missingOptionalIds.length > 0) {
+    console.warn(
+      `[logo-morph] Some decorative SVG layers are missing; available layers will still animate: ${missingOptionalIds.map((id) => `#${idPrefix}${id}`).join(", ")}.`,
+      stage,
+    );
+  }
   const wordmark = stage.querySelector("[data-wordmark]");
   const meanings = stage.querySelector("[data-meanings]");
   const meaningItems = [...stage.querySelectorAll("[data-morph-letter]")];
   function updatePaths(ids, points, width) {
     ids.forEach((id) => {
-      get(id).setAttribute("d", pathData(points));
-      get(id).setAttribute("stroke-width", Math.max(width, 0));
+      const path = get(id);
+      if (!path) return;
+      path.setAttribute("d", pathData(points));
+      path.setAttribute("stroke-width", Math.max(width, 0));
     });
   }
 
