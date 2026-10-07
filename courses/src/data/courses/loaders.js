@@ -3,6 +3,8 @@ import { loadNodeTopic } from './node-js'
 import { loadExpressTopic } from './express'
 import { loadRestApiTopic } from './rest-api'
 import { loadUnitTestingTopic } from './unit-testing-fundamentals'
+import { loadPasswordSaltHashTopic } from './password-salt-hash-fundamentals'
+import { loadJwtAuthenticationTopic } from './jwt-authentication'
 
 const moduleLoaders = {
   mysql: {
@@ -20,6 +22,12 @@ const moduleLoaders = {
   },
   'unit-testing-fundamentals': {
     topic: loadUnitTestingTopic,
+  },
+  'password-salt-hash-fundamenta': {
+    topic: loadPasswordSaltHashTopic,
+  },
+  'jwt-authentication': {
+    topic: loadJwtAuthenticationTopic,
   },
 }
 

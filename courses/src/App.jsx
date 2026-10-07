@@ -10,6 +10,8 @@ import NodeLessonPage from './pages/NodeLessonPage'
 import ExpressLessonPage from './pages/ExpressLessonPage'
 import RestApiLessonPage from './pages/RestApiLessonPage'
 import UnitTestingLessonPage from './pages/UnitTestingLessonPage'
+import PasswordSaltHashLessonPage from './pages/PasswordSaltHashLessonPage'
+import JwtAuthenticationLessonPage from './pages/JwtAuthenticationLessonPage'
 import MiniChallengePage from './pages/MiniChallengePage'
 import PracticeExams from './pages/PracticeExams'
 import NotFound from './pages/NotFound'
@@ -73,6 +75,8 @@ export default function App() {
               <Route path="/course/node-js/topic/:topicId" element={<NodeLessonPage />} />
               <Route path="/course/express/topic/:topicId" element={<ExpressLessonPage />} />
               <Route path="/course/unit-testing-fundamentals/topic/:topicId" element={<UnitTestingLessonPage />} />
+              <Route path="/course/password-salt-hash-fundamenta/topic/:topicId" element={<PasswordSaltHashLessonPage />} />
+              <Route path="/course/jwt-authentication/topic/:topicId" element={<JwtAuthenticationLessonPage />} />
               <Route path="/course/rest-api-fundamentals/topic/:topicId" element={<RestApiLessonPage />} />
               <Route path="/course/:moduleId/topic/:topicId" element={<LessonPage />} />
               <Route path="/course/:moduleId/activity/:activityId" element={<MiniChallengePage />} />
