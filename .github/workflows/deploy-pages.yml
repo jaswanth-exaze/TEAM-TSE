@@ -27,69 +27,52 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: courses/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
 
-      - name: Copy the static site
-        run: |
-          mkdir -p _site
-          rsync -a \
-            --exclude='/.git/' \
-            --exclude='/.github/' \
-            --exclude='/courses/' \
-            --exclude='/_site/' \
-            --exclude='/_site-check/' \
-            ./ _site/
-          touch _site/.nojekyll
-
-      - name: Install course app dependencies
-        working-directory: courses
+      - name: Install project dependencies
         run: npm ci
 
       - name: Check dependency security advisories
-        working-directory: courses
         run: npm audit --audit-level=high
 
-      - name: Build course app into the published site
-        working-directory: courses
-        run: npm run build -- --outDir ../_site/courses --emptyOutDir
+      - name: Build the complete site
+        run: npm run build
 
-      - name: Verify compiled course output
-        working-directory: courses
+      - name: Verify built site
         run: |
-          test -f ../_site/index.html
-          test -f ../_site/about.html
-          test -f ../_site/team.html
-          test -f ../_site/css/style.css
-          test -f ../_site/js/main.js
-          test -f ../_site/js/logo-morph.js
-          test -f "../_site/exaze-logo (1).png"
-          test -f ../_site/team/members/index.json
-          test -f ../_site/.nojekyll
-          test ! -e ../_site/_site-check
-          test -f ../_site/courses/index.html
-          test -d ../_site/courses/assets
-          test -f ../_site/courses/sql-visual-lab/index.html
-          test -f ../_site/courses/sql-visual-lab/app.js
-          test -f ../_site/courses/sql-visual-lab/engine.js
-          test -f ../_site/courses/sql-visual-lab/worker.js
-          test -f ../_site/courses/sql-visual-lab/vendor/sql-wasm.js
-          test -f ../_site/courses/sql-visual-lab/vendor/sql-wasm.wasm
-          test -f ../_site/courses/sql-visual-lab/vendor/mysql.umd.js
-          test -f ../_site/courses/sql-visual-lab/schema.sql
-          test -f ../_site/courses/sql-visual-lab/challenges.json
-          test -f ../_site/courses/linux-lab/index.html
-          test -f ../_site/courses/linux-lab/lab.html
-          test -f ../_site/courses/linux-lab/css/styles.css
-          test -f ../_site/courses/linux-lab/js/app.js
-          test -f ../_site/courses/linux-lab/js/terminal.js
-          test -f ../_site/courses/linux-lab/js/validator.js
-          test -f ../_site/courses/linux-lab/data/questions.json
-          grep -Eq '<script[^>]+src="\./assets/index-[^"]+\.js"' ../_site/courses/index.html
-          grep -Eq '<link[^>]+href="\./assets/index-[^"]+\.css"' ../_site/courses/index.html
-          if grep -q 'src/main.jsx' ../_site/courses/index.html; then
+          test -f dist/index.html
+          test -f dist/about.html
+          test -f dist/team.html
+          test -f dist/css/style.css
+          test -f dist/js/main.js
+          test -f dist/js/logo-morph.js
+          test -f "dist/exaze-logo (1).png"
+          test -f dist/team/members/index.json
+          test -f dist/.nojekyll
+          test -f dist/courses/index.html
+          test -d dist/courses/assets
+          test -f dist/courses/sql-visual-lab/index.html
+          test -f dist/courses/sql-visual-lab/app.js
+          test -f dist/courses/sql-visual-lab/engine.js
+          test -f dist/courses/sql-visual-lab/worker.js
+          test -f dist/courses/sql-visual-lab/vendor/sql-wasm.js
+          test -f dist/courses/sql-visual-lab/vendor/sql-wasm.wasm
+          test -f dist/courses/sql-visual-lab/vendor/mysql.umd.js
+          test -f dist/courses/sql-visual-lab/schema.sql
+          test -f dist/courses/sql-visual-lab/challenges.json
+          test -f dist/courses/linux-lab/index.html
+          test -f dist/courses/linux-lab/lab.html
+          test -f dist/courses/linux-lab/css/styles.css
+          test -f dist/courses/linux-lab/js/app.js
+          test -f dist/courses/linux-lab/js/terminal.js
+          test -f dist/courses/linux-lab/js/validator.js
+          test -f dist/courses/linux-lab/data/questions.json
+          grep -Eq '<script[^>]+src="../courses/assets/[^"]+\.js"' dist/courses/index.html
+          grep -Eq '<link[^>]+href="../courses/assets/[^"]+\.css"' dist/courses/index.html
+          if grep -q 'src/main.jsx' dist/courses/index.html; then
             echo "Course output still references the uncompiled JSX entry point."
             exit 1
           fi
@@ -97,7 +80,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: _site
+          path: dist
 
   deploy:
     environment:
@@ -112,3 +95,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+

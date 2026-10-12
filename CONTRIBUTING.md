@@ -1,116 +1,38 @@
 # Contributing to TSE Learning Hub
 
-Every change — including adding yourself to the Team page — goes through
-the same workflow. Working through it is part of the point.
+Every change, including adding yourself to the Team page, goes through the same workflow. Working through it is part of the point.
 
 ## Workflow
 
-```
-Fork / Clone
-     ↓
-Create a branch
-     ↓
-Make your change
-     ↓
-Commit
-     ↓
-Push
-     ↓
-Open a pull request
-     ↓
-Get reviewed
-     ↓
-Merge
-     ↓
-Deploy (automatic)
-```
+Fork or clone the repository, create a branch, make your change, commit, push, and open a pull request for review. Merging to `main` deploys the site automatically.
 
-## 1. Fork and clone
+## Run the project
+
+Install dependencies and start the one local server from the repository root:
 
 ```bash
-git clone https://github.com/<your-username>/tse-learning-hub.git
-cd tse-learning-hub
+npm ci
+npm run dev
 ```
 
-## 2. Create a branch
+## Add a team profile
 
-Don't work directly on `main`. Name your branch after what it does:
+Member pages are independently authored HTML/CSS pages under `apps/web/team/members/`.
+
+1. Copy the profile template folder to `apps/web/team/members/<your-name>/`.
+2. Add the `tse:name`, `tse:role`, `tse:tagline`, and `tse:github` meta tags in the page head.
+3. Add the folder name to `apps/web/team/members/index.json`.
+4. Check the Team page with `npm run dev`.
+
+Keep the four meta tags accurate. Avoid changing another member's page or the shared directory renderer unless the change needs it.
+
+## Commit and pull request
 
 ```bash
-feature/add-<your-name>-profile
-feature/update-<your-name>-progress
-feature/add-<your-name>-project
+git add apps/web/team/members/<your-name> apps/web/team/members/index.json
+git commit -m "Add <your-name> profile page"
+git push origin feature/add-<your-name>-profile
 ```
 
-```bash
-git checkout -b feature/add-your-name-profile
-```
+Include a short description and how you checked the change in the pull request.
 
-## 3. Adding your own profile page
-
-Your profile is a real page you build — not a data file. This is meant
-to be actual HTML/CSS practice, so take the freedom.
-
-1. Copy the template folder, using your name (lowercase, hyphenated) as
-   the folder name:
-   ```bash
-   cp -r team/members/_template team/members/your-name
-   ```
-2. Open `team/members/your-name/index.html` and fill in the four
-   `<meta name="tse:*">` tags in the `<head>` — that's what the Team
-   directory reads to build your card:
-   ```html
-   <meta name="tse:name" content="Your Full Name" />
-   <meta name="tse:role" content="Trainee Software Engineer" />
-   <meta name="tse:tagline" content="One line about what you're building." />
-   <meta name="tse:github" content="https://github.com/your-username" />
-   ```
-3. Everything else on the page — and all of `style.css` — is yours to
-   change. Rewrite the sections, change the layout, pick your own
-   colors and fonts. The only requirement is that the four meta tags
-   stay accurate.
-4. Add your folder name to `team/members/index.json`:
-   ```json
-   ["your-name"]
-   ```
-5. Do not edit anyone else's folder, or `team.html`, or `js/team.js` —
-   the directory picks up every listed member automatically.
-
-## 4. Commit
-
-Write commit messages that describe the change, not the file:
-
-```bash
-git add team/members/your-name team/members/index.json
-git commit -m "Add your-name profile page"
-```
-
-## 5. Push
-
-```bash
-git push origin feature/add-your-name-profile
-```
-
-## 6. Open a pull request
-
-Include:
-
-- **Title** — e.g. "Add Jaswanth Kumar profile"
-- **Description** — what you added
-- **Testing** — how you checked it (e.g. "Verified locally with `python3 -m http.server`")
-- **Checklist**:
-  - [ ] Profile information added
-  - [ ] Responsive design checked
-  - [ ] No existing profile modified
-  - [ ] Changes tested locally
-
-## 7. Review
-
-A teammate reviews your PR and may request changes. Push additional
-commits to the same branch — they'll show up on the PR automatically.
-
-## 8. Merge
-
-Once approved, the PR is merged into `main`. No manual deployment step
-is needed — the merge is what makes your profile show up on the live
-site.

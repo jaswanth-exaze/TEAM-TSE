@@ -1,1 +1,0 @@
-var e={id:`date-functions`,status:`outline`,sourceTitle:null,sourceDocuments:[],relatedTopicId:null,sections:{whatIsIt:``,syntaxBreakdown:``,basicExample:``,goingDeeper:``,commonMistakes:``,edgeCaseSpotlight:``,tryThis:``,answerKey:``,quickRecap:``,upNext:``}};export{e as default};
