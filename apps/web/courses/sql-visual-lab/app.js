@@ -1062,6 +1062,7 @@ function clauseKeyForStep(step) {
   if (id === 'aggregate' || id === 'select' || id === 'distinct') return 'SELECT'
   if (kind === 'order') return 'ORDER BY'
   if (kind === 'limit') return 'LIMIT'
+  if (kind === 'window') return 'SELECT'
   return ''
 }
 
@@ -1071,9 +1072,10 @@ function stageTag(step) {
   if (id === 'from') return String(step.title || '').replace(/^Start with\s+/i, 'FROM ')
   if (id === 'aggregate') return 'AGGREGATE'
   if (id === 'distinct') return 'DISTINCT'
+  if (step.kind === 'subquery') return 'ADD COLUMN'
   if (isSubqueryStep(step)) return 'SUBQUERY'
-  if (step.kind === 'window') return 'WINDOW'
-  if (step.kind === 'hierarchy') return 'HIERARCHY'
+  if (step.kind === 'window') return step.windowPhase === 'input' ? 'WINDOW INPUT' : step.windowPhase === 'partition' ? 'PARTITION BY' : 'RANK'
+  if (step.kind === 'hierarchy') return step.hierarchyPhase === 'anchor' ? 'ANCHOR' : step.hierarchyPhase === 'recursive' ? `PASS ${step.activeLevel?.depth}` : step.hierarchyPhase === 'stop' ? 'STOP' : step.hierarchyPhase === 'final' ? 'FINAL SELECT' : 'HIERARCHY'
   return step.title
 }
 
@@ -1329,6 +1331,13 @@ function buildFlowModel(step) {
     return {
       inValue: '▤', inLabel: 'table', outValue: String(output), outLabel: `${plural('row', output)} loaded`,
       bar: { kept: 100, removed: 0 }, takeaway: `${countLabel(output, 'row')} read from the table. Nothing has been filtered yet.`,
+    }
+  }
+  if (step.kind === 'subquery') {
+    const rows = input ?? output
+    return {
+      inValue: String(rows), inLabel: `${plural('row', rows)} in`, outValue: String(output), outLabel: `${plural('row', output)} out`,
+      bar: { kept: 100, removed: 0 }, takeaway: 'The subquery result was added as a column on each outer row. WHERE has not filtered these rows yet.',
     }
   }
   if (isSubqueryStep(step)) {
@@ -1644,32 +1653,264 @@ function showStep(index, { fromAutoplay = false } = {}) {
 }
 
 function renderWindowVisual(parent, step) {
-  parent.append(createNode('h4', 'visual-subheading', 'Window functions and their specification'))
-  const cards = createNode('div', 'window-function-list')
-  ;(step.functions || []).forEach((item) => {
+  if (step.windowPhase === 'input') {
+    parent.append(createNode('h4', 'visual-subheading', 'Step 1 · rows entering OVER(...)'))
+    parent.append(createNode('p', 'visual-caption', 'These are the rows after the query’s source and filters. The window function will add a value to every row that reaches it.'))
+    parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
+    return
+  }
+
+  if (step.windowPhase === 'partition') {
+    const partitionKeys = step.functions?.[0]?.partition || []
+    const partitionName = partitionKeys.length ? partitionKeys.join(', ') : 'the full row set'
+    parent.append(createNode('h4', 'visual-subheading', `Step 2 · split rows by ${partitionName}`))
+    parent.append(createNode('p', 'visual-caption', partitionKeys.length
+      ? `Rows with the same ${partitionName} are placed in the same partition. Each group is an independent lane; the window function starts over in every group.`
+      : 'There is no PARTITION BY, so every input row belongs to one shared partition.'))
+    const groups = createNode('div', 'window-partition-grid')
+    ;(step.partitions || []).forEach((partition, index) => {
+      const card = createNode('article', 'window-partition-card')
+      card.append(createNode('p', 'window-logic-label', `PARTITION ${String(index + 1).padStart(2, '0')}`))
+      card.append(createNode('h4', '', partition.label))
+      card.append(createNode('p', 'window-partition-note', `${partition.inputRows?.length || 0} ${partition.inputRows?.length === 1 ? 'row' : 'rows'} will be ranked together. RANK starts again at 1 in this group.`))
+      card.append(renderTable({
+        columns: step.input?.columns || step.result.columns,
+        rows: partition.inputRows || [],
+        totalRows: partition.inputRows?.length || 0,
+      }, { compact: true, rowLimit: 40, numbered: true }))
+      groups.append(card)
+    })
+    if (!(step.partitions || []).length) groups.append(renderTable(step.input || step.result, { rowLimit: 40, numbered: true }))
+    parent.append(groups)
+    return
+  }
+
+  const functions = step.functions || []
+  const rankFunction = functions.find((item) => ['RANK', 'DENSE_RANK', 'ROW_NUMBER'].includes(String(item.name).toUpperCase()))
+  const partitionLabel = rankFunction?.partition?.length ? rankFunction.partition.join(', ') : 'all rows'
+  const orderLabel = rankFunction?.order || 'no window ORDER BY'
+  const functionName = String(rankFunction?.name || 'window function').toUpperCase()
+
+  parent.append(createNode('h4', 'visual-subheading', 'How the OVER clause creates a ranking'))
+  parent.append(createNode('p', 'visual-caption', 'The OVER clause defines the rows a window function can see and the order it uses. It adds a value to each row without collapsing the rows into one result.'))
+
+  const flow = createNode('div', 'window-logic-flow')
+  const partitionCard = createNode('article', 'window-logic-card window-logic-card--partition')
+  partitionCard.append(createNode('p', 'window-logic-label', '01 · PARTITION BY'))
+  partitionCard.append(createNode('h4', '', partitionLabel))
+  partitionCard.append(createNode('p', 'window-logic-copy', rankFunction?.partition?.length
+    ? 'Split employees into separate groups. Each group is ranked independently; a high salary in one department does not compete with another department.'
+    : 'There is no PARTITION BY, so every input row belongs to one shared group.'))
+
+  const orderCard = createNode('article', 'window-logic-card window-logic-card--order')
+  orderCard.append(createNode('p', 'window-logic-label', '02 · ORDER BY inside OVER'))
+  orderCard.append(createNode('h4', '', orderLabel))
+  orderCard.append(createNode('p', 'window-logic-copy', rankFunction?.order
+    ? `Sort the rows inside each partition by ${orderLabel.replace(/\bDESC\b/gi, 'largest first').replace(/\bASC\b/gi, 'smallest first')}. This order determines their rank.`
+    : 'Without an ORDER BY in OVER, the function has no ranking sequence to follow.'))
+
+  const rankCard = createNode('article', 'window-logic-card window-logic-card--rank')
+  rankCard.append(createNode('p', 'window-logic-label', '03 · WINDOW FUNCTION'))
+  rankCard.append(createNode('h4', '', functionName))
+  const rankExplanation = functionName === 'RANK'
+    ? 'RANK gives the same number to tied order values. The next rank skips ahead by the number of tied rows.'
+    : functionName === 'DENSE_RANK'
+      ? 'DENSE_RANK gives the same number to ties, then continues with the next consecutive number.'
+      : functionName === 'ROW_NUMBER'
+        ? 'ROW_NUMBER gives every row a different sequence number, even when order values tie.'
+        : 'The function calculates a value for each row in the window.'
+  rankCard.append(createNode('p', 'window-logic-copy', rankExplanation))
+  flow.append(partitionCard, createNode('span', 'window-logic-arrow', '→'), orderCard, createNode('span', 'window-logic-arrow', '→'), rankCard)
+  parent.append(flow)
+
+  const orderingFunction = rankFunction || functions.find((item) => item.orderKeys?.length)
+  const orderKeys = renderSortKeys(orderingFunction?.orderKeys, 'ORDER BY inside OVER(...) · sort priority')
+  if (orderKeys) parent.append(orderKeys)
+
+  parent.append(createNode('h4', 'visual-subheading', 'Window definition in this query'))
+  const definitions = createNode('div', 'window-function-list')
+  functions.forEach((item) => {
     const card = createNode('article', 'window-function-card')
     card.append(createNode('strong', '', `${item.name}${item.alias ? ` → ${item.alias}` : ''}`))
-    card.append(createNode('span', '', item.specificationName ? `Named window: ${item.specificationName}` : 'Inline window specification'))
-    if (item.partition?.length) card.append(createNode('span', '', `PARTITION BY ${item.partition.join(', ')}`))
-    if (item.order) card.append(createNode('span', '', `ORDER BY ${item.order}`))
+    card.append(createNode('span', '', item.specificationName ? `Named window: ${item.specificationName}` : 'Window specification written inside OVER(...)'))
+    card.append(createNode('span', '', `PARTITION BY ${item.partition?.length ? item.partition.join(', ') : '(all rows together)'}`))
+    card.append(createNode('span', '', `ORDER BY ${item.order || '(no window ordering)'}`))
     if (item.frame) card.append(createNode('span', '', `Frame: ${item.frame}`))
-    cards.append(card)
+    definitions.append(card)
   })
-  parent.append(cards)
-  parent.append(createNode('h4', 'visual-subheading', 'Rows inside each partition'))
-  parent.append(createNode('p', 'visual-caption', 'The same partition is evaluated as a group, while every original row remains in the output. The final columns show the window values the engine calculated.'))
+  parent.append(definitions)
+
+  parent.append(createNode('h4', 'visual-subheading', rankFunction ? 'Rows sorted and ranked inside each partition' : 'Window values inside each partition'))
+  parent.append(createNode('p', 'visual-caption', rankFunction
+    ? 'The table keeps the final values calculated by SQL. When the rank column is available, it is displayed in rank order so you can follow the window ORDER BY.'
+    : 'The table keeps the final values calculated by SQL and groups them by the PARTITION BY values.'))
+  const rankIndex = rankFunction ? findWindowResultColumn(step, rankFunction) : -1
+  const orderColumns = rankFunction ? findWindowOrderColumns(step, rankFunction) : []
   ;(step.partitions || []).forEach((partition, index) => {
     const details = createNode('details', 'window-partition')
     details.open = index === 0
-    details.append(createNode('summary', '', `${partition.label} · ${partition.rows.length} ${partition.rows.length === 1 ? 'row' : 'rows'}`))
-    const result = { columns: step.result.columns, rows: partition.rows, totalRows: partition.rows.length }
-    details.append(renderTable(result, { rowLimit: 40, numbered: true, selectedColumns: (step.functions || []).map((item) => item.alias).filter(Boolean) }))
+    const rows = [...partition.rows]
+    if (rankIndex >= 0) rows.sort((left, right) => Number(left[rankIndex]) - Number(right[rankIndex]))
+    const rowNoun = rows.length === 1 ? 'employee' : 'employees'
+    details.append(createNode('summary', '', `${partition.label} · ${rows.length} ${rowNoun}`))
+    const partitionNote = rankIndex >= 0
+      ? `Sorted by ${rankFunction.order}. This ${functionName} value was calculated by SQL.`
+      : rankFunction?.order
+        ? `The window ORDER BY is ${rankFunction.order}. The displayed order follows the final query result.`
+        : `All rows share one partition. ${functionName} was calculated for every row.`
+    details.append(createNode('p', 'window-partition-note', partitionNote))
+    const selectedColumns = [...orderColumns]
+    if (rankIndex >= 0) selectedColumns.push(step.result.columns[rankIndex])
+    const result = { columns: step.result.columns, rows, totalRows: partition.rows.length }
+    details.append(renderTable(result, {
+      rowLimit: 40,
+      numbered: true,
+      selectedColumns: selectedColumns.length ? [...new Set(selectedColumns)] : undefined,
+    }))
     parent.append(details)
   })
   if (!(step.partitions || []).length) parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
+
+  if (functionName === 'RANK') {
+    const tieExample = createNode('aside', 'rank-tie-example')
+    tieExample.append(createNode('p', 'window-logic-label', 'RANK tie example'))
+    tieExample.append(createNode('p', 'window-partition-note', 'The current employee data has no tied salaries within a department. This example shows what RANK does when two order values are equal.'))
+    tieExample.append(renderTable({
+      columns: ['Sorted position', 'Salary', 'RANK()', 'DENSE_RANK()'],
+      rows: [[1, 120000, 1, 1], [2, 120000, 1, 1], [3, 98000, 3, 2]],
+      totalRows: 3,
+    }, { compact: true, numbered: false }))
+    tieExample.append(createNode('p', 'window-partition-note', 'The two $120,000 rows tie at rank 1. RANK skips 2, so the next row gets 3; DENSE_RANK would give it 2.'))
+    parent.append(tieExample)
+  }
 }
 
+function findWindowResultColumn(step, item) {
+  const columns = step.result.columns || []
+  const alias = normalizeColumn(item.alias || '').split('.').at(-1)
+  if (alias) {
+    const match = columns.findIndex((column) => normalizeColumn(column).split('.').at(-1) === alias)
+    if (match >= 0) return match
+  }
+  const functionName = String(item.name || '').toLowerCase()
+  return columns.findIndex((column) => normalizeColumn(column).includes(functionName))
+}
+
+function findWindowOrderColumns(step, item) {
+  const output = []
+  String(item.order || '').split(',').forEach((term) => {
+    const expression = term.trim().replace(/\s+(?:ASC|DESC)\s*$/i, '').replace(/[`"\[\]]/g, '')
+    if (!/^[\w$]+(?:\.[\w$]+)?$/.test(expression)) return
+    const name = expression.split('.').at(-1).toLowerCase()
+    const column = step.result.columns.find((candidate) => normalizeColumn(candidate).split('.').at(-1) === name)
+    if (column) output.push(column)
+  })
+  return output
+}
 function renderHierarchyVisual(parent, step) {
+  if (step.hierarchyPhase) {
+    const heading = step.hierarchyPhase === 'anchor'
+      ? 'Step 1 · run the anchor once'
+      : step.hierarchyPhase === 'recursive'
+        ? `Step ${step.activeLevel.depth + 1} · expand the previous level`
+        : step.hierarchyPhase === 'stop'
+          ? 'Recursion is complete'
+          : 'Final step · read the completed CTE'
+    parent.append(createNode('h4', 'visual-subheading', heading))
+
+    if (step.hierarchyPhase === 'anchor') {
+      parent.append(createNode('p', 'visual-caption', `The anchor query runs once. It selects employees with no manager and seeds ${step.cteName} at depth 0.`))
+      parent.append(renderCteSql('ANCHOR SQL', step.anchorSql))
+      parent.append(createNode('p', 'cte-pass-label', 'ROOT ROWS ADDED · DEPTH 0'))
+      parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
+      return
+    }
+
+    if (step.hierarchyPhase === 'recursive') {
+      parent.append(createNode('p', 'visual-caption', `The recursive member reads the depth ${step.previousLevel.depth} rows shown on the left, finds employees whose manager_id matches one of those ids, then adds only the new matches at depth ${step.activeLevel.depth}.`))
+      parent.append(renderCteSql(`RECURSIVE MEMBER · PASS ${step.activeLevel.depth}`, step.recursiveSql))
+      const pass = createNode('div', 'cte-pass-panels')
+      const prior = createNode('section', 'cte-pass-panel cte-pass-panel--input')
+      prior.append(createNode('p', 'cte-pass-label', `INPUT · DEPTH ${step.previousLevel.depth}`))
+      prior.append(renderTable(step.input, { compact: true, rowLimit: 24, numbered: true }))
+      const next = createNode('section', 'cte-pass-panel cte-pass-panel--output')
+      next.append(createNode('p', 'cte-pass-label', `NEW ROWS · DEPTH ${step.activeLevel.depth}`))
+      next.append(renderTable(step.result, { compact: true, rowLimit: 24, numbered: true }))
+      pass.append(prior, createNode('span', 'cte-pass-arrow', '→'), next)
+      parent.append(pass)
+      return
+    }
+
+    if (step.hierarchyPhase === 'stop') {
+      parent.append(createNode('p', 'visual-caption', `The previous pass had ${step.previousLevel.rows.length} row${step.previousLevel.rows.length === 1 ? '' : 's'}, but no employees report to them. The recursive member returns an empty batch, so SQL stops repeating it.`))
+      const stop = createNode('section', 'cte-stop-callout')
+      stop.append(createNode('strong', '', '0 new rows'))
+      stop.append(createNode('span', '', 'No next level exists. The CTE is now complete.'))
+      parent.append(stop)
+      return
+    }
+
+    parent.append(createNode('p', 'visual-caption', `Now the outer SELECT reads all accumulated rows from ${step.cteName}. The final ORDER BY arranges the complete hierarchy by depth and id.`))
+    parent.append(renderCteSql('OUTER SELECT', step.outerSql))
+    const orderKeys = renderSortKeys(step.outerOrderBy, 'Final ORDER BY · sort priority')
+    if (orderKeys) parent.append(orderKeys)
+    parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
+    return
+  }
+
+  if (step.recursiveCte && step.anchorSql && step.recursiveSql) {
+    parent.append(createNode('h4', 'visual-subheading', 'How the recursive CTE builds the result'))
+    parent.append(createNode('p', 'visual-caption', `WITH RECURSIVE creates a temporary result called ${step.cteName}. The anchor seeds it once; the recursive member reads the rows already found and adds the next level.`))
+
+    const process = createNode('div', 'cte-process')
+    const anchor = createNode('article', 'cte-process-card cte-process-card--anchor')
+    anchor.append(createNode('p', 'cte-process-label', '01 · ANCHOR · RUNS ONCE'))
+    anchor.append(createNode('h4', '', 'Find the starting rows'))
+    anchor.append(createNode('p', 'cte-process-copy', 'The anchor query selects the root employees. These rows become level 0.'))
+    const anchorCode = createNode('pre', 'cte-sql')
+    anchorCode.append(createNode('code', '', step.anchorSql))
+    anchor.append(anchorCode)
+
+    const recursive = createNode('article', 'cte-process-card cte-process-card--recursive')
+    recursive.append(createNode('p', 'cte-process-label', '02 · RECURSIVE MEMBER · REPEATS'))
+    recursive.append(createNode('h4', '', 'Find children of the current level'))
+    recursive.append(createNode('p', 'cte-process-copy', `Each pass joins employees to ${step.cteName}, which represents the rows found so far. The join adds the next level.`))
+    const recursiveCode = createNode('pre', 'cte-sql')
+    recursiveCode.append(createNode('code', '', step.recursiveSql))
+    recursive.append(recursiveCode)
+
+    const stop = createNode('article', 'cte-process-card cte-process-card--stop')
+    stop.append(createNode('p', 'cte-process-label', '03 · STOP CONDITION'))
+    stop.append(createNode('h4', '', 'No new rows → stop'))
+    stop.append(createNode('p', 'cte-process-copy', 'The recursive member runs again until it finds no more employees to add.'))
+    process.append(anchor, createNode('span', 'cte-process-arrow', '→'), recursive, createNode('span', 'cte-process-arrow', '→'), stop)
+    parent.append(process)
+
+    parent.append(createNode('h4', 'visual-subheading', 'Rows added at each pass'))
+    parent.append(createNode('p', 'visual-caption', 'Level 0 comes from the anchor. Each later level is one recursive pass using the previous level as its starting point.'))
+    const rounds = createNode('div', 'cte-rounds')
+    step.levels.forEach((level) => {
+      const card = createNode('section', 'cte-round')
+      card.dataset.depth = String(Math.min(level.depth, 3))
+      const title = level.depth === 0 ? 'Anchor · starting employees' : `Recursive pass ${level.depth}`
+      card.append(createNode('h4', '', `${title} · ${level.rows.length} ${level.rows.length === 1 ? 'row' : 'rows'}`))
+      card.append(renderTable({ columns: step.result.columns, rows: level.rows, totalRows: level.rows.length }, { compact: true, rowLimit: 40 }))
+      rounds.append(card)
+    })
+    parent.append(rounds)
+
+    if (step.outerSql) {
+      const outer = createNode('section', 'cte-outer-query')
+      outer.append(createNode('p', 'cte-process-label', 'AFTER THE CTE IS BUILT'))
+      outer.append(createNode('p', 'cte-process-copy', `The outer SELECT reads the completed ${step.cteName} result and returns the rows shown here.`))
+      const outerCode = createNode('pre', 'cte-sql')
+      outerCode.append(createNode('code', '', step.outerSql))
+      outer.append(outerCode)
+      parent.append(outer)
+    }
+    return
+  }
+
   parent.append(createNode('h4', 'visual-subheading', 'Recursive levels'))
   parent.append(createNode('p', 'visual-caption', `The recursive member follows ${step.parentColumn} to build levels. ${step.depthColumn} identifies each pass through the hierarchy.`))
   const levels = createNode('div', 'hierarchy-levels')
@@ -1681,58 +1922,32 @@ function renderHierarchyVisual(parent, step) {
     levels.append(card)
   })
   parent.append(levels)
+  const orderKeys = renderSortKeys(step.outerOrderBy, 'Final ORDER BY · sort priority')
+  if (orderKeys) parent.append(orderKeys)
+}
+
+function renderCteSql(label, sql) {
+  const block = createNode('details', 'cte-phase-sql')
+  const summary = createNode('summary', '', label)
+  const pre = createNode('pre', 'cte-sql')
+  pre.append(createNode('code', '', sql || ''))
+  block.append(summary, pre)
+  return block
 }
 
 function renderSubqueryVisual(parent, step) {
   const executions = step.executions || []
-  const isAverageExpression = /^AVG\s*\(/i.test(step.innerExpression || '')
-  const hasAggregateInputRows = isAverageExpression && executions.some((execution) => execution.innerRowsResult)
-  if (hasAggregateInputRows && executions.length) {
+  if (executions.length) {
     renderScalarExecutionSequence(parent, step, executions)
     if (step.capped) {
-      parent.append(createNode('p', 'table-overflow-note', `The walkthrough can advance through the first ${executions.length} of ${step.result.totalRows} outer rows. The Results tab shows the complete output.`))
+      parent.append(createNode('p', 'table-overflow-note', `The walkthrough calculates the subquery column for the first ${executions.length} of ${step.result.totalRows} rows. WHERE runs as the next stage. The Results tab shows the complete query output.`))
     }
     return
   }
 
-  parent.append(createNode('h4', 'visual-subheading', 'Follow the inner query one outer row at a time'))
-  parent.append(createNode('p', 'visual-caption', 'A correlated subquery can read values from the current outer row. The inner result is calculated for that row, then the outer WHERE condition decides whether the row stays.'))
-  const result = renderTable(step.result, {
-    rowLimit: 40,
-    numbered: false,
-    rowStatus: (index) => executions[index]?.passed,
-    statusKept: 'Kept by WHERE',
-    statusRemoved: 'Filtered out',
-    reason: 'The outer comparison is false or UNKNOWN',
-  })
-  parent.append(result)
-
-  const examples = executions.slice(0, 6)
-  if (examples.length) {
-    parent.append(createNode('h4', 'visual-subheading', 'Example inner-query runs'))
-    const list = createNode('div', 'subquery-execution-list')
-    examples.forEach((execution) => {
-      const details = createNode('details', 'subquery-execution')
-      details.open = execution.rowNumber === 1
-      const correlations = execution.referenceValues
-        .filter((item) => item.label.includes('.'))
-        .map((item) => `${item.label} = ${item.value === null ? 'NULL' : String(item.value)}`)
-      const summary = correlations.length
-        ? `Outer row ${execution.rowNumber} · ${correlations.join(', ')} · inner result ${execution.scalarValue === null ? 'NULL' : String(execution.scalarValue)}`
-        : `Outer row ${execution.rowNumber} · inner result ${execution.scalarValue === null ? 'NULL' : String(execution.scalarValue)}`
-      details.append(createNode('summary', '', summary))
-      details.append(createNode('p', 'visual-caption', `${execution.conditionText}.`))
-      const code = createNode('pre', 'step-sql-code')
-      code.append(createNode('code', '', execution.innerSql))
-      details.append(code)
-      list.append(details)
-    })
-    parent.append(list)
-  }
-
-  if (step.capped) {
-    parent.append(createNode('p', 'table-overflow-note', `To keep the explanation responsive, the inner query is expanded for the first ${executions.length} outer rows. The final query result is available separately.`))
-  }
+  parent.append(createNode('h4', 'visual-subheading', 'Subquery value added as a column'))
+  parent.append(createNode('p', 'visual-caption', 'This stage calculates the inner result for each outer row. The WHERE stage that follows makes the keep or remove decision.'))
+  parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
 }
 
 function renderScalarExecutionSequence(parent, step, executions) {
@@ -1760,13 +1975,14 @@ function renderScalarExecutionSequence(parent, step, executions) {
 
   const progressTrack = createNode('div', 'correlated-row-progress')
   progressTrack.setAttribute('role', 'progressbar')
-  progressTrack.setAttribute('aria-label', 'Outer rows checked by the correlated subquery')
+  progressTrack.setAttribute('aria-label', 'Outer rows with a calculated subquery value')
   progressTrack.setAttribute('aria-valuemin', '1')
   progressTrack.setAttribute('aria-valuemax', String(step.result.totalRows || executions.length))
   const progressFill = createNode('span', 'correlated-row-progress-fill')
   progressTrack.append(progressFill)
   const cards = createNode('div', 'correlated-row-flow')
-  sequence.append(navigation, progressTrack, cards)
+  const resultTable = createNode('section', 'correlated-result-table')
+  sequence.append(navigation, progressTrack, cards, resultTable)
   parent.append(sequence)
   updateScalarExecutionSequence(sequence, step, executions, previousButton, nextButton, counter, progressFill)
 }
@@ -1787,7 +2003,7 @@ function updateScalarExecutionSequence(sequence, step, executions, previousButto
   const outerNameIndex = execution.outerColumns.findIndex((column) => normalizeColumn(column).split('.').at(-1) === 'name')
   const outerName = outerNameIndex >= 0 ? execution.sourceRow[outerNameIndex] : `Row ${execution.rowNumber}`
   outerCard.append(createNode('h4', '', String(outerName)))
-  outerCard.append(createNode('p', 'correlated-stage-copy', 'This is the current outer row being tested by WHERE.'))
+  outerCard.append(createNode('p', 'correlated-stage-copy', 'Take this row from the outer query. Its values can be passed into the inner query.'))
   outerCard.append(renderTable({
     columns: execution.outerColumns,
     rows: [execution.sourceRow.slice(0, execution.outerColumns.length)],
@@ -1807,69 +2023,50 @@ function updateScalarExecutionSequence(sequence, step, executions, previousButto
   }
 
   const innerCard = createNode('article', 'correlated-stage-card correlated-stage-card--inner')
-  innerCard.append(createNode('p', 'correlated-stage-label', '02 · INNER QUERY RE-RUNS'))
+  innerCard.append(createNode('p', 'correlated-stage-label', '02 · RUN THE INNER QUERY'))
   const matchingRows = execution.innerRowsResult
-  const matchingCount = matchingRows.totalRows ?? matchingRows.rows.length
-  const relationName = step.inputRelation === 'employees' ? 'employees' : step.inputRelation === 'orders' ? 'orders' : 'matching rows'
-  const departmentReference = execution.correlatedValues.find((reference) => reference.label.toLowerCase().endsWith('department_id'))
-  const departmentContext = departmentReference ? ` in department ${formatCorrelatedValue(departmentReference.value)}` : ''
-  innerCard.append(createNode('h4', '', `AVG of ${matchingCount} ${relationName}${departmentContext}`))
-  innerCard.append(createNode('p', 'correlated-stage-copy', departmentReference
-    ? `The inner query finds employees where department_id = ${formatCorrelatedValue(departmentReference.value)}, then averages their salary values.`
-    : 'The inner query uses the current outer row’s correlated value to find the rows included in this average.'))
-  const average = createNode('div', 'correlated-average-result')
-  average.append(createNode('span', '', step.innerExpression))
-  const averageValue = createNode('strong', '')
-  appendCorrelatedValue(averageValue, execution.scalarValue)
-  average.append(averageValue)
-  innerCard.append(average)
-  innerCard.append(renderTable(matchingRows, { compact: true, numbered: true, rowLimit: 8 }))
+  const correlationText = execution.correlatedValues.map((reference) => `${reference.label} = ${formatCorrelatedValue(reference.value)}`).join(' · ')
+  innerCard.append(createNode('h4', '', step.innerExpression))
+  innerCard.append(createNode('p', 'correlated-stage-copy', correlationText
+    ? `The current row supplies ${correlationText}. The inner SELECT uses those values to calculate its answer.`
+    : 'The inner SELECT runs for this outer row and returns a scalar value.'))
+  if (matchingRows) {
+    innerCard.append(createNode('p', 'correlated-stage-copy', `Input rows used by ${step.innerExpression}:`))
+    innerCard.append(renderTable(matchingRows, { compact: true, numbered: true, rowLimit: 8 }))
+  } else if (execution.innerResult) {
+    innerCard.append(createNode('p', 'correlated-stage-copy', 'The inner SELECT returns this value:'))
+    innerCard.append(renderTable(execution.innerResult, { compact: true, numbered: true, rowLimit: 8 }))
+  }
   const innerSql = createNode('details', 'step-sql correlated-inner-sql')
-  innerSql.append(createNode('summary', '', 'See the inner SQL for this employee'))
+  innerSql.append(createNode('summary', '', 'See the inner SQL for this row'))
   const innerSqlCode = createNode('pre', 'step-sql-code')
   innerSqlCode.append(createNode('code', '', execution.innerSql))
   innerSql.append(innerSqlCode)
   innerCard.append(innerSql)
 
-  const decisionCard = createNode('article', `correlated-stage-card correlated-stage-card--decision${execution.passed ? ' is-kept' : ' is-dropped'}`)
-  decisionCard.append(createNode('p', 'correlated-stage-label', '03 · COMPARE WITH THE AVERAGE'))
-  decisionCard.append(createNode('h4', '', 'Does this row pass WHERE?'))
-  const equation = createNode('div', 'correlated-equation')
-  const comparison = execution.comparison
-  if (comparison) {
-    const leftValue = comparison.subqueryOnLeft ? execution.scalarValue : comparison.outerValue
-    const rightValue = comparison.subqueryOnLeft ? comparison.outerValue : execution.scalarValue
-    const leftLabel = comparison.subqueryOnLeft ? step.innerExpression : comparison.outerExpression
-    const rightLabel = comparison.subqueryOnLeft ? comparison.outerExpression : step.innerExpression
-    const leftTerm = createNode('div', 'correlated-equation-term')
-    leftTerm.append(createNode('span', '', leftLabel))
-    const leftNumber = createNode('strong', '')
-    appendCorrelatedValue(leftNumber, leftValue)
-    leftTerm.append(leftNumber)
-    const operator = createNode('span', 'correlated-equation-operator', formatComparisonOperator(comparison.operator))
-    const rightTerm = createNode('div', 'correlated-equation-term')
-    rightTerm.append(createNode('span', '', rightLabel))
-    const rightNumber = createNode('strong', '')
-    appendCorrelatedValue(rightNumber, rightValue)
-    rightTerm.append(rightNumber)
-    equation.append(leftTerm, operator, rightTerm)
-  } else {
-    equation.append(createNode('p', 'correlated-condition-text', execution.conditionText))
-  }
-  decisionCard.append(equation)
-  const decision = createNode('div', `correlated-decision-badge${execution.passed ? ' is-kept' : ' is-dropped'}`, execution.passed ? 'KEEP ROW' : 'DROP ROW')
-  decisionCard.append(decision)
-  decisionCard.append(createNode('p', 'correlated-stage-copy', execution.passed
-    ? 'The comparison is true, so this row appears in the query output.'
-    : execution.conditionValue === null
-      ? 'The comparison is UNKNOWN. WHERE keeps only rows where the condition is true.'
-      : 'The comparison is false, so this row is filtered out of the query output.'))
+  const appendCard = createNode('article', 'correlated-stage-card correlated-stage-card--added')
+  appendCard.append(createNode('p', 'correlated-stage-label', '03 · APPEND A NEW COLUMN'))
+  appendCard.append(createNode('h4', '', step.innerExpression))
+  appendCard.append(createNode('p', 'correlated-stage-copy', 'Put the inner query’s scalar answer beside this outer row. Move to the next row; WHERE has not run yet.'))
+  const value = createNode('div', 'correlated-average-result')
+  value.append(createNode('span', '', 'Value added to this row'))
+  const scalar = createNode('strong', '')
+  appendCorrelatedValue(scalar, execution.scalarValue)
+  value.append(scalar)
+  appendCard.append(value)
 
-  flow.replaceChildren(outerCard, createNode('span', 'correlated-flow-arrow', '→'), innerCard, createNode('span', 'correlated-flow-arrow', '→'), decisionCard)
-}
+  flow.replaceChildren(outerCard, createNode('span', 'correlated-flow-arrow', '→'), innerCard, createNode('span', 'correlated-flow-arrow', '→'), appendCard)
 
-function formatComparisonOperator(operator) {
-  return ({ '>': '>', '<': '<', '>=': '≥', '<=': '≤', '<>': '≠', '!=': '≠', '=': '=' })[operator] || operator
+  const resultTable = sequence.querySelector('.correlated-result-table')
+  const resultRows = (step.outerRows || []).map((row, rowIndex) => {
+    const finished = rowIndex <= index && executions[rowIndex]
+    return [...row, finished ? executions[rowIndex].scalarValue : 'Waiting']
+  })
+  resultTable.replaceChildren(
+    createNode('h4', 'visual-subheading', 'The outer table gains one column, row by row'),
+    createNode('p', 'visual-caption', 'Completed rows keep their calculated value. Rows after the current one are still waiting for their inner query result.'),
+    renderTable({ columns: step.result.columns, rows: resultRows, totalRows: total }, { rowLimit: 40, numbered: true }),
+  )
 }
 
 function formatCorrelatedValue(value) {
@@ -2201,13 +2398,27 @@ function updateWhereExecutionSequence(sequence, step, input, previousButton, nex
   const inputCard = createNode('article', 'correlated-stage-card correlated-stage-card--outer')
   inputCard.append(createNode('p', 'correlated-stage-label', '01 · INPUT ROW'))
   inputCard.append(createNode('h4', '', String(rowName)))
-  inputCard.append(createNode('p', 'correlated-stage-copy', 'This row reaches the WHERE clause before any filtering happens.'))
+  inputCard.append(createNode('p', 'correlated-stage-copy', step.subqueryValueColumn
+    ? `This row carries the ${step.subqueryExpression} value calculated in the previous stage. WHERE can now check the full row.`
+    : 'This row reaches the WHERE clause before any filtering happens.'))
   inputCard.append(renderTable({ columns: input.columns, rows: [row], totalRows: 1 }, { compact: true }))
 
   const checkCard = createNode('article', 'correlated-stage-card correlated-stage-card--inner')
   checkCard.append(createNode('p', 'correlated-stage-label', '02 · EVALUATE WHERE'))
   checkCard.append(createNode('code', 'where-condition-code', step.filterReason))
-  checkCard.append(createNode('p', 'correlated-stage-copy', 'SQL evaluates this condition using the values in the input row.'))
+  checkCard.append(createNode('p', 'correlated-stage-copy', step.subqueryValueColumn
+    ? 'Now evaluate the WHERE condition using the values in this row, including the subquery result column.'
+    : 'SQL evaluates this condition using the values in the input row.'))
+  if (step.subqueryValueColumn) {
+    const subqueryIndex = input.columns.indexOf(step.subqueryValueColumn)
+    const subqueryValue = row[subqueryIndex]
+    const valueNote = createNode('div', 'correlated-key')
+    valueNote.append(createNode('span', '', `Value from previous stage · ${step.subqueryExpression}`))
+    const value = createNode('strong', '')
+    appendCorrelatedValue(value, subqueryValue)
+    valueNote.append(value)
+    checkCard.append(valueNote)
+  }
   checkCard.append(createNode('div', `where-truth-result${truth === 'TRUE' ? ' is-true' : truth === 'FALSE' ? ' is-false' : ' is-unknown'}`, truth))
 
   const decisionCard = createNode('article', `correlated-stage-card correlated-stage-card--decision${passed ? ' is-kept' : ' is-dropped'}`)
@@ -2332,13 +2543,33 @@ function renderProjectionVisual(parent, step) {
 
 function renderOrderVisual(parent, step) {
   const input = step.input
-  parent.append(createNode('h4', 'visual-subheading', 'Rows in their sorted order'))
-  parent.append(createNode('p', 'visual-caption', 'The arrows show the requested sort direction. Row positions now follow ORDER BY.'))
-  const directions = step.description.match(/\b(?:ASC|DESC)\b/gi) || []
-  const direction = directions[0]?.toUpperCase() === 'DESC' ? '↓ DESC' : '↑ ASC'
-  parent.append(createNode('div', 'sort-direction', `${direction} · ${step.result.totalRows} rows`))
+  parent.append(createNode('h4', 'visual-subheading', 'Sort keys, then read the arranged rows'))
+  const sortKeys = renderSortKeys(step.sortKeys, 'ORDER BY · sort priority')
+  if (sortKeys) parent.append(sortKeys)
+  parent.append(createNode('p', 'visual-caption', `The table below is the result after applying the ORDER BY keys in priority order. ${step.result.totalRows} ${step.result.totalRows === 1 ? 'row' : 'rows'} are shown.`))
   parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
   if (input && step.result.rows.length === 0) parent.append(createNode('p', 'empty-inline', 'There were no rows to sort.'))
+}
+
+function renderSortKeys(keys, heading = 'ORDER BY · sort priority') {
+  if (!keys?.length) return null
+  const section = createNode('section', 'sort-key-visual')
+  section.append(createNode('p', 'sort-key-heading', heading))
+  const list = createNode('div', 'sort-key-list')
+  keys.forEach((key, index) => {
+    const descending = String(key.direction).toUpperCase() === 'DESC'
+    const item = createNode('article', `sort-key-card${descending ? ' is-descending' : ' is-ascending'}`)
+    item.append(createNode('span', 'sort-key-number', `KEY ${index + 1}`))
+    item.append(createNode('strong', 'sort-key-expression', key.expression))
+    item.append(createNode('span', 'sort-key-direction', `${descending ? '↓' : '↑'} ${descending ? 'DESC' : 'ASC'}`))
+    item.append(createNode('small', 'sort-key-explanation', descending ? 'Descending · larger / later values first' : 'Ascending · smaller / earlier values first'))
+    list.append(item)
+  })
+  section.append(list)
+  section.append(createNode('p', 'sort-key-note', keys.length > 1
+    ? 'SQL sorts by Key 1 first. When rows tie on a key, it uses the next key to decide their order.'
+    : 'SQL arranges every row using this one sort key.'))
+  return section
 }
 
 function renderLimitVisual(parent, step) {

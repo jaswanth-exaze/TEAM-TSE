@@ -76,7 +76,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
     if (!hierarchy) {
       return { available: false, reason: 'This recursive CTE returned its result, but it does not expose an id, a parent id, and a depth or level column, so a tree cannot be drawn safely.', steps: [] }
     }
-    return { available: true, reason: '', steps: [hierarchy] }
+    return { available: true, reason: '', steps: await buildRecursiveCteSteps(hierarchy, queryRunner) }
   }
   if (isEmployeeSelfJoin(ast)) {
     const hierarchy = await buildSelfJoinHierarchyStep(parser, ast, queryRunner, finalResult)
@@ -90,6 +90,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
   const sourceEntries = Array.isArray(ast.from) ? ast.from : []
   const hasFrom = sourceEntries.length > 0
   const visualSubquery = getVisualizableWhereSubquery(ast)
+  let scalarSubqueryStep = null
 
   const runStep = async (definition, options) => {
     const statement = makePartialQuery(parser, ast, options)
@@ -140,7 +141,10 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         : visualSubquery.kind === 'exists'
           ? await buildExistsSubqueryStep(parser, ast, visualSubquery, queryRunner, previousResult)
           : await buildScalarSubqueryStep(parser, ast, visualSubquery, queryRunner, previousResult)
-      if (subqueryStep) steps.push(subqueryStep)
+      if (subqueryStep) {
+        steps.push(subqueryStep)
+        if (subqueryStep.kind === 'subquery') scalarSubqueryStep = subqueryStep
+      }
     }
 
     if (ast.where) {
@@ -157,6 +161,17 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         ],
       })
       const markerResult = await queryRunner(markedRows)
+      const filterInput = await queryRunner(filterRows)
+      let walkthroughInput = filterInput
+      if (scalarSubqueryStep) {
+        const valueColumn = scalarSubqueryStep.result.columns.at(-1)
+        const computedValues = scalarSubqueryStep.executions.map((execution) => execution.scalarValue)
+        walkthroughInput = {
+          ...filterInput,
+          columns: [...filterInput.columns, valueColumn],
+          rows: filterInput.rows.map((row, index) => [...row, index < computedValues.length ? computedValues[index] : 'Not expanded']),
+        }
+      }
       await runStep({
         id: 'where',
         title: 'WHERE',
@@ -165,7 +180,9 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         filterFlags: markerResult.rows.map((row) => Boolean(row[0])),
         filterResults: markerResult.rows.map((row) => row[0] ?? null),
         filterReason: expressionText(ast.where, parser),
-        filterInput: await queryRunner(filterRows),
+        filterInput: walkthroughInput,
+        subqueryValueColumn: scalarSubqueryStep?.result.columns.at(-1) || '',
+        subqueryExpression: scalarSubqueryStep?.innerExpression || '',
       }, { fromCount: sourceEntries.length, includeWhere: true })
     }
 
@@ -305,6 +322,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         title: 'ORDER BY',
         plain: describeOrderPlain(ast.orderby, parser),
         description: `ORDER BY sorts the selected rows by ${ast.orderby.map((order) => `${expressionText(order.expr, parser)} ${order.type || 'ASC'}`).join(', ')}.`,
+        sortKeys: getSortKeys(ast.orderby, parser),
       }, {
         fromCount: sourceEntries.length,
         includeWhere: Boolean(ast.where),
@@ -789,11 +807,6 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
   const sourceResult = await queryRunner(sourceSql)
   const helperStart = Math.max(0, sourceResult.columns.length - references.length)
   const innerExpression = expressionText(subquery.inner.columns[0].expr, parser)
-  const scalarComparison = findScalarComparisonNode(outerAst.where, subquery.wrapper)
-  const comparisonSubqueryOnLeft = scalarComparison?.left === subquery.wrapper
-  const comparisonOuterExpression = scalarComparison
-    ? (comparisonSubqueryOnLeft ? scalarComparison.right : scalarComparison.left)
-    : null
   const totalOuterRows = sourceResult.totalRows ?? sourceResult.rows.length
   const executions = []
   const maxRowsToExplain = 25
@@ -827,23 +840,7 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
       innerRowsSql = parser.sqlify(innerRowsAst, MYSQL_OPTIONS).replace(/;\s*$/, '')
       innerRowsResult = await queryRunner(innerRowsSql)
     }
-    const conditionAst = transformAst(clone(outerAst.where), (node) => {
-      if (node === subquery.wrapper || node.ast?.type === 'select') return makeLiteralAst(parser, scalarValue)
-      if (node.type !== 'column_ref') return undefined
-      const key = columnReferenceKey(node)
-      if (!referenceValues.has(key)) return undefined
-      return makeLiteralAst(parser, referenceValues.get(key))
-    })
-    const evaluationAst = parser.astify('SELECT 1', MYSQL_OPTIONS)
-    evaluationAst.columns = [{ expr: conditionAst, as: '__visual_condition' }]
-    const evaluationSql = parser.sqlify(evaluationAst, MYSQL_OPTIONS).replace(/;\s*$/, '')
-    const conditionResult = await queryRunner(evaluationSql)
-    const conditionValue = conditionResult.rows[0]?.[0] ?? null
-    const passed = conditionValue === true || conditionValue === 1
     const referenceValuesList = references.map((item) => ({ label: item.label, value: referenceValues.get(item.key) }))
-    const comparisonOuterValue = comparisonOuterExpression?.type === 'column_ref'
-      ? referenceValues.get(columnReferenceKey(comparisonOuterExpression))
-      : null
     executions.push({
       rowNumber: index + 1,
       sourceRow,
@@ -856,68 +853,36 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
       innerSql,
       innerRowsSql,
       innerRowsResult,
+      innerResult,
       scalarValue,
-      comparison: scalarComparison ? {
-        operator: String(scalarComparison.operator || '').trim(),
-        outerExpression: expressionText(comparisonOuterExpression, parser),
-        subqueryOnLeft: comparisonSubqueryOnLeft,
-        outerValue: comparisonOuterValue,
-      } : null,
-      conditionValue,
-      passed,
-      conditionText: `${expressionText(outerAst.where, parser)} evaluated ${conditionValue === null ? 'UNKNOWN (NULL)' : passed ? 'true' : 'false'}`,
     })
   }
 
   const columns = [
-    'Outer row',
     ...sourceResult.columns.slice(0, helperStart),
-    ...references.map((item) => item.label),
-    `Inner result: ${innerExpression}`,
-    'WHERE decision',
+    `Subquery result · ${innerExpression}`,
   ]
-  const rows = executions.map((execution) => [
-    execution.rowNumber,
-    ...execution.sourceRow.slice(0, helperStart),
-    ...execution.referenceValues.map((item) => item.value),
-    execution.scalarValue,
-    execution.conditionValue === null ? 'UNKNOWN — filtered out' : execution.passed ? 'Pass — row kept' : 'Fail — filtered out',
-  ])
+  const outerRows = sourceResult.rows.map((row) => row.slice(0, helperStart))
+  const rows = outerRows.map((row, index) => [...row, index < executions.length ? executions[index].scalarValue : 'Waiting'])
   const sample = executions[0]
   const capped = sourceResult.rows.length > executions.length || Boolean(sourceResult.truncated)
   return {
     id: 'scalar-subquery',
     kind: 'subquery',
-    title: 'Run the inner query for each outer row',
-    plain: `For each row, run the inner query again to calculate ${innerExpression}, then compare that answer in WHERE.`,
-    description: `The outer query supplies one row at a time to the scalar subquery. The inner SELECT calculates ${innerExpression} again for each outer row; WHERE then compares that value and keeps or filters the row. This walkthrough expands ${executions.length}${capped ? ` of ${totalOuterRows} outer rows` : ` outer ${totalOuterRows === 1 ? 'row' : 'rows'}`}.`,
+    title: 'Add the subquery result to each row',
+    plain: `Run the inner query for each outer row and place its ${innerExpression} answer in a new column. The next WHERE stage checks the rows.`,
+    description: `The outer query supplies one row at a time to the scalar subquery. The inner SELECT calculates ${innerExpression} for that row, and the result is shown as an added column before WHERE filters anything. This walkthrough expands ${executions.length}${capped ? ` of ${totalOuterRows} outer rows` : ` outer ${totalOuterRows === 1 ? 'row' : 'rows'}`}.`,
     sql: sample?.innerSql || parser.sqlify(subquery.inner, MYSQL_OPTIONS).replace(/;\s*$/, ''),
     input: previousResult || sourceResult,
     result: { columns, rows, totalRows: totalOuterRows, truncated: capped },
+    outerRows,
+    outerColumns: sourceResult.columns.slice(0, helperStart),
     executions,
     innerExpression,
     inputRelation: getTableName(subquery.inner.from?.[0]),
     wrapperSql: expressionText(subquery.inner, parser),
     capped,
   }
-}
-
-function findScalarComparisonNode(value, target, parent = null) {
-  if (!value || typeof value !== 'object') return null
-  if (value === target) return parent?.type === 'binary_expr' ? parent : null
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = findScalarComparisonNode(item, target, parent)
-      if (found) return found
-    }
-    return null
-  }
-  for (const [key, child] of Object.entries(value)) {
-    if (key === 'ast') continue
-    const found = findScalarComparisonNode(child, target, value)
-    if (found) return found
-  }
-  return null
 }
 
 function collectColumnReferencesOutsideSubqueries(value, references = []) {
@@ -962,22 +927,92 @@ function makeLiteralAst(parser, value) {
 async function buildWindowExecutionStep(parser, ast, queryRunner, finalResult) {
   if (!finalResult) return { available: false, reason: 'Window results are ready, but partition details could not be attached to this result.', steps: [] }
   const functions = getWindowFunctions(ast, parser)
-  const partitions = buildWindowPartitions(ast, finalResult, parser, queryRunner)
-  let groups = []
-  try { groups = await partitions } catch { groups = [] }
-  const details = {
-    id: 'window-functions',
-    title: 'Window calculations',
-    plain: 'Every row stays. Each row also gets a value calculated from the other rows in its partition, such as a rank or running total.',
-    description: 'Window functions keep each input row, then calculate a value across its partition. The cards show each function and its partition, order, and frame; the result table shows the computed value on every row.',
-    kind: 'window',
-    sql: parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, ''),
-    result: finalResult,
-    functions,
-    partitions: groups,
-    input: finalResult,
+  const querySql = parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, '')
+  let windowResult = finalResult
+  if (ast.orderby || ast.limit) {
+    const beforeFinalSort = clone(ast)
+    beforeFinalSort.orderby = null
+    beforeFinalSort.limit = null
+    try { windowResult = await queryRunner(parser.sqlify(beforeFinalSort, MYSQL_OPTIONS).replace(/;\s*$/, '')) } catch { windowResult = finalResult }
   }
-  return { available: true, reason: '', steps: [details] }
+
+  const inputAst = clone(ast)
+  inputAst.columns = (ast.columns || []).filter((column) => !containsWindowNode(column.expr)).map((column) => clone(column))
+  if (!inputAst.columns.length) inputAst.columns = [{ expr: { type: 'column_ref', table: null, column: '*' }, as: null }]
+  inputAst.window = null
+  inputAst.qualify = null
+  inputAst.orderby = null
+  inputAst.limit = null
+  let windowInput
+  try {
+    windowInput = await queryRunner(parser.sqlify(inputAst, MYSQL_OPTIONS).replace(/;\s*$/, ''))
+  } catch {
+    windowInput = { columns: windowResult.columns, rows: windowResult.rows.map((row) => row.slice()), totalRows: windowResult.totalRows ?? windowResult.rows.length }
+  }
+
+  let groups = []
+  try { groups = await buildWindowPartitions(ast, windowResult, parser, queryRunner) } catch { groups = [] }
+  groups = groups.map((group) => ({
+    ...group,
+    inputRows: group.indexes.map((index) => windowInput.rows[index]).filter(Boolean),
+  }))
+
+  const mainWindow = functions[0]
+  const partitionTitle = mainWindow?.partition?.length ? `PARTITION BY ${mainWindow.partition.join(', ')}` : 'One shared partition'
+  const orderingTitle = mainWindow?.order ? `ORDER BY ${mainWindow.order}` : 'window order'
+  const functionTitle = mainWindow?.name || 'window function'
+  const shared = { kind: 'window', functions, partitions: groups, sql: querySql, input: windowInput }
+  const steps = [{
+    ...shared,
+    id: 'window-input',
+    windowPhase: 'input',
+    title: 'Rows entering the window',
+    plain: 'The query first produces the employee rows that the window function will inspect. No employee is removed by RANK.',
+    description: 'These rows are the input to the OVER clause. The window calculation adds a value to each row; it does not group employees into one summary row.',
+    sql: parser.sqlify(inputAst, MYSQL_OPTIONS).replace(/;\s*$/, ''),
+    result: windowInput,
+  }, {
+    ...shared,
+    id: 'window-partition',
+    windowPhase: 'partition',
+    title: partitionTitle,
+    plain: `Split incoming rows by ${partitionTitle}. Each partition is an independent calculation group.`,
+    description: `PARTITION BY groups rows with the same ${mainWindow?.partition?.join(', ') || 'partition key'}. The window function starts over in each partition, so values from different groups are not compared.`,
+    result: windowResult,
+    input: windowInput,
+  }, {
+    ...shared,
+    id: 'window-rank',
+    windowPhase: 'rank',
+    title: `${orderingTitle} · assign ${functionTitle}`,
+    plain: `Inside each ${mainWindow?.partition?.length ? 'partition' : 'window'}, sort rows by ${mainWindow?.order || 'the window order'} and calculate ${functionTitle} for every row.`,
+    description: `ORDER BY inside OVER controls the sequence within each partition. ${functionTitle} calculates a value for every row without removing any rows.`,
+    result: windowResult,
+    input: windowInput,
+  }]
+
+  if (ast.orderby || ast.limit) {
+    const sortKeys = getSortKeys(ast.orderby, parser)
+    steps.push({
+      id: ast.orderby ? 'order' : 'limit',
+      title: ast.orderby ? 'Final ORDER BY' : 'Final LIMIT',
+      plain: ast.orderby ? 'After every rank has been calculated, the outer ORDER BY arranges the completed rows for display.' : 'The final LIMIT returns only the requested number of already-ranked rows.',
+      description: ast.orderby ? `The outer ORDER BY ${sortKeys.map((key) => `${key.expression} ${key.direction}`).join(', ')} is outside OVER(...). It changes the order of the finished result; it does not change how RANK was assigned.` : 'LIMIT is applied after the window values are calculated.',
+      kind: ast.orderby ? 'order' : 'limit',
+      sortKeys,
+      sql: querySql,
+      input: windowResult,
+      result: finalResult,
+    })
+  }
+  return { available: true, reason: '', steps }
+}
+
+function containsWindowNode(node) {
+  if (!node || typeof node !== 'object') return false
+  if (Array.isArray(node)) return node.some(containsWindowNode)
+  if (node.type === 'function' && node.over) return true
+  return Object.entries(node).some(([key, value]) => key !== 'ast' && containsWindowNode(value))
 }
 
 async function buildWindowPartitions(ast, result, parser, queryRunner) {
@@ -991,6 +1026,8 @@ async function buildWindowPartitions(ast, result, parser, queryRunner) {
   }
 
   const copy = clone(ast)
+  copy.orderby = null
+  copy.limit = null
   const selected = Array.isArray(ast.columns) ? clone(ast.columns) : [{ expr: { type: 'column_ref', table: null, column: '*' }, as: null }]
   const helpers = partitionExpressions.map((expr, index) => ({ expr: clone(expr), as: `__visual_partition_${index + 1}` }))
   copy.columns = [...selected, ...helpers]
@@ -1028,7 +1065,8 @@ function getWindowFunctions(ast, parser) {
         ? named.get(reference.toLowerCase())
         : reference?.window_specification || reference
       const partitionExpressions = spec?.partitionby?.map((entry) => entry.expr || entry) || []
-      const ordering = spec?.orderby?.map((entry) => `${expressionText(entry.expr, parser)} ${entry.type || 'ASC'}`).join(', ') || ''
+      const orderKeys = getSortKeys(spec?.orderby, parser)
+      const ordering = orderKeys.map((entry) => `${entry.expression} ${entry.direction}`).join(', ')
       const frame = spec?.window_frame_clause ? expressionText(spec.window_frame_clause, parser) : ''
       output.push({
         name: name || 'Window function',
@@ -1037,6 +1075,7 @@ function getWindowFunctions(ast, parser) {
         partition: partitionExpressions.map((expr) => expressionText(expr, parser)),
         partitionExpressions,
         order: ordering,
+        orderKeys,
         frame,
       })
       return
@@ -1055,6 +1094,30 @@ function getAstFunctionName(node) {
 
 function buildHierarchyExecutionStep(parser, ast, result) {
   if (!result?.columns?.length) return null
+  const recursiveCte = (ast.with || []).find((item) => item.recursive)
+  const cteQuery = recursiveCte?.stmt?.ast
+  let anchorSql = ''
+  let recursiveSql = ''
+  let outerSql = ''
+  if (cteQuery) {
+    const anchor = clone(cteQuery)
+    anchor.with = null
+    anchor._next = null
+    anchor.set_op = null
+    anchorSql = parser.sqlify(anchor, MYSQL_OPTIONS).replace(/;\s*$/, '')
+
+    if (cteQuery._next) {
+      const recursive = clone(cteQuery._next)
+      recursive.with = null
+      recursive._next = null
+      recursive.set_op = null
+      recursiveSql = parser.sqlify(recursive, MYSQL_OPTIONS).replace(/;\s*$/, '')
+    }
+
+    const outer = clone(ast)
+    outer.with = null
+    outerSql = parser.sqlify(outer, MYSQL_OPTIONS).replace(/;\s*$/, '')
+  }
   const columns = result.columns.map((column) => String(column).replace(/[`"[\]]/g, '').toLowerCase())
   const idIndex = columns.findIndex((column) => ['id', 'employee_id', 'node_id'].includes(column))
   const parentIndex = columns.findIndex((column) => ['manager_id', 'parent_id', 'reports_to'].includes(column))
@@ -1081,16 +1144,112 @@ function buildHierarchyExecutionStep(parser, ast, result) {
     id: 'recursive-hierarchy',
     title: 'Recursive hierarchy',
     plain: 'Start with the top-level rows, then repeatedly find the rows that report to them, adding one level of the tree per pass.',
-    description: 'The recursive CTE starts with its anchor rows, then repeatedly joins each discovered parent to its children. Rows are grouped by their returned depth or inferred parent level.',
+    description: 'A recursive CTE runs its anchor member once, then repeats its recursive member using the rows found in the previous pass. Rows are grouped by their returned depth or inferred parent level.',
     kind: 'hierarchy',
     sql: parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, ''),
     result,
     input: result,
+    recursiveCte: Boolean(recursiveCte),
+    cteName: recursiveCte?.name?.value || recursiveCte?.name || '',
+    anchorSql,
+    recursiveSql,
+    outerSql,
     idColumn: result.columns[idIndex],
     parentColumn: result.columns[parentIndex],
     depthColumn: depthIndex >= 0 ? result.columns[depthIndex] : 'inferred depth',
+    outerOrderBy: getSortKeys(ast.orderby, parser),
     levels: [...levels.entries()].sort(([left], [right]) => left - right).map(([depth, items]) => ({ depth, rows: items.map((item) => item.row), ids: items.map((item) => item.id), parents: items.map((item) => item.parent) })),
   }
+}
+
+async function buildRecursiveCteSteps(hierarchy, queryRunner) {
+  if (!hierarchy.recursiveCte || !hierarchy.recursiveSql || !hierarchy.levels?.length) return [hierarchy]
+
+  const steps = []
+  const columns = hierarchy.result.columns
+  const anchorLevel = hierarchy.levels.find((level) => level.depth === 0) || { depth: 0, rows: [] }
+  let anchorResult = { columns, rows: anchorLevel.rows, totalRows: anchorLevel.rows.length }
+  try {
+    const actualAnchor = await queryRunner(hierarchy.anchorSql)
+    if (actualAnchor?.columns?.length) anchorResult = actualAnchor
+  } catch {
+    // The anchor rows from the completed CTE still provide a useful view when a runner cannot execute the isolated member.
+  }
+
+  const common = {
+    kind: 'hierarchy',
+    sql: hierarchy.sql,
+    recursiveCte: true,
+    cteName: hierarchy.cteName,
+    anchorSql: hierarchy.anchorSql,
+    recursiveSql: hierarchy.recursiveSql,
+    outerSql: hierarchy.outerSql,
+    levels: hierarchy.levels,
+    idColumn: hierarchy.idColumn,
+    parentColumn: hierarchy.parentColumn,
+    depthColumn: hierarchy.depthColumn,
+    outerOrderBy: hierarchy.outerOrderBy || [],
+  }
+  steps.push({
+    ...common,
+    id: 'cte-anchor',
+    hierarchyPhase: 'anchor',
+    title: 'Anchor query · find the roots',
+    plain: `Run the anchor SELECT once to place root rows into ${hierarchy.cteName} at depth 0.`,
+    description: 'The anchor member runs once. In this query, manager_id IS NULL identifies the employees at the top of the organization.',
+    sql: hierarchy.anchorSql,
+    result: anchorResult,
+    input: null,
+    activeLevel: anchorLevel,
+  })
+
+  const levels = hierarchy.levels.filter((level) => level.depth > 0)
+  levels.forEach((level) => {
+    const previous = hierarchy.levels.find((item) => item.depth === level.depth - 1) || anchorLevel
+    const previousResult = { columns, rows: previous.rows, totalRows: previous.rows.length }
+    const passResult = { columns, rows: level.rows, totalRows: level.rows.length }
+    steps.push({
+      ...common,
+      id: `cte-pass-${level.depth}`,
+      hierarchyPhase: 'recursive',
+      title: `Recursive pass ${level.depth} · find the next level`,
+      plain: `Use the employees found in the previous pass to find their direct reports. Add ${level.rows.length} ${level.rows.length === 1 ? 'new row' : 'new rows'} at depth ${level.depth}.`,
+      description: `The recursive member joins employees.manager_id to ${hierarchy.cteName}.id from the previous pass. These newly matched employees become the next level of the organization.`,
+      sql: hierarchy.recursiveSql,
+      result: passResult,
+      input: previousResult,
+      activeLevel: level,
+      previousLevel: previous,
+    })
+  })
+
+  const lastLevel = hierarchy.levels.at(-1) || anchorLevel
+  const lastResult = { columns, rows: lastLevel.rows, totalRows: lastLevel.rows.length }
+  steps.push({
+    ...common,
+    id: 'cte-stop',
+    hierarchyPhase: 'stop',
+    title: 'Stop when a pass adds no rows',
+    plain: `The next recursive pass finds no employees reporting to depth ${lastLevel.depth}, so the recursion is complete.`,
+    description: 'A recursive CTE ends when its recursive member returns an empty batch. No new rows are added after this point.',
+    sql: hierarchy.recursiveSql,
+    result: { columns, rows: [], totalRows: 0 },
+    input: lastResult,
+    activeLevel: { depth: lastLevel.depth + 1, rows: [] },
+    previousLevel: lastLevel,
+  })
+  steps.push({
+    ...common,
+    id: 'cte-final',
+    hierarchyPhase: 'final',
+    title: 'Outer SELECT · return the completed hierarchy',
+    plain: `Read all accumulated rows from ${hierarchy.cteName}, then return them in the requested order.`,
+    description: `After recursion stops, the outer SELECT reads the completed CTE. Its ORDER BY arranges rows by depth and then id.`,
+    sql: hierarchy.outerSql || hierarchy.sql,
+    result: hierarchy.result,
+    input: hierarchy.result,
+  })
+  return steps
 }
 
 async function buildSelfJoinHierarchyStep(parser, ast, queryRunner, result) {
@@ -1137,6 +1296,7 @@ async function buildSelfJoinHierarchyStep(parser, ast, queryRunner, result) {
     idColumn: 'employee id',
     parentColumn: 'manager_id',
     depthColumn: 'inferred depth',
+    outerOrderBy: getSortKeys(ast.orderby, parser),
     levels: [...levels.entries()].sort(([left], [right]) => left - right).map(([depth, items]) => ({
       depth,
       rows: items.map((item) => item.row),
@@ -1394,6 +1554,13 @@ function describeSelectPlain(columns, parser) {
 function describeOrderPlain(orderby, parser) {
   const parts = (orderby || []).map((order) => `${expressionText(order.expr, parser)} ${String(order.type || 'ASC').toUpperCase() === 'DESC' ? '(high to low)' : '(low to high)'}`)
   return `Sort the rows by ${parts.join(', then ')}.`
+}
+
+function getSortKeys(orderby, parser) {
+  return (orderby || []).map((term) => ({
+    expression: expressionText(term.expr, parser),
+    direction: String(term.type || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
+  }))
 }
 
 function aggregateNames(value, names = new Set(), top = true) {

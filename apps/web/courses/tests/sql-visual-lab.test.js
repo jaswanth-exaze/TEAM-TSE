@@ -213,6 +213,9 @@ test('builds dedicated window and recursive hierarchy steps', async () => {
   assert.equal(windowPlan.steps[0].kind, 'window')
   assert.equal(windowPlan.steps[0].functions[0].alias, 'dept_rank')
   assert.equal(windowPlan.steps[0].partitions.reduce((sum, group) => sum + group.rows.length, 0), 12)
+  assert.deepEqual(windowPlan.steps.slice(0, 3).map((step) => step.windowPhase), ['input', 'partition', 'rank'])
+  assert.deepEqual(Array.from(windowPlan.steps[2].functions[0].orderKeys, (key) => `${key.expression} ${key.direction}`), ['salary DESC'])
+  assert.deepEqual(Array.from(windowPlan.steps.at(-1).sortKeys, (key) => `${key.expression} ${key.direction}`), ['department_id ASC', 'dept_rank ASC'])
 
   const selfJoinSql = `SELECT e.name AS employee, m.name AS manager
     FROM employees AS e LEFT JOIN employees AS m ON e.manager_id = m.id
@@ -243,6 +246,8 @@ test('builds dedicated window and recursive hierarchy steps', async () => {
   assert.equal(hierarchyPlan.available, true)
   assert.equal(hierarchyPlan.steps[0].kind, 'hierarchy')
   assert.deepEqual(hierarchyPlan.steps[0].levels.map((level) => level.rows.length), [3, 7, 2])
+  assert.deepEqual(hierarchyPlan.steps.map((step) => step.hierarchyPhase), ['anchor', 'recursive', 'recursive', 'stop', 'final'])
+  assert.deepEqual(Array.from(hierarchyPlan.steps.at(-1).outerOrderBy, (key) => `${key.expression} ${key.direction}`), ['depth ASC', 'id ASC'])
 })
 
 test('visualizes a correlated scalar subquery once for every outer employee', async () => {
@@ -271,10 +276,13 @@ test('visualizes a correlated scalar subquery once for every outer employee', as
   assert.ok(whereStep, 'the plan should still show the outer WHERE filter')
   assert.equal(subqueryStep.executions.length, 12)
   assert.match(subqueryStep.executions[0].innerSql, /(?:\d+\s*=\s*`?e2`?\.`?department_id|`?e2`?\.`?department_id`?\s*=\s*\d+)/i)
+  assert.match(subqueryStep.result.columns.at(-1), /^Subquery result · AVG\(salary\)$/)
+  assert.equal(whereStep.filterInput.columns.at(-1), subqueryStep.result.columns.at(-1))
 
-  const keptNames = subqueryStep.result.rows
-    .filter((row, index) => subqueryStep.executions[index].passed)
-    .map((row) => row[1])
+  const nameIndex = whereStep.filterInput.columns.findIndex((column) => column.toLowerCase() === 'name')
+  const keptNames = whereStep.filterInput.rows
+    .filter((_row, index) => whereStep.filterFlags[index])
+    .map((row) => row[nameIndex])
     .sort()
   assert.deepEqual(Array.from(keptNames), Array.from(finalResult.rows, (row) => row[0]).sort())
   assert.equal(subqueryStep.executions.every((execution) => typeof execution.innerSql === 'string' && execution.innerSql.length > 0), true)
@@ -295,10 +303,20 @@ test('visualizes uncorrelated scalar subqueries without mistaking IN subqueries 
   const scalarStep = scalarPlan.steps.find((step) => step.kind === 'subquery')
   assert.equal(scalarStep.executions[0].scalarValue, 0)
   assert.equal(scalarStep.executions.length, 12)
+  assert.equal(scalarStep.result.rows[0].at(-1), 0)
 
   const inInspection = inspectQuery('SELECT name FROM employees WHERE department_id IN (SELECT id FROM departments)', parser)
-  assert.equal(inInspection.visualizationAvailable, false)
-  assert.match(inInspection.reason, /single-column scalar subquery/i)
+  assert.equal(inInspection.visualizationAvailable, true, inInspection.reason)
+  const inResult = await request('run', { sql: 'SELECT name FROM employees WHERE department_id IN (SELECT id FROM departments)' })
+  const inPlan = await buildExecutionSteps(
+    parser,
+    inInspection.ast,
+    async (statement) => request('run', { sql: statement }),
+    inResult,
+  )
+  assert.equal(inPlan.available, true, inPlan.reason)
+  assert.ok(inPlan.steps.some((step) => step.kind === 'subquery-membership'))
+  assert.equal(inPlan.steps.some((step) => step.kind === 'subquery'), false)
 })
 
 function createWorker() {
