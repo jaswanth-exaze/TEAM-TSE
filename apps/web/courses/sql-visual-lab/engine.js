@@ -125,7 +125,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         const rightAlias = String(entry.as || tableName)
         const isSelfJoin = Boolean(matchingSelfJoinEntry)
         const condition = getJoinCondition(entry, parser)
-        const joinRight = await queryRunner(`SELECT * FROM \`${String(tableName).replace(/`/g, '``')}\` LIMIT ${isSelfJoin ? 20 : 8}`)
+        const joinRight = await queryRunner(`SELECT * FROM \`${String(tableName).replace(/`/g, '``')}\` ORDER BY id ASC LIMIT 100`)
         const joinStep = await runStep({
           id: `join-${index}`,
           kind: 'join',
@@ -142,6 +142,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
           isSelfJoin,
           joinRight,
         }, { fromCount: index + 1 })
+        joinStep.joinScan = buildJoinScan(joinStep.input, joinRight, joinStep.result)
         if (isSelfJoin) {
           const leftColumnCount = joinStep.input?.columns?.length || 0
           joinStep.joinDisplayResult = {
@@ -1212,9 +1213,9 @@ async function buildRecursiveCteSteps(hierarchy, queryRunner) {
     ...common,
     id: 'cte-anchor',
     hierarchyPhase: 'anchor',
-    title: 'Anchor query · find the roots',
-    plain: `Run the anchor SELECT once to place root rows into ${hierarchy.cteName} at depth 0.`,
-    description: 'The anchor member runs once. In this query, manager_id IS NULL identifies the employees at the top of the organization.',
+    title: 'Anchor query · seed the CTE',
+    plain: `Run the anchor SELECT once to place its starting rows into ${hierarchy.cteName} at depth 0.`,
+    description: 'The anchor member runs once. Its FROM and WHERE clauses choose the starting rows for the recursive process.',
     sql: hierarchy.anchorSql,
     result: anchorResult,
     input: null,
@@ -1338,7 +1339,36 @@ function rawExpressionText(expression, parser) {
 }
 
 function getJoinCondition(entry, parser) {
-  return entry.on ? expressionText(entry.on, parser) : entry.using?.length ? `USING (${entry.using.join(', ')})` : 'the join condition'
+  return entry.on ? expressionText(entry.on, parser) : entry.using?.length ? `USING (${entry.using.join(', ')})` : 'TRUE (every candidate pair matches)'
+}
+
+function buildJoinScan(leftResult, rightResult, joinedResult) {
+  if (!leftResult?.columns?.length || !rightResult?.columns?.length || joinedResult?.truncated) return null
+  const leftColumnCount = leftResult.columns.length
+  const rightIdIndex = rightResult.columns.findIndex((column) => String(column).replace(/[`"[\]]/g, '').toLowerCase() === 'id')
+  if (rightIdIndex < 0 || joinedResult.columns.length !== leftColumnCount + rightResult.columns.length) return null
+
+  const leftRowsByKey = new Map()
+  leftResult.rows.forEach((row, index) => {
+    const key = stableValue(row)
+    if (!leftRowsByKey.has(key)) leftRowsByKey.set(key, [])
+    leftRowsByKey.get(key).push(index)
+  })
+  const matchedRightIds = leftResult.rows.map(() => new Set())
+  const combinedRows = leftResult.rows.map(() => [])
+  joinedResult.rows.forEach((row) => {
+    const leftRows = leftRowsByKey.get(stableValue(row.slice(0, leftColumnCount))) || []
+    const rightId = row[leftColumnCount + rightIdIndex]
+    leftRows.forEach((index) => {
+      if (rightId !== null && rightId !== undefined) matchedRightIds[index].add(String(rightId))
+      combinedRows[index].push(row)
+    })
+  })
+  return {
+    rightIdIndex,
+    matchedRightIdsByLeft: matchedRightIds.map((ids) => [...ids]),
+    combinedRowsByLeft: combinedRows,
+  }
 }
 
 function describeJoin(entry, tableName, joinType, parser) {

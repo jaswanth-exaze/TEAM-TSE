@@ -50,6 +50,19 @@ ORDER BY salary DESC;`,
 FROM employees AS e
 LEFT JOIN departments AS d ON e.department_id = d.id
 ORDER BY e.name;`,
+  'self-join-manager': `SELECT e.id, e.name AS employee_name, m.name AS manager_name
+FROM employees AS e
+LEFT JOIN employees AS m ON e.manager_id = m.id
+ORDER BY e.id;`,
+  'self-join-colleagues': `SELECT e.department_id,
+       e.name AS employee_name,
+       colleague.name AS colleague_name
+FROM employees AS e
+INNER JOIN employees AS colleague
+  ON e.department_id = colleague.department_id
+ AND e.id < colleague.id
+WHERE e.department_id IS NOT NULL
+ORDER BY e.department_id, e.name, colleague.name;`,
   group: `SELECT status, COUNT(*) AS order_count, SUM(amount) AS total_amount
 FROM orders
 GROUP BY status;`,
@@ -123,6 +136,20 @@ WHERE EXISTS (
        RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS department_rank
 FROM employees
 ORDER BY department_id, department_rank;`,
+  'window-company-ranking': `SELECT name, department_id, salary,
+       RANK() OVER (ORDER BY salary DESC) AS company_rank
+FROM employees
+ORDER BY company_rank, name;`,
+  'window-hire-order': `SELECT name, department_id, hire_date,
+       RANK() OVER (PARTITION BY department_id ORDER BY hire_date ASC) AS hire_order
+FROM employees
+ORDER BY department_id, hire_order;`,
+  'window-ranking-functions': `SELECT name, department_id,
+       RANK() OVER (ORDER BY department_id ASC) AS rank_with_gaps,
+       DENSE_RANK() OVER (ORDER BY department_id ASC) AS dense_rank,
+       ROW_NUMBER() OVER (ORDER BY department_id ASC, id ASC) AS row_number
+FROM employees
+ORDER BY department_id ASC, id ASC;`,
   hierarchy: `WITH RECURSIVE org AS (
   SELECT id, name, manager_id, 0 AS depth
   FROM employees
@@ -134,6 +161,30 @@ ORDER BY department_id, department_rank;`,
 )
 SELECT id, name, manager_id, depth
 FROM org
+ORDER BY depth, id;`,
+  'cte-team-reports': `WITH RECURSIVE reports AS (
+  SELECT id, name, manager_id, 0 AS depth
+  FROM employees
+  WHERE id = 3
+  UNION ALL
+  SELECT e.id, e.name, e.manager_id, reports.depth + 1
+  FROM employees AS e
+  JOIN reports ON e.manager_id = reports.id
+)
+SELECT id, name, manager_id, depth
+FROM reports
+ORDER BY depth, id;`,
+  'cte-two-teams': `WITH RECURSIVE selected_teams AS (
+  SELECT id, name, manager_id, 0 AS depth
+  FROM employees
+  WHERE id IN (1, 3)
+  UNION ALL
+  SELECT e.id, e.name, e.manager_id, selected_teams.depth + 1
+  FROM employees AS e
+  JOIN selected_teams ON e.manager_id = selected_teams.id
+)
+SELECT id, name, manager_id, depth
+FROM selected_teams
 ORDER BY depth, id;`,
   'sandbox-insert': `INSERT INTO departments (name, location)
 VALUES ('Finance', 'Delhi');`,
@@ -436,10 +487,21 @@ function configureActions() {
     if (example) {
       codeEditor.setValue(example)
       codeEditor.clearError()
-      const isSubquery = event.target.value.startsWith('subquery-')
-      setQueryMessage(isSubquery
+      const exampleId = event.target.value
+      const isSubquery = exampleId.startsWith('subquery-')
+      const isSelfJoin = exampleId.startsWith('self-join-')
+      const isRanking = exampleId.startsWith('window-')
+      const isCte = exampleId === 'hierarchy' || exampleId.startsWith('cte-')
+      const message = isSubquery
         ? 'Guided subquery loaded. Run it to see the inner query and row-by-row decisions.'
-        : 'Example loaded. Run it to see the intermediate data.', 'neutral')
+        : isSelfJoin
+          ? 'Self-join loaded. Run it to compare the two table aliases and see the joined rows.'
+          : isRanking
+            ? 'Ranking query loaded. Run it to see the partitions, rank values, and final row order.'
+            : isCte
+              ? 'CTE walkthrough loaded. Run it to step through the anchor, recursive passes, and final rows.'
+              : 'Example loaded. Run it to see the intermediate data.'
+      setQueryMessage(message, 'neutral')
       editor?.focus()
     }
     event.target.value = ''
@@ -1663,16 +1725,20 @@ function renderWindowVisual(parent, step) {
   if (step.windowPhase === 'partition') {
     const partitionKeys = step.functions?.[0]?.partition || []
     const partitionName = partitionKeys.length ? partitionKeys.join(', ') : 'the full row set'
-    parent.append(createNode('h4', 'visual-subheading', `Step 2 · split rows by ${partitionName}`))
+    parent.append(createNode('h4', 'visual-subheading', partitionKeys.length
+      ? `Step 2 · split rows by ${partitionName}`
+      : 'Step 2 · one shared window for the whole table'))
     parent.append(createNode('p', 'visual-caption', partitionKeys.length
       ? `Rows with the same ${partitionName} are placed in the same partition. Each group is an independent lane; the window function starts over in every group.`
-      : 'There is no PARTITION BY, so every input row belongs to one shared partition.'))
+      : 'There is no PARTITION BY, so every input row belongs to one shared partition. The ranking runs across the whole input table as one window.'))
     const groups = createNode('div', 'window-partition-grid')
     ;(step.partitions || []).forEach((partition, index) => {
       const card = createNode('article', 'window-partition-card')
       card.append(createNode('p', 'window-logic-label', `PARTITION ${String(index + 1).padStart(2, '0')}`))
       card.append(createNode('h4', '', partition.label))
-      card.append(createNode('p', 'window-partition-note', `${partition.inputRows?.length || 0} ${partition.inputRows?.length === 1 ? 'row' : 'rows'} will be ranked together. RANK starts again at 1 in this group.`))
+      const functionNames = [...new Set((step.functions || []).map((item) => String(item.name).toUpperCase()))]
+      const functionLabel = functionNames.length ? functionNames.join(', ') : 'Window functions'
+      card.append(createNode('p', 'window-partition-note', `${partition.inputRows?.length || 0} ${partition.inputRows?.length === 1 ? 'row' : 'rows'} are processed together by ${functionLabel}.`))
       card.append(renderTable({
         columns: step.input?.columns || step.result.columns,
         rows: partition.inputRows || [],
@@ -1760,7 +1826,10 @@ function renderWindowVisual(parent, step) {
         : `All rows share one partition. ${functionName} was calculated for every row.`
     details.append(createNode('p', 'window-partition-note', partitionNote))
     const selectedColumns = [...orderColumns]
-    if (rankIndex >= 0) selectedColumns.push(step.result.columns[rankIndex])
+    functions.filter((item) => ['RANK', 'DENSE_RANK', 'ROW_NUMBER'].includes(String(item.name).toUpperCase()))
+      .map((item) => findWindowResultColumn(step, item))
+      .filter((columnIndex) => columnIndex >= 0)
+      .forEach((columnIndex) => selectedColumns.push(step.result.columns[columnIndex]))
     const result = { columns: step.result.columns, rows, totalRows: partition.rows.length }
     details.append(renderTable(result, {
       rowLimit: 40,
@@ -1819,7 +1888,7 @@ function renderHierarchyVisual(parent, step) {
     parent.append(createNode('h4', 'visual-subheading', heading))
 
     if (step.hierarchyPhase === 'anchor') {
-      parent.append(createNode('p', 'visual-caption', `The anchor query runs once. It selects employees with no manager and seeds ${step.cteName} at depth 0.`))
+      parent.append(createNode('p', 'visual-caption', `The anchor query runs once. Its starting rows seed ${step.cteName} at depth 0; the recursive passes build outward from these rows.`))
       parent.append(renderCteSql('ANCHOR SQL', step.anchorSql))
       parent.append(createNode('p', 'cte-pass-label', 'ROOT ROWS ADDED · DEPTH 0'))
       parent.append(renderTable(step.result, { rowLimit: 40, numbered: true }))
@@ -2470,6 +2539,8 @@ function renderJoinVisual(parent, step) {
     parent.append(explanation)
   }
 
+  renderJoinScan(parent, step)
+
   const output = createNode('section', 'join-output')
   output.append(createNode('div', 'comparison-heading', `${step.joinType} JOIN output · ${step.result.totalRows} ${step.result.totalRows === 1 ? 'row' : 'rows'}`))
   if (step.isSelfJoin) {
@@ -2488,6 +2559,134 @@ function renderJoinVisual(parent, step) {
     }))
   }
   parent.append(output)
+}
+
+function renderJoinScan(parent, step) {
+  if (!step.joinScan || !step.input?.rows?.length) return
+  const scan = createNode('section', 'join-row-scan')
+  const header = createNode('div', 'join-scan-header')
+  header.append(createNode('div', 'join-scan-title', 'Walk the rows one at a time'))
+  header.append(createNode('p', 'join-scan-copy', 'Choose a left row, then scan the right table from top to bottom. A true ON condition combines the pair into a joined row.'))
+
+  const navigation = createNode('div', 'join-scan-navigation')
+  const previousButton = createNode('button', 'button button--quiet join-scan-button', '← Previous left row')
+  previousButton.type = 'button'
+  const counter = createNode('span', 'join-scan-counter')
+  const nextButton = createNode('button', 'button button--primary join-scan-button', 'Next left row →')
+  nextButton.type = 'button'
+  navigation.append(previousButton, counter, nextButton)
+
+  const flow = createNode('div', 'join-scan-flow')
+  const leftCard = createNode('section', 'join-scan-card join-scan-card--left')
+  leftCard.append(createNode('div', 'comparison-heading', `${step.joinLeftAlias || 'Left'} · current row`))
+  const leftTable = createNode('div', 'join-scan-table')
+  leftCard.append(leftTable)
+
+  const conditionCard = createNode('section', 'join-scan-condition')
+  conditionCard.append(createNode('span', 'self-join-condition-label', 'CHECK ON CONDITION'))
+  conditionCard.append(createNode('code', '', step.joinCondition || 'TRUE'))
+  conditionCard.append(createNode('span', 'join-scan-arrow', '↓'))
+  conditionCard.append(createNode('p', 'join-scan-copy', 'Compare this left row with each candidate on the right.'))
+
+  const rightCard = createNode('section', 'join-scan-card join-scan-card--right')
+  rightCard.append(createNode('div', 'comparison-heading', `${step.joinRightAlias || step.joinTable} · candidates in scan order`))
+  const rightCaption = createNode('p', 'join-scan-caption')
+  const candidateNavigation = createNode('div', 'join-candidate-navigation')
+  const previousCandidate = createNode('button', 'button button--quiet join-scan-button', '← Previous candidate')
+  previousCandidate.type = 'button'
+  const candidateCounter = createNode('span', 'join-scan-counter')
+  const nextCandidate = createNode('button', 'button button--quiet join-scan-button', 'Next candidate →')
+  nextCandidate.type = 'button'
+  candidateNavigation.append(previousCandidate, candidateCounter, nextCandidate)
+  const candidateDecision = createNode('p', 'join-candidate-decision')
+  const rightTable = createNode('div', 'join-scan-table')
+  rightCard.append(rightCaption, candidateNavigation, candidateDecision, rightTable)
+  flow.append(leftCard, conditionCard, rightCard)
+
+  const combined = createNode('section', 'join-scan-combined')
+  combined.append(createNode('div', 'comparison-heading', 'Rows combined for this left row'))
+  const combinedContent = createNode('div', 'join-scan-table')
+  combined.append(combinedContent)
+
+  scan.append(header, navigation, flow, combined)
+  parent.append(scan)
+
+  let currentIndex = 0
+  let candidateIndex = 0
+  const update = () => {
+    const leftRow = step.input.rows[currentIndex]
+    const candidates = step.joinRight.rows || []
+    if (candidateIndex >= candidates.length) candidateIndex = Math.max(0, candidates.length - 1)
+    const matchingIds = new Set(step.joinScan.matchedRightIdsByLeft[currentIndex] || [])
+    const combinedRows = step.joinScan.combinedRowsByLeft[currentIndex] || []
+    counter.textContent = `Left row ${currentIndex + 1} of ${step.input.rows.length}`
+    previousButton.disabled = currentIndex === 0
+    nextButton.disabled = currentIndex === step.input.rows.length - 1
+
+    leftTable.replaceChildren(renderTable({
+      columns: step.input.columns,
+      rows: [leftRow],
+      totalRows: 1,
+    }, { compact: true, numbered: true, rowLimit: 1 }))
+
+    rightCaption.textContent = `Scanned ${step.joinRight.rows.length} candidate ${step.joinRight.rows.length === 1 ? 'row' : 'rows'} · ${matchingIds.size} ${matchingIds.size === 1 ? 'match' : 'matches'}`
+    rightTable.replaceChildren(renderTable(step.joinRight, {
+      compact: true,
+      numbered: true,
+      rowLimit: 100,
+      showStatus: true,
+      rowStatus: (_index, row) => matchingIds.has(String(row[step.joinScan.rightIdIndex])),
+      statusKept: 'Combine',
+      statusRemoved: 'No match',
+    }))
+    candidateCounter.textContent = candidates.length ? `Candidate ${candidateIndex + 1} of ${candidates.length}` : 'No candidates'
+    previousCandidate.disabled = candidateIndex === 0
+    nextCandidate.disabled = candidateIndex >= candidates.length - 1
+    const currentCandidate = candidates[candidateIndex]
+    const candidateMatches = currentCandidate && matchingIds.has(String(currentCandidate[step.joinScan.rightIdIndex]))
+    candidateDecision.className = `join-candidate-decision${candidateMatches ? ' is-match' : ''}`
+    candidateDecision.textContent = currentCandidate
+      ? candidateMatches
+        ? `MATCH · this ${step.joinRightAlias || 'right'} row is combined with the current left row.`
+        : 'NO MATCH · move to the next right-side row.'
+      : 'The right table has no candidate rows.'
+    const candidateRows = rightTable.querySelectorAll('tbody tr')
+    candidateRows.forEach((row, index) => row.classList.toggle('is-current-row', index === candidateIndex))
+    candidateRows[candidateIndex]?.scrollIntoView({ block: 'nearest' })
+
+    if (combinedRows.length) {
+      const columns = step.joinDisplayResult?.columns || step.result.columns
+      combinedContent.replaceChildren(renderTable({
+        columns,
+        rows: combinedRows,
+        totalRows: combinedRows.length,
+      }, { compact: true, rowLimit: 40 }))
+    } else {
+      combinedContent.replaceChildren(createNode('p', 'join-scan-empty', step.joinType.toUpperCase().includes('LEFT')
+        ? 'No right-side row matched. LEFT JOIN still keeps this left row, with NULL values on the right.'
+        : 'No right-side row matched, so this left row does not create a joined row.'))
+    }
+  }
+
+  previousButton.addEventListener('click', () => {
+    if (currentIndex > 0) currentIndex -= 1
+    candidateIndex = 0
+    update()
+  })
+  nextButton.addEventListener('click', () => {
+    if (currentIndex < step.input.rows.length - 1) currentIndex += 1
+    candidateIndex = 0
+    update()
+  })
+  previousCandidate.addEventListener('click', () => {
+    if (candidateIndex > 0) candidateIndex -= 1
+    update()
+  })
+  nextCandidate.addEventListener('click', () => {
+    if (candidateIndex < (step.joinRight.rows?.length || 0) - 1) candidateIndex += 1
+    update()
+  })
+  update()
 }
 
 function renderGroupVisual(parent, step) {

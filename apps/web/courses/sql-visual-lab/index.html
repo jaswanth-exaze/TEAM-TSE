@@ -105,6 +105,10 @@
                 <option value="group">Group orders by status</option>
                 <option value="having">Filter groups with HAVING</option>
                 <option value="order-limit">Sort and limit results</option>
+                <optgroup label="Self-join walkthroughs">
+                  <option value="self-join-manager" data-mode="query">Match employees to their managers</option>
+                  <option value="self-join-colleagues" data-mode="query">Pair employees in the same department</option>
+                </optgroup>
                 <optgroup label="Guided subquery walkthroughs">
                   <option value="subquery-department-in" data-mode="query">IN · Employees in Hyderabad departments</option>
                   <option value="subquery-orders-in" data-mode="query">IN · Employees with orders over 10,000</option>
@@ -114,8 +118,17 @@
                   <option value="subquery-not-exists-orders" data-mode="query">NOT EXISTS · Employees with no orders</option>
                   <option value="subquery-exists-above-average" data-mode="query">Nested EXISTS · Orders above employee average</option>
                 </optgroup>
-                <option value="window-ranking" data-mode="query">Rank employees inside departments</option>
-                <option value="hierarchy" data-mode="query">Trace the employee hierarchy</option>
+                <optgroup label="Window ranking walkthroughs">
+                  <option value="window-ranking" data-mode="query">Rank salaries inside each department</option>
+                  <option value="window-company-ranking" data-mode="query">Rank salaries across the company</option>
+                  <option value="window-hire-order" data-mode="query">Rank employees by hire date per department</option>
+                  <option value="window-ranking-functions" data-mode="query">Compare RANK, DENSE_RANK, and ROW_NUMBER</option>
+                </optgroup>
+                <optgroup label="CTE walkthroughs">
+                  <option value="hierarchy" data-mode="query">Trace the full employee hierarchy</option>
+                  <option value="cte-team-reports" data-mode="query">Trace reports under Chen Li</option>
+                  <option value="cte-two-teams" data-mode="query">Start recursion from two managers</option>
+                </optgroup>
                 <option value="sandbox-insert" data-mode="sandbox" hidden>Insert a department</option>
                 <option value="sandbox-update" data-mode="sandbox" hidden>Update one employee</option>
                 <option value="sandbox-delete" data-mode="sandbox" hidden>Delete one order</option>
