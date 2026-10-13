@@ -78,13 +78,6 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
     }
     return { available: true, reason: '', steps: await buildRecursiveCteSteps(hierarchy, queryRunner) }
   }
-  if (isEmployeeSelfJoin(ast)) {
-    const hierarchy = await buildSelfJoinHierarchyStep(parser, ast, queryRunner, finalResult)
-    return hierarchy
-      ? { available: true, reason: '', steps: [hierarchy] }
-      : { available: false, reason: 'This self-join uses a parent/child relationship, but its rows could not be mapped into a stable hierarchy. Include the child id and manager id in the query.', steps: [] }
-  }
-
   const steps = []
   let previousResult = null
   const sourceEntries = Array.isArray(ast.from) ? ast.from : []
@@ -122,16 +115,41 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         const entry = sourceEntries[index]
         const joinType = String(entry.join || 'JOIN').replace(/\s+JOIN$/i, '').trim() || 'INNER'
         const tableName = getTableName(entry)
-      await runStep({
-        id: `join-${index}`,
-        kind: 'join',
-        joinType,
-        title: `${joinType} JOIN ${tableName}`,
-        plain: describeJoinPlain(entry, tableName, joinType, parser),
-        description: describeJoin(entry, tableName, joinType, parser),
-        joinTable: tableName,
-        joinRight: await queryRunner(`SELECT * FROM \`${String(tableName).replace(/`/g, '``')}\` LIMIT 8`),
-      }, { fromCount: index + 1 })
+        const leftEntry = sourceEntries[index - 1]
+        const matchingSelfJoinEntry = sourceEntries.slice(0, index).find((source) => {
+          const sourceTable = getTableName(source)
+          return sourceTable && tableName && sourceTable.toLowerCase() === tableName.toLowerCase()
+        })
+        const leftTable = getTableName(matchingSelfJoinEntry || leftEntry)
+        const leftAlias = String((matchingSelfJoinEntry || leftEntry).as || leftTable)
+        const rightAlias = String(entry.as || tableName)
+        const isSelfJoin = Boolean(matchingSelfJoinEntry)
+        const condition = getJoinCondition(entry, parser)
+        const joinRight = await queryRunner(`SELECT * FROM \`${String(tableName).replace(/`/g, '``')}\` LIMIT ${isSelfJoin ? 20 : 8}`)
+        const joinStep = await runStep({
+          id: `join-${index}`,
+          kind: 'join',
+          joinType,
+          title: `${joinType} JOIN ${tableName}${isSelfJoin ? ` AS ${rightAlias}` : ''}`,
+          plain: describeJoinPlain(entry, tableName, joinType, parser),
+          description: describeJoin(entry, tableName, joinType, parser),
+          joinTable: tableName,
+          joinLeftTable: leftTable,
+          joinLeftAlias: leftAlias,
+          joinRightTable: tableName,
+          joinRightAlias: rightAlias,
+          joinCondition: condition,
+          isSelfJoin,
+          joinRight,
+        }, { fromCount: index + 1 })
+        if (isSelfJoin) {
+          const leftColumnCount = joinStep.input?.columns?.length || 0
+          joinStep.joinDisplayResult = {
+            ...joinStep.result,
+            columns: joinStep.result.columns.map((column, columnIndex) =>
+              `${columnIndex < leftColumnCount ? leftAlias : rightAlias}.${column}`),
+          }
+        }
       }
     }
 
@@ -1252,103 +1270,6 @@ async function buildRecursiveCteSteps(hierarchy, queryRunner) {
   return steps
 }
 
-async function buildSelfJoinHierarchyStep(parser, ast, queryRunner, result) {
-  if (!result?.rows?.length || ast.distinct || !Array.isArray(ast.columns) || !Array.isArray(ast.from)) return null
-  const relation = findSelfJoinRelation(ast)
-  if (!relation) return null
-  const copy = clone(ast)
-  copy.columns = [
-    ...clone(ast.columns),
-    { expr: { type: 'column_ref', table: relation.childAlias, column: 'id' }, as: '__visual_child_id' },
-    { expr: { type: 'column_ref', table: relation.childAlias, column: 'manager_id' }, as: '__visual_parent_id' },
-  ]
-  const response = await queryRunner(parser.sqlify(copy, MYSQL_OPTIONS).replace(/;\s*$/, ''))
-  const offset = response.columns.length - 2
-  const records = result.rows.map((row, index) => ({
-    row,
-    id: response.rows[index]?.[offset],
-    parent: response.rows[index]?.[offset + 1] ?? null,
-  }))
-  if (records.some((record) => record.id === undefined)) return null
-  const byId = new Map(records.map((record) => [String(record.id), record]))
-  const depthFor = (record, seen = new Set()) => {
-    const key = String(record.id)
-    if (seen.has(key)) return 0
-    seen.add(key)
-    const parent = record.parent === null ? null : byId.get(String(record.parent))
-    return parent ? depthFor(parent, seen) + 1 : 0
-  }
-  const levels = new Map()
-  records.forEach((record) => {
-    const depth = depthFor(record)
-    if (!levels.has(depth)) levels.set(depth, [])
-    levels.get(depth).push(record)
-  })
-  return {
-    id: 'self-join-hierarchy',
-    title: 'Manager hierarchy',
-    plain: 'Match each person to their manager, then arrange everyone into levels by following the manager links.',
-    description: `The self-join matches each ${relation.childAlias} row to its manager through manager_id = id. The rows are arranged into levels by following that parent link.`,
-    kind: 'hierarchy',
-    sql: parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, ''),
-    result,
-    input: result,
-    idColumn: 'employee id',
-    parentColumn: 'manager_id',
-    depthColumn: 'inferred depth',
-    outerOrderBy: getSortKeys(ast.orderby, parser),
-    levels: [...levels.entries()].sort(([left], [right]) => left - right).map(([depth, items]) => ({
-      depth,
-      rows: items.map((item) => item.row),
-      ids: items.map((item) => item.id),
-      parents: items.map((item) => item.parent),
-    })),
-  }
-}
-
-function isEmployeeSelfJoin(ast) {
-  return Boolean(findSelfJoinRelation(ast))
-}
-
-function findSelfJoinRelation(ast) {
-  if (!Array.isArray(ast?.from)) return null
-  for (let rightIndex = 1; rightIndex < ast.from.length; rightIndex += 1) {
-    const right = ast.from[rightIndex]
-    for (let leftIndex = 0; leftIndex < rightIndex; leftIndex += 1) {
-      const left = ast.from[leftIndex]
-      if (!getTableName(left) || getTableName(left).toLowerCase() !== getTableName(right).toLowerCase()) continue
-      const leftAlias = String(left.as || getTableName(left))
-      const rightAlias = String(right.as || getTableName(right))
-      if (leftAlias.toLowerCase() === rightAlias.toLowerCase()) continue
-      const conditions = collectEqualityColumnPairs(right.on)
-      const candidates = [
-        { childAlias: leftAlias, managerAlias: rightAlias },
-        { childAlias: rightAlias, managerAlias: leftAlias },
-      ]
-      const relation = candidates.find(({ childAlias, managerAlias }) => conditions.some(([one, two]) =>
-        isColumnPair(one, childAlias, 'manager_id') && isColumnPair(two, managerAlias, 'id')
-        || isColumnPair(two, childAlias, 'manager_id') && isColumnPair(one, managerAlias, 'id')))
-      if (relation) return relation
-    }
-  }
-  return null
-}
-
-function collectEqualityColumnPairs(node, pairs = []) {
-  if (!node || typeof node !== 'object') return pairs
-  if (Array.isArray(node)) { node.forEach((item) => collectEqualityColumnPairs(item, pairs)); return pairs }
-  if (node.type === 'binary_expr' && String(node.operator).trim() === '=' && node.left?.type === 'column_ref' && node.right?.type === 'column_ref') {
-    pairs.push([node.left, node.right])
-  }
-  Object.values(node).forEach((value) => collectEqualityColumnPairs(value, pairs))
-  return pairs
-}
-
-function isColumnPair(node, alias, column) {
-  return String(node?.table || '').toLowerCase() === alias.toLowerCase()
-    && String(node?.column || '').toLowerCase() === column.toLowerCase()
-}
-
 function isRecursiveCte(ast) {
   return Array.isArray(ast?.with) && ast.with.some((item) => Boolean(item.recursive))
 }
@@ -1416,8 +1337,12 @@ function rawExpressionText(expression, parser) {
   }
 }
 
+function getJoinCondition(entry, parser) {
+  return entry.on ? expressionText(entry.on, parser) : entry.using?.length ? `USING (${entry.using.join(', ')})` : 'the join condition'
+}
+
 function describeJoin(entry, tableName, joinType, parser) {
-  const condition = entry.on ? expressionText(entry.on, parser) : entry.using?.length ? `USING (${entry.using.join(', ')})` : 'the join condition'
+  const condition = getJoinCondition(entry, parser)
   const behavior = joinType.toUpperCase().includes('LEFT')
     ? 'Every left-side row stays; unmatched right-side values appear as NULL.'
     : joinType.toUpperCase().includes('RIGHT')

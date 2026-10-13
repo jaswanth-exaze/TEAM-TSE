@@ -320,6 +320,11 @@ kbd { min-width: 17px; border: 1px solid #363f52; border-radius: 4px; padding: 1
 .comparison-heading { margin-bottom: 8px; color: #c9d3e3; font-family: var(--font-code); font-size: 9px; font-weight: 600; }
 .join-connector, .projection-arrow { color: var(--lab-amber-soft); font-size: 18px; text-align: center; }
 .join-output { margin-top: 10px; }
+.self-join-explanation { display: grid; grid-template-columns: minmax(0, 1fr) minmax(190px, .55fr) minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 10px; border: 1px solid rgb(228 167 47 / 18%); border-radius: 9px; padding: 12px; background: linear-gradient(120deg, rgb(228 167 47 / 5%), rgb(120 168 255 / 4%)); }
+.self-join-intro { margin: 0; color: var(--lab-muted); font-size: 10px; line-height: 1.6; }
+.self-join-condition { display: grid; justify-items: center; gap: 5px; border: 1px solid rgb(228 167 47 / 25%); border-radius: 8px; padding: 9px; background: rgb(228 167 47 / 7%); text-align: center; }
+.self-join-condition-label { color: var(--lab-amber-soft); font-family: var(--font-code); font-size: 8px; font-weight: 700; letter-spacing: .08em; }
+.self-join-condition code { color: #fff0c8; font-family: var(--font-code); font-size: 11px; overflow-wrap: anywhere; }
 .group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr)); gap: 8px; }
 .group-card { min-width: 0; border: 1px solid rgb(120 168 255 / 19%); border-radius: 9px; padding: 10px; background: rgb(120 168 255 / 3%); animation: group-arrive .26s ease both; }
 @keyframes group-arrive { from { transform: translateY(5px); opacity: .5; } to { transform: translateY(0); opacity: 1; } }
@@ -382,6 +387,8 @@ kbd { min-width: 17px; border: 1px solid #363f52; border-radius: 4px; padding: 1
   .example-select { width: 220px; }
   .join-comparison, .projection-comparison { grid-template-columns: minmax(0, 1fr); }
   .join-connector, .projection-arrow { transform: rotate(90deg); }
+  .join-connector--self { transform: none; }
+  .self-join-explanation { grid-template-columns: minmax(0, 1fr); text-align: center; }
   .subquery-flow--exists { grid-template-columns: minmax(0, 1fr); }
   .subquery-flow--exists .subquery-flow-arrow { transform: rotate(90deg); min-height: 14px; }
 }

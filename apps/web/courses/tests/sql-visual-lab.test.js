@@ -198,7 +198,7 @@ test('shows transaction, savepoint, rollback, commit, and undo/redo state', asyn
   assert.equal(redoneValue.finalResult.rows[0][0], 1)
 })
 
-test('builds dedicated window and recursive hierarchy steps', async () => {
+test('builds window, self-join, and recursive hierarchy walkthroughs', async () => {
   const windowSql = `SELECT name, department_id, salary,
     RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS dept_rank
     FROM employees ORDER BY department_id, dept_rank`
@@ -227,8 +227,21 @@ test('builds dedicated window and recursive hierarchy steps', async () => {
     async (sql) => request('run', { sql }),
     selfJoinResult,
   )
-  assert.equal(selfJoinPlan.steps[0].kind, 'hierarchy')
-  assert.deepEqual(selfJoinPlan.steps[0].levels.map((level) => level.rows.length), [3, 7, 2])
+  assert.equal(selfJoinPlan.available, true)
+  const selfJoinStep = selfJoinPlan.steps.find((step) => step.kind === 'join')
+  assert.ok(selfJoinStep)
+  assert.equal(selfJoinStep.isSelfJoin, true)
+  assert.equal(selfJoinStep.joinLeftTable, 'employees')
+  assert.equal(selfJoinStep.joinLeftAlias, 'e')
+  assert.equal(selfJoinStep.joinRightTable, 'employees')
+  assert.equal(selfJoinStep.joinRightAlias, 'm')
+  assert.equal(selfJoinStep.joinCondition, 'e.manager_id = m.id')
+  assert.equal(selfJoinStep.input.totalRows, 12)
+  assert.equal(selfJoinStep.joinRight.totalRows, 12)
+  assert.equal(selfJoinStep.result.totalRows, 12)
+  assert.deepEqual(Array.from(selfJoinStep.joinDisplayResult.columns.slice(0, 2)), ['e.id', 'e.name'])
+  assert.deepEqual(Array.from(selfJoinStep.joinDisplayResult.columns.slice(6, 8)), ['m.id', 'm.name'])
+  assert.deepEqual(Array.from(selfJoinResult.columns), ['employee', 'manager'])
 
   const hierarchySql = `WITH RECURSIVE org AS (
     SELECT id, name, manager_id, 0 AS depth FROM employees WHERE manager_id IS NULL

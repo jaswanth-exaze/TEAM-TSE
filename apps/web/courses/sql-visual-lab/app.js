@@ -2439,28 +2439,54 @@ function renderJoinVisual(parent, step) {
   const input = step.input || { columns: [], rows: [], totalRows: 0 }
   const comparison = createNode('div', 'join-comparison')
   const left = createNode('section', 'comparison-card')
-  left.append(createNode('div', 'comparison-heading', 'Left-side rows'))
+  left.append(createNode('div', 'comparison-heading', step.isSelfJoin
+    ? `${step.joinLeftTable} AS ${step.joinLeftAlias} · first table role`
+    : 'Left-side rows'))
   left.append(renderTable(input, { compact: true, rowLimit: 20 }))
   const right = createNode('section', 'comparison-card')
-  right.append(createNode('div', 'comparison-heading', `${step.joinTable} join source`))
-  right.append(renderTable(step.joinRight || { columns: [], rows: [], totalRows: 0 }, { compact: true, rowLimit: 8 }))
-  comparison.append(left, createNode('div', 'join-connector', '↔'), right)
-  parent.append(createNode('h4', 'visual-subheading', 'Match related records'))
+  right.append(createNode('div', 'comparison-heading', step.isSelfJoin
+    ? `${step.joinRightTable} AS ${step.joinRightAlias} · second table role`
+    : `${step.joinTable} join source`))
+  right.append(renderTable(step.joinRight || { columns: [], rows: [], totalRows: 0 }, { compact: true, rowLimit: step.isSelfJoin ? 20 : 8 }))
+  comparison.append(left, createNode('div', `join-connector${step.isSelfJoin ? ' join-connector--self' : ''}`, step.isSelfJoin ? 'JOIN' : '↔'), right)
+  parent.append(createNode('h4', 'visual-subheading', step.isSelfJoin ? 'One table, two aliases' : 'Match related records'))
   parent.append(comparison)
 
+  if (step.isSelfJoin) {
+    const explanation = createNode('div', 'self-join-explanation')
+    explanation.append(createNode('p', 'self-join-intro', `SQL reads ${step.joinLeftTable} twice. The left copy has alias ${step.joinLeftAlias}; the second copy has alias ${step.joinRightAlias}. The aliases let the query refer to each copy separately.`))
+    const condition = createNode('div', 'self-join-condition')
+    condition.append(createNode('span', 'self-join-condition-label', 'COMPARE THESE COLUMNS'))
+    condition.append(createNode('code', '', step.joinCondition || 'Join condition'))
+    explanation.append(condition)
+    const joinBehavior = step.joinType.toUpperCase().includes('LEFT')
+      ? `LEFT JOIN keeps every ${step.joinLeftAlias} row. If no ${step.joinRightAlias} row matches, the right-side values are NULL.`
+      : step.joinType.toUpperCase().includes('RIGHT')
+        ? `RIGHT JOIN keeps every ${step.joinRightAlias} row. If no ${step.joinLeftAlias} row matches, the left-side values are NULL.`
+        : step.joinType.toUpperCase().includes('FULL')
+          ? 'FULL JOIN keeps unmatched rows from both copies, filling the missing side with NULL.'
+          : 'Only row pairs from the two copies that satisfy this condition are kept.'
+    explanation.append(createNode('p', 'self-join-intro', `For each row in the left copy, SQL looks for matching row(s) in the right copy. ${joinBehavior}`))
+    parent.append(explanation)
+  }
+
   const output = createNode('section', 'join-output')
-  output.append(createNode('div', 'comparison-heading', `${step.joinType} JOIN result · ${step.result.totalRows} rows`))
-  const leftColumns = input.columns.length
-  output.append(renderTable(step.result, {
-    rowLimit: 40,
-    rowStatus: (index) => {
-      const rightValues = step.result.rows[index]?.slice(leftColumns) || []
-      return rightValues.some((value) => value !== null) ? true : false
-    },
-    statusKept: 'Matched',
-    statusRemoved: 'No right match',
-    showStatus: step.joinType.toUpperCase().includes('LEFT') || step.joinType.toUpperCase().includes('RIGHT'),
-  }))
+  output.append(createNode('div', 'comparison-heading', `${step.joinType} JOIN output · ${step.result.totalRows} ${step.result.totalRows === 1 ? 'row' : 'rows'}`))
+  if (step.isSelfJoin) {
+    output.append(renderTable(step.joinDisplayResult || step.result, { rowLimit: 40 }))
+  } else {
+    const leftColumns = input.columns.length
+    output.append(renderTable(step.result, {
+      rowLimit: 40,
+      rowStatus: (index) => {
+        const rightValues = step.result.rows[index]?.slice(leftColumns) || []
+        return rightValues.some((value) => value !== null) ? true : false
+      },
+      statusKept: 'Matched',
+      statusRemoved: 'No right match',
+      showStatus: step.joinType.toUpperCase().includes('LEFT') || step.joinType.toUpperCase().includes('RIGHT'),
+    }))
+  }
   parent.append(output)
 }
 
