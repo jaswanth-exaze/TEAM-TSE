@@ -89,7 +89,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
   let previousResult = null
   const sourceEntries = Array.isArray(ast.from) ? ast.from : []
   const hasFrom = sourceEntries.length > 0
-  const scalarSubquery = getVisualizableWhereSubquery(ast)
+  const visualSubquery = getVisualizableWhereSubquery(ast)
 
   const runStep = async (definition, options) => {
     const statement = makePartialQuery(parser, ast, options)
@@ -113,6 +113,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         id: 'from',
         label: 'FROM',
         title: `Start with ${fromName}`,
+        plain: `Read every row of the ${fromName} table.`,
         description: `FROM reads the starting rows from ${fromName}. No filtering or column selection has happened yet.`,
       }, { fromCount: 1 })
 
@@ -125,6 +126,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         kind: 'join',
         joinType,
         title: `${joinType} JOIN ${tableName}`,
+        plain: describeJoinPlain(entry, tableName, joinType, parser),
         description: describeJoin(entry, tableName, joinType, parser),
         joinTable: tableName,
         joinRight: await queryRunner(`SELECT * FROM \`${String(tableName).replace(/`/g, '``')}\` LIMIT 8`),
@@ -132,8 +134,12 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       }
     }
 
-    if (scalarSubquery) {
-      const subqueryStep = await buildScalarSubqueryStep(parser, ast, scalarSubquery, queryRunner, previousResult)
+    if (visualSubquery) {
+      const subqueryStep = visualSubquery.kind === 'membership'
+        ? await buildMembershipSubqueryStep(parser, ast, visualSubquery, queryRunner, previousResult)
+        : visualSubquery.kind === 'exists'
+          ? await buildExistsSubqueryStep(parser, ast, visualSubquery, queryRunner, previousResult)
+          : await buildScalarSubqueryStep(parser, ast, visualSubquery, queryRunner, previousResult)
       if (subqueryStep) steps.push(subqueryStep)
     }
 
@@ -154,8 +160,10 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       await runStep({
         id: 'where',
         title: 'WHERE',
-        description: `WHERE checks each incoming row against ${expressionText(ast.where, parser)}. Rows that do not match are removed before groups are formed.`,
+        plain: containsSubquery(ast.where) ? 'Keep only the rows that pass the subquery test.' : `Keep only the rows where ${expressionText(ast.where, parser)}.`,
+        description: `WHERE evaluates ${expressionText(ast.where, parser)} against each incoming row. TRUE keeps the row; FALSE or UNKNOWN removes it before the next query stage.`,
         filterFlags: markerResult.rows.map((row) => Boolean(row[0])),
+        filterResults: markerResult.rows.map((row) => row[0] ?? null),
         filterReason: expressionText(ast.where, parser),
         filterInput: await queryRunner(filterRows),
       }, { fromCount: sourceEntries.length, includeWhere: true })
@@ -183,6 +191,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       await runStep({
         id: 'group',
         title: 'GROUP BY',
+        plain: `Bundle rows that share the same ${groupExpressions.map((expr) => expressionText(expr, parser)).join(' + ')} into one group each.`,
         description: `GROUP BY collects the ${(await queryRunner(inputRows)).totalRows} incoming rows into groups using ${groupExpressions.map((expr) => expressionText(expr, parser)).join(', ')}.`,
         kind: 'groups',
         buckets: grouped.buckets,
@@ -199,6 +208,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       await runStep({
         id: 'aggregate',
         title: 'AGGREGATE',
+        plain: `Calculate ${aggregateNames(ast.columns)} for each group.`,
         description: 'Aggregate functions calculate a value for each group. COUNT, SUM, AVG, MIN, and MAX ignore NULL values where SQL defines them to.',
       }, {
         fromCount: sourceEntries.length,
@@ -210,6 +220,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       await runStep({
         id: 'aggregate',
         title: 'AGGREGATE',
+        plain: `Calculate ${aggregateNames(ast.columns)} across all the rows, giving a single answer.`,
         description: 'Without GROUP BY, aggregate functions calculate one result for the entire set of rows.',
       }, {
         fromCount: sourceEntries.length,
@@ -230,6 +241,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       const havingStep = await runStep({
         id: 'having',
         title: 'HAVING',
+        plain: `Keep only the groups where ${expressionText(ast.having, parser)}.`,
         description: `HAVING filters completed groups using ${expressionText(ast.having, parser)}. Aggregates are calculated before this filter is applied.`,
         kind: 'having',
         filterReason: expressionText(ast.having, parser),
@@ -259,6 +271,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
     await runStep({
       id: 'select',
       title: 'SELECT',
+      plain: describeSelectPlain(ast.columns, parser),
       description: describeSelect(ast.columns, parser),
       selectedColumns: getReferencedColumns(ast.columns),
     }, {
@@ -273,6 +286,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
       await runStep({
         id: 'distinct',
         title: 'DISTINCT',
+        plain: 'Remove rows that are exact duplicates of an earlier row.',
         description: 'DISTINCT compares the selected column values and removes duplicate result rows.',
       }, {
         fromCount: sourceEntries.length,
@@ -289,6 +303,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         id: 'order',
         kind: 'order',
         title: 'ORDER BY',
+        plain: describeOrderPlain(ast.orderby, parser),
         description: `ORDER BY sorts the selected rows by ${ast.orderby.map((order) => `${expressionText(order.expr, parser)} ${order.type || 'ASC'}`).join(', ')}.`,
       }, {
         fromCount: sourceEntries.length,
@@ -328,6 +343,7 @@ export async function buildExecutionSteps(parser, ast, queryRunner, finalResult 
         includeLimit: true,
       })
       limitStep.limitCount = limitStep.result.totalRows
+      limitStep.plain = `Keep only the first ${limitStep.limitCount} ${limitStep.limitCount === 1 ? 'row' : 'rows'} and discard the rest.`
     }
 
     return { available: steps.length > 0, reason: '', steps }
@@ -459,7 +475,7 @@ function explainUnsupportedQuery(ast) {
     return 'Step view not available for this query yet: subqueries in HAVING are supported for results only.'
   }
   if (containsSubquery(ast.where) && !getVisualizableWhereSubquery(ast)) {
-    return 'Step view not available for this query yet: this subquery shape cannot be expanded safely. A single-column scalar subquery in WHERE is supported when it reads regular tables.'
+    return 'Step view not available for this query yet: this subquery shape cannot be expanded safely. Try a single-column IN query, a correlated EXISTS query, or a scalar comparison in WHERE.'
   }
   return ''
 }
@@ -470,17 +486,65 @@ function getVisualizableWhereSubquery(ast) {
 
   const wrappers = collectSubqueryWrappers(ast.where)
   if (wrappers.length !== 1) return null
-  if (!isScalarComparisonSubquery(ast.where, wrappers[0])) return null
   const inner = wrappers[0].ast
-  if (!inner || inner.type !== 'select' || !Array.isArray(inner.columns) || inner.columns.length !== 1) return null
-  if (inner.with || inner.groupby || inner.having || inner._next || inner.set_op || collectSubqueryWrappers(inner).length) return null
+  if (!inner || inner.type !== 'select' || !Array.isArray(inner.columns) || !inner.columns.length) return null
+  if (inner.with || inner.groupby || inner.having || inner._next || inner.set_op) return null
   if (inner.from && (!Array.isArray(inner.from) || inner.from.some((entry) => !getTableName(entry)))) return null
+
+  const ancestors = findSubqueryAncestors(ast.where, wrappers[0]) || []
+  const membership = [...ancestors].reverse().find((node) => node.type === 'binary_expr' && /^(?:NOT\s+)?IN$/i.test(String(node.operator || '')))
+  const exists = [...ancestors].reverse().find((node) =>
+    node.type === 'unary_expr' && /EXISTS/i.test(String(node.operator || ''))
+    || node.type === 'function' && (node.name?.name || []).some((part) => /EXISTS/i.test(String(part.value || ''))))
+  const kind = membership ? 'membership' : exists ? 'exists' : isScalarComparisonSubquery(ast.where, wrappers[0]) ? 'scalar' : ''
+  if (!kind) return null
+  if (kind === 'membership' && inner.columns.length !== 1) return null
+  if (kind === 'scalar' && (inner.columns.length !== 1 || collectSubqueryWrappers(inner).length)) return null
+
+  const nestedWrappers = kind === 'exists' ? collectSubqueryWrappers(inner.where) : []
+  if (nestedWrappers.length > 1) return null
+  if (nestedWrappers.length === 1) {
+    const nested = nestedWrappers[0].ast
+    if (!isScalarComparisonSubquery(inner.where, nestedWrappers[0])
+      || !nested || nested.type !== 'select' || !Array.isArray(nested.columns) || nested.columns.length !== 1
+      || nested.with || nested.groupby || nested.having || nested._next || nested.set_op
+      || collectSubqueryWrappers(nested).length
+      || nested.from && (!Array.isArray(nested.from) || nested.from.some((entry) => !getTableName(entry)))) return null
+  }
 
   const outerAliases = new Set((ast.from || []).map((entry) => String(entry.as || getTableName(entry)).toLowerCase()))
   const innerAliases = new Set((inner.from || []).map((entry) => String(entry.as || getTableName(entry)).toLowerCase()))
   const correlated = collectColumnReferences(inner).filter((reference) => reference.table && outerAliases.has(String(reference.table).toLowerCase()))
   if (correlated.some((reference) => innerAliases.has(String(reference.table).toLowerCase()))) return null
-  return { wrapper: wrappers[0], inner, outerAliases, correlated }
+  if (kind === 'membership' && correlated.length) return null
+  return {
+    kind,
+    wrapper: wrappers[0],
+    inner,
+    outerAliases,
+    correlated,
+    membershipExpression: membership?.left || null,
+    operator: membership?.operator || '',
+    negated: /NOT/i.test(String(membership?.operator || exists?.operator || '')),
+  }
+}
+
+function findSubqueryAncestors(value, target, ancestors = []) {
+  if (value === target) return ancestors
+  if (!value || typeof value !== 'object') return null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findSubqueryAncestors(item, target, ancestors)
+      if (found) return found
+    }
+    return null
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (key === 'ast' && child?.type === 'select') continue
+    const found = findSubqueryAncestors(child, target, [...ancestors, value])
+    if (found) return found
+  }
+  return null
 }
 
 function isScalarComparisonSubquery(value, target, parent = null) {
@@ -521,6 +585,178 @@ function collectColumnReferences(value, references = []) {
   return references
 }
 
+async function buildMembershipSubqueryStep(parser, outerAst, subquery, queryRunner, previousResult) {
+  const valueColumn = { expr: clone(subquery.membershipExpression), as: '__visual_membership_value' }
+  const passColumn = { expr: clone(outerAst.where), as: '__visual_where_passes' }
+  const source = makeOuterSourceQuery(parser, outerAst, [valueColumn, passColumn])
+  const [sourceResult, innerResult] = await Promise.all([
+    queryRunner(source.sql),
+    queryRunner(parser.sqlify(subquery.inner, MYSQL_OPTIONS).replace(/;\s*$/, '')),
+  ])
+  const valueIndex = sourceResult.columns.length - 2
+  const passIndex = sourceResult.columns.length - 1
+  const membershipValues = innerResult.rows.map((row) => row[0])
+  const operator = String(subquery.operator || 'IN').toUpperCase()
+  const rows = sourceResult.rows.map((row) => {
+    const value = row[valueIndex]
+    const condition = row[passIndex]
+    const passed = condition === true || condition === 1
+    const matched = membershipValues.some((candidate) => candidate !== null && stableValue(candidate) === stableValue(value))
+    const decision = condition === null
+      ? 'UNKNOWN · filtered out'
+      : passed
+        ? `${matched ? 'Match' : 'Condition passed'} · kept`
+        : `${matched ? 'Match' : 'No match'} · filtered out`
+    return [...row.slice(0, valueIndex), value, decision]
+  })
+  const columns = [
+    ...sourceResult.columns.slice(0, valueIndex),
+    expressionText(subquery.membershipExpression, parser),
+    `${operator} decision`,
+  ]
+  const capped = Boolean(sourceResult.truncated || innerResult.truncated)
+
+  return {
+    id: 'subquery-membership',
+    kind: 'subquery-membership',
+    title: 'Build the inner set, then check each row',
+    plain: `Run the inner query once to get ${innerResult.totalRows} ${innerResult.totalRows === 1 ? 'value' : 'values'}, then keep only the rows whose ${expressionText(subquery.membershipExpression, parser)} ${/NOT/i.test(operator) ? 'is not' : 'is'} in that list.`,
+    description: `The inner query runs once and returns ${innerResult.totalRows} value${innerResult.totalRows === 1 ? '' : 's'}. The outer query checks each ${expressionText(subquery.membershipExpression, parser)} against that set; only rows that satisfy ${expressionText(outerAst.where, parser)} remain.`,
+    sql: parser.sqlify(subquery.inner, MYSQL_OPTIONS).replace(/;\s*$/, ''),
+    input: previousResult || sourceResult,
+    result: { columns, rows, totalRows: sourceResult.totalRows, truncated: capped },
+    innerResult,
+    membershipValues,
+    membershipExpression: expressionText(subquery.membershipExpression, parser),
+    operator,
+    filterFlags: rows.map((row) => row.at(-1).includes('kept')),
+    capped,
+  }
+}
+
+async function buildExistsSubqueryStep(parser, outerAst, subquery, queryRunner, previousResult) {
+  const references = []
+  const seen = new Set()
+  subquery.correlated.forEach((reference) => {
+    const key = columnReferenceKey(reference)
+    if (seen.has(key)) return
+    seen.add(key)
+    references.push({ key, expression: clone(reference), label: expressionText(reference, parser) })
+  })
+  const helperColumns = references.map((reference, index) => ({
+    expr: clone(reference.expression),
+    as: `__visual_exists_outer_${index + 1}`,
+  }))
+  const source = makeOuterSourceQuery(parser, outerAst, helperColumns)
+  const sourceResult = await queryRunner(source.sql)
+  const totalOuterRows = sourceResult.totalRows ?? sourceResult.rows.length
+  const executions = []
+  const maxRowsToExplain = 25
+  const nestedWrappers = collectSubqueryWrappers(subquery.inner.where)
+
+  for (let index = 0; index < Math.min(sourceResult.rows.length, maxRowsToExplain); index += 1) {
+    const sourceRow = sourceResult.rows[index]
+    const values = new Map(references.map((reference, referenceIndex) => [reference.key, sourceRow[source.baseColumnCount + referenceIndex]]))
+    const replaceOuterReferences = (node) => {
+      if (node.type !== 'column_ref' || !node.table || !subquery.outerAliases.has(String(node.table).toLowerCase())) return undefined
+      const key = columnReferenceKey(node)
+      if (!values.has(key)) throw new Error(`The outer value ${expressionText(node, parser)} could not be mapped into the inner query.`)
+      return makeLiteralAst(parser, values.get(key))
+    }
+    const innerAst = transformAst(clone(subquery.inner), replaceOuterReferences)
+    const innerSql = parser.sqlify(innerAst, MYSQL_OPTIONS).replace(/;\s*$/, '')
+    const matchingAst = clone(innerAst)
+    matchingAst.columns = [{ expr: { type: 'column_ref', table: null, column: '*' }, as: null }]
+    const matchingResult = await queryRunner(parser.sqlify(matchingAst, MYSQL_OPTIONS).replace(/;\s*$/, ''))
+    const matchCount = matchingResult.totalRows ?? matchingResult.rows.length
+    const hasMatch = matchCount > 0
+    const passed = subquery.negated ? !hasMatch : hasMatch
+    const nestedValues = []
+
+    for (const wrapper of nestedWrappers) {
+      try {
+        const nestedAst = transformAst(clone(wrapper.ast), replaceOuterReferences)
+        const nestedSql = parser.sqlify(nestedAst, MYSQL_OPTIONS).replace(/;\s*$/, '')
+        const nestedResult = await queryRunner(nestedSql)
+        nestedValues.push({
+          label: expressionText(wrapper.ast.columns[0].expr, parser),
+          value: nestedResult.rows[0]?.[0] ?? null,
+          sql: nestedSql,
+        })
+      } catch {
+        // The full inner query still provides the authoritative EXISTS decision.
+      }
+    }
+
+    const referenceValues = references.map((reference) => ({ label: reference.label, value: values.get(reference.key) }))
+    const decision = passed
+      ? `${subquery.negated ? 'No matching row' : 'At least one match'} · kept`
+      : `${subquery.negated ? 'A match exists' : 'No match'} · filtered out`
+    executions.push({
+      rowNumber: index + 1,
+      sourceRow,
+      referenceValues,
+      innerSql,
+      matchingResult,
+      matchCount,
+      hasMatch,
+      passed,
+      decision,
+      nestedValues,
+    })
+  }
+
+  const rows = executions.map((execution) => [
+    ...execution.sourceRow.slice(0, source.baseColumnCount),
+    ...execution.referenceValues.map((reference) => reference.value),
+    execution.matchCount,
+    execution.decision,
+  ])
+  const columns = [
+    ...sourceResult.columns.slice(0, source.baseColumnCount),
+    ...references.map((reference) => reference.label),
+    'Matching inner rows',
+    subquery.negated ? 'NOT EXISTS decision' : 'EXISTS decision',
+  ]
+  const capped = sourceResult.rows.length > executions.length || Boolean(sourceResult.truncated)
+  const verb = subquery.negated ? 'NOT EXISTS' : 'EXISTS'
+  const rowCoverage = capped ? `the first ${executions.length} of ${totalOuterRows}` : `all ${totalOuterRows}`
+
+  return {
+    id: 'subquery-exists',
+    kind: 'subquery-exists',
+    title: `Check ${verb} for each outer row`,
+    plain: `For each row, look for matching rows in the inner query. Keep the row when ${subquery.negated ? 'none are found' : 'at least one is found'}.`,
+    description: `For each outer row, the lab supplies its correlated value${references.length === 1 ? '' : 's'} to the inner query. ${verb} keeps or filters the employee based on whether that lookup returns any rows.${nestedWrappers.length ? ' The nested average is evaluated for the same employee.' : ''} This walkthrough evaluates ${rowCoverage} outer rows.`,
+    sql: executions[0]?.innerSql || parser.sqlify(subquery.inner, MYSQL_OPTIONS).replace(/;\s*$/, ''),
+    input: previousResult || sourceResult,
+    result: { columns, rows, totalRows: totalOuterRows, truncated: capped },
+    executions,
+    negated: subquery.negated,
+    capped,
+  }
+}
+
+function makeOuterSourceQuery(parser, outerAst, helperColumns) {
+  const sourceAst = clone(outerAst)
+  const baseColumns = Array.isArray(outerAst.columns)
+    ? clone(outerAst.columns)
+    : [{ expr: { type: 'column_ref', table: null, column: '*' }, as: null }]
+  sourceAst.columns = [...baseColumns, ...helperColumns]
+  sourceAst.where = null
+  sourceAst.groupby = null
+  sourceAst.having = null
+  sourceAst.orderby = null
+  sourceAst.limit = null
+  sourceAst.distinct = null
+  sourceAst._next = null
+  sourceAst.set_op = null
+  return {
+    sql: parser.sqlify(sourceAst, MYSQL_OPTIONS).replace(/;\s*$/, ''),
+    baseColumnCount: baseColumns.length,
+  }
+}
+
 async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, previousResult) {
   const visibleReferences = collectColumnReferencesOutsideSubqueries(outerAst.where)
     .filter((reference) => !reference.table || subquery.outerAliases.has(String(reference.table).toLowerCase()))
@@ -553,6 +789,11 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
   const sourceResult = await queryRunner(sourceSql)
   const helperStart = Math.max(0, sourceResult.columns.length - references.length)
   const innerExpression = expressionText(subquery.inner.columns[0].expr, parser)
+  const scalarComparison = findScalarComparisonNode(outerAst.where, subquery.wrapper)
+  const comparisonSubqueryOnLeft = scalarComparison?.left === subquery.wrapper
+  const comparisonOuterExpression = scalarComparison
+    ? (comparisonSubqueryOnLeft ? scalarComparison.right : scalarComparison.left)
+    : null
   const totalOuterRows = sourceResult.totalRows ?? sourceResult.rows.length
   const executions = []
   const maxRowsToExplain = 25
@@ -570,6 +811,22 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
     const innerSql = parser.sqlify(innerAst, MYSQL_OPTIONS).replace(/;\s*$/, '')
     const innerResult = await queryRunner(innerSql)
     const scalarValue = innerResult.rows.length ? innerResult.rows[0][0] : null
+    let innerRowsResult = null
+    let innerRowsSql = ''
+    if (hasAggregate(subquery.inner.columns)) {
+      const innerRowsAst = clone(innerAst)
+      innerRowsAst.columns = [{ expr: { type: 'column_ref', table: null, column: '*' }, as: null }]
+      innerRowsAst.groupby = null
+      innerRowsAst.having = null
+      innerRowsAst.orderby = null
+      innerRowsAst.limit = null
+      innerRowsAst.distinct = null
+      innerRowsAst.with = null
+      innerRowsAst._next = null
+      innerRowsAst.set_op = null
+      innerRowsSql = parser.sqlify(innerRowsAst, MYSQL_OPTIONS).replace(/;\s*$/, '')
+      innerRowsResult = await queryRunner(innerRowsSql)
+    }
     const conditionAst = transformAst(clone(outerAst.where), (node) => {
       if (node === subquery.wrapper || node.ast?.type === 'select') return makeLiteralAst(parser, scalarValue)
       if (node.type !== 'column_ref') return undefined
@@ -583,12 +840,29 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
     const conditionResult = await queryRunner(evaluationSql)
     const conditionValue = conditionResult.rows[0]?.[0] ?? null
     const passed = conditionValue === true || conditionValue === 1
+    const referenceValuesList = references.map((item) => ({ label: item.label, value: referenceValues.get(item.key) }))
+    const comparisonOuterValue = comparisonOuterExpression?.type === 'column_ref'
+      ? referenceValues.get(columnReferenceKey(comparisonOuterExpression))
+      : null
     executions.push({
       rowNumber: index + 1,
       sourceRow,
-      referenceValues: references.map((item) => ({ label: item.label, value: referenceValues.get(item.key) })),
+      outerColumns: sourceResult.columns.slice(0, helperStart),
+      referenceValues: referenceValuesList,
+      correlatedValues: subquery.correlated.map((reference) => ({
+        label: expressionText(reference, parser),
+        value: referenceValues.get(columnReferenceKey(reference)),
+      })),
       innerSql,
+      innerRowsSql,
+      innerRowsResult,
       scalarValue,
+      comparison: scalarComparison ? {
+        operator: String(scalarComparison.operator || '').trim(),
+        outerExpression: expressionText(comparisonOuterExpression, parser),
+        subqueryOnLeft: comparisonSubqueryOnLeft,
+        outerValue: comparisonOuterValue,
+      } : null,
       conditionValue,
       passed,
       conditionText: `${expressionText(outerAst.where, parser)} evaluated ${conditionValue === null ? 'UNKNOWN (NULL)' : passed ? 'true' : 'false'}`,
@@ -615,15 +889,35 @@ async function buildScalarSubqueryStep(parser, outerAst, subquery, queryRunner, 
     id: 'scalar-subquery',
     kind: 'subquery',
     title: 'Run the inner query for each outer row',
-    description: `The outer query supplies each row to the scalar subquery. The inner SELECT calculates ${innerExpression}; its value is then used by the outer WHERE condition. This view expands ${executions.length}${capped ? ` of ${totalOuterRows} rows` : ` ${totalOuterRows === 1 ? 'row' : 'rows'}`}.`,
+    plain: `For each row, run the inner query again to calculate ${innerExpression}, then compare that answer in WHERE.`,
+    description: `The outer query supplies one row at a time to the scalar subquery. The inner SELECT calculates ${innerExpression} again for each outer row; WHERE then compares that value and keeps or filters the row. This walkthrough expands ${executions.length}${capped ? ` of ${totalOuterRows} outer rows` : ` outer ${totalOuterRows === 1 ? 'row' : 'rows'}`}.`,
     sql: sample?.innerSql || parser.sqlify(subquery.inner, MYSQL_OPTIONS).replace(/;\s*$/, ''),
     input: previousResult || sourceResult,
     result: { columns, rows, totalRows: totalOuterRows, truncated: capped },
     executions,
     innerExpression,
+    inputRelation: getTableName(subquery.inner.from?.[0]),
     wrapperSql: expressionText(subquery.inner, parser),
     capped,
   }
+}
+
+function findScalarComparisonNode(value, target, parent = null) {
+  if (!value || typeof value !== 'object') return null
+  if (value === target) return parent?.type === 'binary_expr' ? parent : null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = findScalarComparisonNode(item, target, parent)
+      if (found) return found
+    }
+    return null
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (key === 'ast') continue
+    const found = findScalarComparisonNode(child, target, value)
+    if (found) return found
+  }
+  return null
 }
 
 function collectColumnReferencesOutsideSubqueries(value, references = []) {
@@ -674,6 +968,7 @@ async function buildWindowExecutionStep(parser, ast, queryRunner, finalResult) {
   const details = {
     id: 'window-functions',
     title: 'Window calculations',
+    plain: 'Every row stays. Each row also gets a value calculated from the other rows in its partition, such as a rank or running total.',
     description: 'Window functions keep each input row, then calculate a value across its partition. The cards show each function and its partition, order, and frame; the result table shows the computed value on every row.',
     kind: 'window',
     sql: parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, ''),
@@ -785,6 +1080,7 @@ function buildHierarchyExecutionStep(parser, ast, result) {
   return {
     id: 'recursive-hierarchy',
     title: 'Recursive hierarchy',
+    plain: 'Start with the top-level rows, then repeatedly find the rows that report to them, adding one level of the tree per pass.',
     description: 'The recursive CTE starts with its anchor rows, then repeatedly joins each discovered parent to its children. Rows are grouped by their returned depth or inferred parent level.',
     kind: 'hierarchy',
     sql: parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, ''),
@@ -832,6 +1128,7 @@ async function buildSelfJoinHierarchyStep(parser, ast, queryRunner, result) {
   return {
     id: 'self-join-hierarchy',
     title: 'Manager hierarchy',
+    plain: 'Match each person to their manager, then arrange everyone into levels by following the manager links.',
     description: `The self-join matches each ${relation.childAlias} row to its manager through manager_id = id. The rows are arranged into levels by following that parent link.`,
     kind: 'hierarchy',
     sql: parser.sqlify(ast, MYSQL_OPTIONS).replace(/;\s*$/, ''),
@@ -938,7 +1235,12 @@ function getReferencedColumns(value, columns = new Set()) {
   return [...columns]
 }
 
+// Display-only text: backtick quoting from the MySQL printer is dropped so labels read naturally.
 function expressionText(expression, parser) {
+  return rawExpressionText(expression, parser).replace(/`/g, '')
+}
+
+function rawExpressionText(expression, parser) {
   try {
     return parser.exprToSQL(expression, MYSQL_OPTIONS)
   } catch {
@@ -1066,4 +1368,42 @@ function splitStatements(sql) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function describeJoinPlain(entry, tableName, joinType, parser) {
+  const condition = entry.on ? expressionText(entry.on, parser) : entry.using?.length ? `USING (${entry.using.join(', ')})` : 'the join condition is true'
+  const upper = String(joinType).toUpperCase()
+  const keep = upper.includes('LEFT')
+    ? 'Left rows without a partner are kept, with NULLs on the right.'
+    : upper.includes('RIGHT')
+      ? 'Right rows without a partner are kept, with NULLs on the left.'
+      : 'Rows without a partner are dropped.'
+  return `Attach ${tableName} rows wherever ${condition}. ${keep}`
+}
+
+function describeSelectPlain(columns, parser) {
+  if (!columns || columns === '*') return 'Keep every column.'
+  const names = columns.map((column) => {
+    const text = column.as || expressionText(column.expr, parser)
+    return text === '*' ? 'all columns' : text
+  })
+  const shown = names.slice(0, 4).join(', ')
+  return `Pick the output columns: ${shown}${names.length > 4 ? ` and ${names.length - 4} more` : ''}.`
+}
+
+function describeOrderPlain(orderby, parser) {
+  const parts = (orderby || []).map((order) => `${expressionText(order.expr, parser)} ${String(order.type || 'ASC').toUpperCase() === 'DESC' ? '(high to low)' : '(low to high)'}`)
+  return `Sort the rows by ${parts.join(', then ')}.`
+}
+
+function aggregateNames(value, names = new Set(), top = true) {
+  if (value && typeof value === 'object') {
+    if (Array.isArray(value)) value.forEach((item) => aggregateNames(item, names, false))
+    else {
+      if (value.type === 'aggr_func') names.add(String(value.name || '').toUpperCase())
+      Object.values(value).forEach((item) => aggregateNames(item, names, false))
+    }
+  }
+  if (!top) return names
+  return [...names].join(', ') || 'a summary value'
 }

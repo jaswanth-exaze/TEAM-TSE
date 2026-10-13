@@ -34,7 +34,7 @@
         <div>
           <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true">{ }</span> INTERACTIVE MYSQL PRACTICE</p>
           <h1 id="page-title">SQL Visual Learning Lab</h1>
-          <p class="intro-copy">Run a query to see its results first. Open How it works when you want to follow the rows through each step.</p>
+          <p class="intro-copy">Write SQL, run it, and follow the data through each stage, from row-by-row WHERE checks to the final result.</p>
         </div>
         <button class="button button--quiet" id="cheatsheet-button" type="button" aria-haspopup="dialog">
           <span aria-hidden="true">⌘</span> Clause cheat sheet
@@ -105,6 +105,15 @@
                 <option value="group">Group orders by status</option>
                 <option value="having">Filter groups with HAVING</option>
                 <option value="order-limit">Sort and limit results</option>
+                <optgroup label="Guided subquery walkthroughs">
+                  <option value="subquery-department-in" data-mode="query">IN · Employees in Hyderabad departments</option>
+                  <option value="subquery-orders-in" data-mode="query">IN · Employees with orders over 10,000</option>
+                  <option value="subquery-department-average" data-mode="query">Correlated average · Salary above department average</option>
+                  <option value="subquery-correlated-average" data-mode="query">Correlated AVG · Step through each employee</option>
+                  <option value="subquery-exists-completed" data-mode="query">EXISTS · Employees with completed orders</option>
+                  <option value="subquery-not-exists-orders" data-mode="query">NOT EXISTS · Employees with no orders</option>
+                  <option value="subquery-exists-above-average" data-mode="query">Nested EXISTS · Orders above employee average</option>
+                </optgroup>
                 <option value="window-ranking" data-mode="query">Rank employees inside departments</option>
                 <option value="hierarchy" data-mode="query">Trace the employee hierarchy</option>
                 <option value="sandbox-insert" data-mode="sandbox" hidden>Insert a department</option>
@@ -137,16 +146,17 @@ ORDER BY salary DESC;</textarea>
             <div id="query-message" class="query-message" role="status" aria-live="polite"></div>
             <button class="button button--quiet" id="retry-engine" type="button" hidden>Retry engine</button>
           </section>
+        </section>
 
-          <section class="output-panel panel" aria-label="Query output">
-            <div class="tab-bar" role="tablist" aria-label="Query output views">
+        <section class="output-panel panel" aria-label="Query output">
+          <div class="tab-bar" role="tablist" aria-label="Query output views">
               <button class="tab-button is-active" id="tab-result" type="button" role="tab" aria-selected="true" aria-controls="panel-result" tabindex="0" data-tab="result">Results <span class="tab-count" id="result-count"></span></button>
-              <button class="tab-button" id="tab-steps" type="button" role="tab" aria-selected="false" aria-controls="panel-steps" tabindex="-1" data-tab="steps">How it works <span class="new-badge">VISUAL STEPS</span></button>
+              <button class="tab-button" id="tab-steps" type="button" role="tab" aria-selected="false" aria-controls="panel-steps" tabindex="-1" data-tab="steps">How it works</button>
               <div class="output-meta" id="execution-meta"></div>
-            </div>
-            <p class="output-hint">Results open here after a run. Choose <strong>How it works</strong> to explore the visual breakdown.</p>
+          </div>
+          <p class="output-hint">Run a query, then open <strong>How it works</strong> to watch your rows flow through each clause, from the first table to the final result.</p>
 
-            <div class="tab-panel is-active" id="panel-result" role="tabpanel" aria-labelledby="tab-result" tabindex="0">
+          <div class="tab-panel is-active" id="panel-result" role="tabpanel" aria-labelledby="tab-result" tabindex="0">
               <div class="result-content" id="result-content">
                 <div class="empty-state">
                   <span class="empty-icon" aria-hidden="true">▤</span>
@@ -154,25 +164,35 @@ ORDER BY salary DESC;</textarea>
                   <p>Run the example above, or write a SELECT query of your own.</p>
                 </div>
               </div>
-            </div>
+          </div>
 
-            <div class="tab-panel" id="panel-steps" role="tabpanel" aria-labelledby="tab-steps" tabindex="0" hidden>
+          <div class="tab-panel" id="panel-steps" role="tabpanel" aria-labelledby="tab-steps" tabindex="0" hidden>
               <div class="steps-empty empty-state">
                 <span class="empty-icon" aria-hidden="true">⌁</span>
                 <h3>See how your query works</h3>
                 <p>Run a query to reveal its logical steps and the rows produced at each stage.</p>
+                <div class="pipeline-preview" aria-hidden="true">
+                  <span class="pipeline-chip clause--from">FROM</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--join">JOIN</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--where">WHERE</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--group">GROUP BY</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--having">HAVING</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--select">SELECT</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--order">ORDER BY</span><span class="pipeline-arrow">›</span>
+                  <span class="pipeline-chip clause--limit">LIMIT</span>
+                </div>
+                <p class="pipeline-caption">Every query is a pipeline: rows flow in, each clause reshapes them, and what comes out is your result.</p>
               </div>
               <div class="step-view" id="step-view" hidden></div>
-            </div>
-          </section>
+          </div>
+        </section>
 
-          <section class="challenge-feedback panel" id="challenge-feedback" aria-live="polite" hidden>
-            <div class="feedback-copy" id="challenge-feedback-copy"></div>
-            <div class="feedback-actions">
-              <button class="button button--quiet" id="show-hint" type="button">Show hint</button>
-              <button class="button button--quiet" id="show-solution" type="button" hidden>Show solution</button>
-            </div>
-          </section>
+        <section class="challenge-feedback panel" id="challenge-feedback" aria-live="polite" hidden>
+          <div class="feedback-copy" id="challenge-feedback-copy"></div>
+          <div class="feedback-actions">
+            <button class="button button--quiet" id="show-hint" type="button">Show hint</button>
+            <button class="button button--quiet" id="show-solution" type="button" hidden>Show solution</button>
+          </div>
         </section>
       </div>
 
@@ -192,15 +212,15 @@ ORDER BY salary DESC;</textarea>
           <button class="icon-button" aria-label="Close cheat sheet" value="close">×</button>
         </div>
         <ol class="clause-list">
-          <li><span>01</span><code>FROM</code><p>Choose the source rows.</p></li>
-          <li><span>02</span><code>JOIN</code><p>Match related rows from other tables.</p></li>
-          <li><span>03</span><code>WHERE</code><p>Keep rows that meet a condition.</p></li>
-          <li><span>04</span><code>GROUP BY</code><p>Collect rows into groups.</p></li>
-          <li><span>05</span><code>HAVING</code><p>Filter groups after aggregation.</p></li>
-          <li><span>06</span><code>SELECT</code><p>Choose and calculate output columns.</p></li>
+          <li class="clause--from"><span>01</span><code>FROM</code><p>Choose the source rows.</p></li>
+          <li class="clause--join"><span>02</span><code>JOIN</code><p>Match related rows from other tables.</p></li>
+          <li class="clause--where"><span>03</span><code>WHERE</code><p>Keep rows that meet a condition.</p></li>
+          <li class="clause--group"><span>04</span><code>GROUP BY</code><p>Collect rows into groups.</p></li>
+          <li class="clause--having"><span>05</span><code>HAVING</code><p>Filter groups after aggregation.</p></li>
+          <li class="clause--select"><span>06</span><code>SELECT</code><p>Choose and calculate output columns.</p></li>
           <li><span>07</span><code>DISTINCT</code><p>Remove duplicate output rows.</p></li>
-          <li><span>08</span><code>ORDER BY</code><p>Sort the remaining result.</p></li>
-          <li><span>09</span><code>LIMIT</code><p>Keep only the requested number of rows.</p></li>
+          <li class="clause--order"><span>08</span><code>ORDER BY</code><p>Sort the remaining result.</p></li>
+          <li class="clause--limit"><span>09</span><code>LIMIT</code><p>Keep only the requested number of rows.</p></li>
         </ol>
         <p class="dialog-note">This is the logical order used to explain a query. A database engine may choose a different physical execution plan.</p>
       </form>

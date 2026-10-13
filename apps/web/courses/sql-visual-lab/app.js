@@ -24,6 +24,7 @@ const resultContent = $('#result-content')
 const resultCount = $('#result-count')
 const executionMeta = $('#execution-meta')
 const stepView = $('#step-view')
+const outputPanel = $('.output-panel')
 const stepPanel = $('#panel-steps')
 const resultPanel = $('#panel-result')
 const stepsEmpty = $('.steps-empty')
@@ -62,6 +63,62 @@ ORDER BY employee_count DESC, department_name;`,
 FROM orders
 ORDER BY amount DESC
 LIMIT 5;`,
+  'subquery-department-in': `SELECT id, name, department_id
+FROM employees
+WHERE department_id IN (
+  SELECT id
+  FROM departments
+  WHERE location = 'Hyderabad'
+);`,
+  'subquery-orders-in': `SELECT id, name
+FROM employees
+WHERE id IN (
+  SELECT employee_id
+  FROM orders
+  WHERE amount > 10000
+);`,
+  'subquery-department-average': `SELECT e.id, e.name, e.department_id, e.salary
+FROM employees e
+WHERE e.department_id IS NOT NULL
+  AND e.salary > (
+    SELECT AVG(e2.salary)
+    FROM employees e2
+    WHERE e2.department_id = e.department_id
+  );`,
+  'subquery-correlated-average': `SELECT name, salary
+FROM employees e1
+WHERE salary > (
+  SELECT AVG(salary)
+  FROM employees e2
+  WHERE e2.department_id = e1.department_id
+);`,
+  'subquery-exists-completed': `SELECT e.id, e.name
+FROM employees e
+WHERE EXISTS (
+  SELECT 1
+  FROM orders o
+  WHERE o.employee_id = e.id
+    AND o.status = 'completed'
+);`,
+  'subquery-not-exists-orders': `SELECT e.id, e.name
+FROM employees e
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM orders o
+  WHERE o.employee_id = e.id
+);`,
+  'subquery-exists-above-average': `SELECT e.id, e.name
+FROM employees e
+WHERE EXISTS (
+  SELECT 1
+  FROM orders o
+  WHERE o.employee_id = e.id
+    AND o.amount > (
+      SELECT AVG(o2.amount)
+      FROM orders o2
+      WHERE o2.employee_id = e.id
+    )
+);`,
   'window-ranking': `SELECT name, department_id, salary,
        RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS department_rank
 FROM employees
@@ -105,6 +162,13 @@ let selectedChallenge = null
 let failedAttempts = 0
 let activeStepIndex = 0
 let activeSteps = []
+let activeSubqueryExecutionIndex = 0
+let activeWhereExecutionIndex = 0
+let lastQuerySql = ''
+let activeSql = ''
+let activeSegments = []
+let activePlanIsSandbox = false
+let activePlanHasGroups = false
 let autoplayTimer = null
 let markedErrorLine = null
 let solutionVisible = false
@@ -327,6 +391,7 @@ function configureTabs() {
 
 function activateTab(name) {
   const isSteps = name === 'steps'
+  if (!isSteps && outputPanel.classList.contains('is-focused')) setWalkthroughFocus(false)
   document.querySelectorAll('[role="tab"]').forEach((tab) => {
     const active = tab.dataset.tab === name
     tab.classList.toggle('is-active', active)
@@ -340,6 +405,20 @@ function activateTab(name) {
 }
 
 function configureActions() {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && outputPanel.classList.contains('is-focused') && !document.fullscreenElement && !document.querySelector('dialog[open]')) {
+      setWalkthroughFocus(false)
+    }
+  })
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement === outputPanel) {
+      outputPanel.classList.add('uses-native-fullscreen')
+      updateWalkthroughFocusState(true)
+    } else if (outputPanel.classList.contains('uses-native-fullscreen')) {
+      outputPanel.classList.remove('uses-native-fullscreen')
+      updateWalkthroughFocusState(false)
+    }
+  })
   runButton.addEventListener('click', () => runQuery())
   cancelButton.addEventListener('click', () => workerClient?.cancel())
   retryButton.addEventListener('click', () => loadDependencies())
@@ -357,7 +436,10 @@ function configureActions() {
     if (example) {
       codeEditor.setValue(example)
       codeEditor.clearError()
-      setQueryMessage('Example loaded. Run it to see the intermediate data.', 'neutral')
+      const isSubquery = event.target.value.startsWith('subquery-')
+      setQueryMessage(isSubquery
+        ? 'Guided subquery loaded. Run it to see the inner query and row-by-row decisions.'
+        : 'Example loaded. Run it to see the intermediate data.', 'neutral')
       editor?.focus()
     }
     event.target.value = ''
@@ -657,6 +739,7 @@ async function runQuery({ checkChallenge = false, confirmed = false } = {}) {
   if (!engineReady || isQueryRunning) return null
   if (checkChallenge && currentMode !== 'query') return null
   const sql = codeEditor.getValue()
+  lastQuerySql = sql
   clearEditorError()
   stopAutoplay()
 
@@ -739,7 +822,7 @@ async function runQuery({ checkChallenge = false, confirmed = false } = {}) {
       } else {
         renderStepUnavailable(stepPlan.reason)
       }
-      activateTab('result')
+      activateTab(stepPlan.available ? 'steps' : 'result')
       return result || workerResult
     }
 
@@ -757,7 +840,7 @@ async function runQuery({ checkChallenge = false, confirmed = false } = {}) {
     resultCount.textContent = `${result.totalRows} ${result.totalRows === 1 ? 'row' : 'rows'}${result.truncated ? ' (showing first 5,000)' : ''}`
     setQueryMessage(
       stepPlan.available
-        ? 'Query complete. Results are shown; open How it works for the visual breakdown.'
+        ? 'Query complete. Follow the walkthrough, then open Results to see the final rows.'
         : 'Query complete. The final result is ready; this query has no step breakdown.',
       stepPlan.available ? 'success' : 'warning',
     )
@@ -767,7 +850,7 @@ async function runQuery({ checkChallenge = false, confirmed = false } = {}) {
     } else {
       renderStepUnavailable(stepPlan.reason || 'Step view not available for this query yet. The final result is still shown.')
     }
-    activateTab('result')
+    activateTab(stepPlan.available ? 'steps' : 'result')
 
     if (checkChallenge) await gradeChallenge(result)
     return result
@@ -952,26 +1035,474 @@ function renderResult(result) {
   resultContent.append(renderTable(result))
 }
 
+// ---------------------------------------------------------------------------
+// How it works: color-coded clauses, plain-English story, and row-flow helpers
+// ---------------------------------------------------------------------------
+const CLAUSE_CLASS = { FROM: 'from', JOIN: 'join', WHERE: 'where', 'GROUP BY': 'group', HAVING: 'having', SELECT: 'select', 'ORDER BY': 'order', LIMIT: 'limit' }
+const CLAUSE_RUN_ORDER = ['FROM', 'JOIN', 'WHERE', 'GROUP BY', 'HAVING', 'SELECT', 'ORDER BY', 'LIMIT']
+
+function clauseClass(key) {
+  return key && CLAUSE_CLASS[key] ? ` clause--${CLAUSE_CLASS[key]}` : ''
+}
+
+function isSubqueryStep(step) {
+  const kind = String(step?.kind || '')
+  return kind === 'subquery' || kind.startsWith('subquery-')
+}
+
+// Which SQL clause a stage belongs to (used for color and for highlighting the SQL).
+function clauseKeyForStep(step) {
+  const id = String(step.id || '')
+  const kind = String(step.kind || '')
+  if (id === 'from') return 'FROM'
+  if (kind === 'join' || id.startsWith('join-')) return 'JOIN'
+  if (id === 'where' || isSubqueryStep(step)) return 'WHERE'
+  if (kind === 'groups') return 'GROUP BY'
+  if (id === 'having') return 'HAVING'
+  if (id === 'aggregate' || id === 'select' || id === 'distinct') return 'SELECT'
+  if (kind === 'order') return 'ORDER BY'
+  if (kind === 'limit') return 'LIMIT'
+  return ''
+}
+
+// Short label shown on stage chips and in the story list.
+function stageTag(step) {
+  const id = String(step.id || '')
+  if (id === 'from') return String(step.title || '').replace(/^Start with\s+/i, 'FROM ')
+  if (id === 'aggregate') return 'AGGREGATE'
+  if (id === 'distinct') return 'DISTINCT'
+  if (isSubqueryStep(step)) return 'SUBQUERY'
+  if (step.kind === 'window') return 'WINDOW'
+  if (step.kind === 'hierarchy') return 'HIERARCHY'
+  return step.title
+}
+
+function stepPlainText(step) {
+  return step.plain || step.description || ''
+}
+
+function countLabel(value, unit) {
+  return `${value} ${unit}${value === 1 ? '' : 's'}`
+}
+
+function stageCounts(step) {
+  return { input: step.filterInput?.totalRows ?? step.input?.totalRows, output: step.result?.totalRows }
+}
+
+// The unit a stage counts: groups after GROUP BY, rows everywhere else.
+function stageUnit(step) {
+  if (step.kind === 'groups') return 'group'
+  if (activePlanHasGroups && (step.id === 'aggregate' || step.id === 'having')) return 'group'
+  return 'row'
+}
+
+// Split SQL into top-level clause segments (ignores text inside parentheses, strings and comments).
+function segmentSqlByClause(sql) {
+  const text = String(sql || '')
+  const marks = []
+  let depth = 0
+  let quote = ''
+  let lineComment = false
+  let blockComment = false
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i]
+    const next = text[i + 1]
+    if (lineComment) { if (ch === '\n') lineComment = false; continue }
+    if (blockComment) { if (ch === '*' && next === '/') { blockComment = false; i += 1 } continue }
+    if (quote) {
+      if (ch === quote) { if (next === quote) i += 1; else quote = '' } else if (ch === '\\') i += 1
+      continue
+    }
+    if ((ch === '-' && next === '-') || ch === '#') { lineComment = true; continue }
+    if (ch === '/' && next === '*') { blockComment = true; i += 1; continue }
+    if (ch === "'" || ch === '"' || ch === '`') { quote = ch; continue }
+    if (ch === '(') { depth += 1; continue }
+    if (ch === ')') { depth = Math.max(0, depth - 1); continue }
+    if (depth !== 0 || !/[A-Za-z]/.test(ch) || (i > 0 && /[\w$]/.test(text[i - 1]))) continue
+    const match = text.slice(i).match(/^(SELECT|FROM|WHERE|GROUP\s+BY|HAVING|ORDER\s+BY|LIMIT|(?:(?:INNER|LEFT|RIGHT|FULL|CROSS|NATURAL)\s+(?:OUTER\s+)?)?JOIN)\b/i)
+    if (match) {
+      const word = match[1].toUpperCase().replace(/\s+/g, ' ')
+      marks.push({ index: i, key: word.endsWith('JOIN') ? 'JOIN' : word })
+      i += match[1].length - 1
+    }
+  }
+  if (!marks.length) return [{ key: '', text }]
+  const segments = []
+  if (marks[0].index > 0) segments.push({ key: '', text: text.slice(0, marks[0].index) })
+  marks.forEach((mark, position) => {
+    const end = position + 1 < marks.length ? marks[position + 1].index : text.length
+    segments.push({ key: mark.key, text: text.slice(mark.index, end) })
+  })
+  return segments
+}
+
+function describeComplexity(steps) {
+  let score = 0
+  steps.forEach((step) => {
+    const id = String(step.id || '')
+    const kind = String(step.kind || '')
+    if (kind === 'join' || kind === 'groups' || id === 'aggregate' || id === 'having') score += 1
+    else if (isSubqueryStep(step) || kind === 'window' || kind === 'hierarchy') score += 3
+  })
+  if (score === 0) return { level: 'simple', label: 'Simple query', hint: 'One table with filtering, sorting or limiting.' }
+  if (score <= 2) return { level: 'moderate', label: 'Moderate query', hint: 'Adds a join or grouping on top of the basics.' }
+  return { level: 'advanced', label: 'Advanced query', hint: 'Combines several of: joins, grouping, HAVING, subqueries and window functions.' }
+}
+
+function buildOverviewHeader(steps) {
+  const overview = createNode('header', 'walkthrough-overview')
+  const copy = createNode('div', 'walkthrough-overview-copy')
+  copy.append(createNode('p', 'eyebrow eyebrow--small', 'INTERACTIVE QUERY WALKTHROUGH'))
+  const isSubquery = steps.some(isSubqueryStep)
+  copy.append(createNode('h2', '', isSubquery ? 'Follow the inner query and the outer rows' : 'Follow the data through every SQL stage'))
+  if (activePlanIsSandbox) {
+    copy.append(createNode('p', 'walkthrough-overview-description', 'Select a stage to see the rows and decisions at that point in the script.'))
+    overview.append(copy)
+    return overview
+  }
+  copy.append(createNode('p', 'walkthrough-overview-description', 'Every stage takes rows in, changes them, and hands them to the next stage. Press Next, use the ← → keys, or hit Auto-play to watch the data flow from the first table to your final result.'))
+  overview.append(copy)
+
+  const complexity = describeComplexity(steps)
+  const badges = createNode('div', 'overview-badges')
+  const level = createNode('span', `overview-badge overview-badge--${complexity.level}`, complexity.label)
+  level.title = complexity.hint
+  badges.append(level)
+  badges.append(createNode('span', 'overview-badge', `${steps.length} ${steps.length === 1 ? 'stage' : 'stages'}`))
+  const last = steps[steps.length - 1]
+  if (last?.result) badges.append(createNode('span', 'overview-badge', `Final result · ${countLabel(last.result.totalRows, 'row')}`))
+  overview.append(badges)
+  return overview
+}
+
+function buildQueryMap(steps) {
+  const map = createNode('pre', 'query-map')
+  map.setAttribute('aria-label', 'Your query, color-coded by clause')
+  const code = createNode('code')
+  let joinCount = 0
+  activeSegments.forEach((segment) => {
+    const known = segment.key && steps.some((step) => clauseKeyForStep(step) === segment.key)
+    if (!known) {
+      code.append(document.createTextNode(segment.text))
+      return
+    }
+    const trimmed = segment.text.replace(/\s+$/, '')
+    const span = createNode('span', `query-clause${clauseClass(segment.key)}`, trimmed)
+    span.dataset.clause = segment.key
+    if (segment.key === 'JOIN') {
+      joinCount += 1
+      span.dataset.occurrence = String(joinCount)
+    }
+    span.tabIndex = 0
+    span.setAttribute('role', 'button')
+    span.title = `Jump to ${segment.key}`
+    const jump = () => {
+      const occurrence = segment.key === 'JOIN' ? Number(span.dataset.occurrence) : 0
+      let index = occurrence ? steps.findIndex((step) => step.id === `join-${occurrence}`) : -1
+      if (index < 0) index = steps.findIndex((step) => clauseKeyForStep(step) === segment.key)
+      if (index >= 0) showStep(index)
+    }
+    span.addEventListener('click', jump)
+    span.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); jump() }
+    })
+    code.append(span, document.createTextNode(segment.text.slice(trimmed.length)))
+  })
+  map.append(code)
+  return map
+}
+
+function buildOrderStrip() {
+  const written = []
+  activeSegments.forEach((segment) => { if (segment.key && !written.includes(segment.key)) written.push(segment.key) })
+  const ran = CLAUSE_RUN_ORDER.filter((key) => written.includes(key))
+  if (ran.length < 2) return null
+  const strip = createNode('div', 'order-strip')
+  const makeRow = (label, keys, numbered) => {
+    const row = createNode('div', 'order-row')
+    row.append(createNode('span', 'order-row-label', label))
+    keys.forEach((key, index) => {
+      if (index) row.append(createNode('span', 'order-arrow', '›'))
+      const chip = createNode('span', `order-chip${clauseClass(key)}`)
+      chip.dataset.clause = key
+      if (numbered) chip.append(createNode('b', '', String(index + 1)))
+      chip.append(document.createTextNode(key))
+      row.append(chip)
+    })
+    return row
+  }
+  strip.append(makeRow('You write', written, false), makeRow('SQL runs', ran, true))
+  strip.append(createNode('p', 'order-note', 'SQL does not run top to bottom. It builds and filters the rows first, and only then picks columns (SELECT), sorts and limits.'))
+  return strip
+}
+
+function buildStory(steps) {
+  const list = createNode('ol', 'story-list')
+  steps.forEach((step, index) => {
+    const key = clauseKeyForStep(step)
+    const item = createNode('li', `story-item${clauseClass(key)}`)
+    item.dataset.stepIndex = String(index)
+    const button = createNode('button', 'story-button')
+    button.type = 'button'
+    button.append(createNode('span', 'story-number', String(index + 1)))
+    const copy = createNode('span', 'story-copy')
+    copy.append(createNode('span', 'story-tag', stageTag(step)))
+    copy.append(createNode('span', 'story-text', stepPlainText(step)))
+    button.append(copy)
+    button.addEventListener('click', () => showStep(index))
+    item.append(button)
+    list.append(item)
+  })
+  return list
+}
+
+function buildOverviewCard(steps) {
+  if (!steps.some((step) => clauseKeyForStep(step))) return null
+  const card = createNode('details', 'overview-card')
+  card.open = true
+  const summary = createNode('summary')
+  summary.append(createNode('span', 'overview-card-title', 'Query overview'))
+  summary.append(createNode('span', 'overview-card-sub', 'Your SQL, color-coded, and what each part does in plain English'))
+  summary.append(createNode('span', 'overview-card-chevron', '▾'))
+  card.append(summary)
+  const body = createNode('div', 'overview-body')
+  const left = createNode('div', 'overview-column')
+  left.append(createNode('p', 'intro-label', 'YOUR QUERY · CLICK A COLOR TO JUMP'), buildQueryMap(steps))
+  const strip = buildOrderStrip()
+  if (strip) left.append(strip)
+  const right = createNode('div', 'overview-column')
+  right.append(createNode('p', 'intro-label', 'WHAT HAPPENS · IN ORDER'), buildStory(steps))
+  body.append(left, right)
+  card.append(body)
+  return card
+}
+
+function syncOverviewHighlight() {
+  const step = activeSteps[activeStepIndex]
+  if (!step) return
+  const key = clauseKeyForStep(step)
+  const map = stepView.querySelector('.query-map')
+  map?.classList.toggle('has-active', Boolean(key))
+  const joinMatch = /^join-(\d+)$/.exec(String(step.id || ''))
+  stepView.querySelectorAll('.query-clause').forEach((node) => {
+    let active = Boolean(key) && node.dataset.clause === key
+    if (active && key === 'JOIN' && joinMatch) active = node.dataset.occurrence === joinMatch[1]
+    node.classList.toggle('is-active', active)
+  })
+  // A comma join has no JOIN keyword to light up, so fall back to FROM.
+  if (key && map && !map.querySelector('.query-clause.is-active')) map.querySelector('.query-clause[data-clause="FROM"]')?.classList.add('is-active')
+  stepView.querySelectorAll('.order-chip').forEach((chip) => chip.classList.toggle('is-active', Boolean(key) && chip.dataset.clause === key))
+  stepView.querySelectorAll('.story-item').forEach((item) => {
+    const index = Number(item.dataset.stepIndex)
+    item.classList.toggle('is-active', index === activeStepIndex)
+    item.classList.toggle('is-done', index < activeStepIndex)
+  })
+}
+
+function getClauseSnippet(step) {
+  const key = clauseKeyForStep(step)
+  if (!key) return ''
+  const matches = activeSegments.filter((segment) => segment.key === key)
+  if (!matches.length) return ''
+  let segment = matches[0]
+  const joinMatch = /^join-(\d+)$/.exec(String(step.id || ''))
+  if (key === 'JOIN' && joinMatch && matches[Number(joinMatch[1]) - 1]) segment = matches[Number(joinMatch[1]) - 1]
+  return segment.text.trim().replace(/;$/, '')
+}
+
+// Describes how many rows went in and out of a stage, for the flow meter.
+function buildFlowModel(step) {
+  const id = String(step.id || '')
+  const kind = String(step.kind || '')
+  const { input, output } = stageCounts(step)
+  if (output === undefined || output === null) return null
+  const plural = (unit, n) => `${unit}${n === 1 ? '' : 's'}`
+  const percent = (part, whole) => (whole > 0 ? Math.max(0, Math.min(100, (part / whole) * 100)) : 0)
+  const filter = (total, kept, unit, takeaway) => ({
+    inValue: String(total), inLabel: `${plural(unit, total)} in`,
+    outValue: String(kept), outLabel: `${plural(unit, kept)} out`,
+    bar: { kept: percent(kept, total), removed: total > 0 ? 100 - percent(kept, total) : 0, keptLabel: `${kept} kept`, removedLabel: `${Math.max(0, total - kept)} removed`, tone: 'removed' },
+    takeaway,
+  })
+
+  if (id === 'from') {
+    return {
+      inValue: '▤', inLabel: 'table', outValue: String(output), outLabel: `${plural('row', output)} loaded`,
+      bar: { kept: 100, removed: 0 }, takeaway: `${countLabel(output, 'row')} read from the table. Nothing has been filtered yet.`,
+    }
+  }
+  if (isSubqueryStep(step)) {
+    const decisions = step.filterFlags || step.executions?.map((execution) => execution.passed)
+    if (!decisions?.length) return null
+    const kept = decisions.filter(Boolean).length
+    return filter(decisions.length, kept, 'row', `${kept} of ${decisions.length} rows passed the subquery test${step.capped ? ' (the first rows were checked)' : ''}.`)
+  }
+  if (kind === 'join') {
+    if (input === undefined || input === null) return null
+    const takeaway = output > input
+      ? `${output - input} extra ${output - input === 1 ? 'row' : 'rows'} appeared because some rows matched more than one partner.`
+      : output < input
+        ? `${input - output} ${input - output === 1 ? 'row' : 'rows'} had no match, so this join dropped them.`
+        : `Row count unchanged at ${output}.`
+    return {
+      inValue: String(input), inLabel: `${plural('row', input)} in`, outValue: String(output), outLabel: `${plural('row', output)} out`,
+      bar: output < input
+        ? { kept: percent(output, input), removed: 100 - percent(output, input), keptLabel: `${output} matched`, removedLabel: `${input - output} dropped`, tone: 'removed' }
+        : { kept: 100, removed: 0, extraLabel: output > input ? `+${output - input} extra ${output - input === 1 ? 'row' : 'rows'}` : '' },
+      takeaway,
+    }
+  }
+  if (kind === 'groups') {
+    if (input === undefined || input === null) return null
+    return {
+      inValue: String(input), inLabel: `${plural('row', input)} in`, outValue: String(output), outLabel: `${plural('group', output)} out`,
+      bar: { kept: percent(output, input), removed: 100 - percent(output, input), keptLabel: countLabel(output, 'group'), removedLabel: `${Math.max(0, input - output)} rows merged in`, tone: 'merged' },
+      takeaway: `${countLabel(input, 'row')} were sorted into ${countLabel(output, 'group')}. Rows that share the same key land in the same group.`,
+    }
+  }
+  if (id === 'aggregate') {
+    if (input === undefined || input === null) return null
+    if (activePlanHasGroups) {
+      return {
+        inValue: String(input), inLabel: `${plural('group', input)} in`, outValue: String(output), outLabel: `${plural('group', output)} out`,
+        bar: { kept: 100, removed: 0 }, takeaway: `Each of the ${countLabel(output, 'group')} now carries its calculated value (COUNT, SUM, AVG…).`,
+      }
+    }
+    return {
+      inValue: String(input), inLabel: `${plural('row', input)} in`, outValue: String(output), outLabel: `${plural('row', output)} out`,
+      bar: { kept: percent(output, input), removed: 100 - percent(output, input), keptLabel: countLabel(output, 'row'), removedLabel: `${Math.max(0, input - output)} rows folded in`, tone: 'merged' },
+      takeaway: `All ${countLabel(input, 'row')} were squeezed into ${countLabel(output, 'row')}: one answer for the whole table.`,
+    }
+  }
+  if (id === 'where' || id === 'distinct' || kind === 'limit' || id === 'having') {
+    if (input === undefined || input === null) return null
+    const unit = id === 'having' ? 'group' : 'row'
+    const removed = Math.max(0, input - output)
+    const takeaway = id === 'where'
+      ? (output === 0 ? 'No row passed the condition, so nothing moves on and the result will be empty.'
+        : removed === 0 ? 'Every row passed the condition, so nothing was removed.'
+          : `${removed} of ${input} rows failed the condition and were removed. Only ${output} move on.`)
+      : id === 'having'
+        ? (removed === 0 ? 'Every group passed the HAVING test.' : `${removed} of ${input} groups failed the HAVING test and were removed.`)
+        : id === 'distinct'
+          ? (removed === 0 ? 'There were no duplicates to remove.' : `${removed} duplicate rows were removed.`)
+          : `Kept the first ${output}; ${removed} ${plural('row', removed)} fall after the cutoff.`
+    return filter(input, output, unit, takeaway)
+  }
+  if (id === 'select') {
+    const base = input === undefined || input === null ? output : input
+    const inCols = step.input?.columns?.length
+    const outCols = step.result.columns?.length
+    const columnNote = !activePlanHasGroups && inCols && outCols && inCols !== outCols
+      ? ` ${inCols} columns were narrowed to the ${outCols} you asked for.`
+      : outCols ? ` Each row now has the ${outCols} requested ${outCols === 1 ? 'column' : 'columns'}.` : ''
+    return {
+      inValue: String(base), inLabel: `${plural('row', base)} in`, outValue: String(output), outLabel: `${plural('row', output)} out`,
+      bar: { kept: 100, removed: 0 }, takeaway: `Same ${countLabel(output, 'row')}, only the columns change.${columnNote}`,
+    }
+  }
+  if (kind === 'order') {
+    const base = input === undefined || input === null ? output : input
+    return {
+      inValue: String(base), inLabel: `${plural('row', base)} in`, outValue: String(output), outLabel: `${plural('row', output)} out`,
+      bar: { kept: 100, removed: 0 }, takeaway: 'Same rows in a new order. Nothing was added or removed.',
+    }
+  }
+  return null
+}
+
+function renderFlowMeter(step) {
+  if (activePlanIsSandbox) return null
+  const model = buildFlowModel(step)
+  if (!model) return null
+  const section = createNode('section', 'flow-meter')
+  section.setAttribute('aria-label', 'Rows entering and leaving this stage')
+  const left = createNode('div', 'flow-meter-end')
+  left.append(createNode('strong', '', model.inValue), createNode('small', '', model.inLabel))
+  const middle = createNode('div', 'flow-meter-middle')
+  const bar = createNode('div', 'flow-meter-bar')
+  bar.setAttribute('role', 'img')
+  bar.setAttribute('aria-label', `${model.inValue} ${model.inLabel}, ${model.outValue} ${model.outLabel}`)
+  const kept = createNode('span', 'flow-meter-kept')
+  kept.style.width = `${model.bar.kept}%`
+  bar.append(kept)
+  if (model.bar.removed > 0) {
+    const removed = createNode('span', `flow-meter-removed is-${model.bar.tone || 'removed'}`)
+    removed.style.width = `${model.bar.removed}%`
+    bar.append(removed)
+  }
+  middle.append(bar)
+  const legend = createNode('div', 'flow-meter-legend')
+  if (model.bar.keptLabel) legend.append(createNode('span', 'flow-legend is-kept', model.bar.keptLabel))
+  if (model.bar.removed > 0 && model.bar.removedLabel) legend.append(createNode('span', `flow-legend is-${model.bar.tone || 'removed'}`, model.bar.removedLabel))
+  if (model.bar.extraLabel) legend.append(createNode('span', 'flow-legend is-extra', model.bar.extraLabel))
+  if (legend.children.length) middle.append(legend)
+  const right = createNode('div', 'flow-meter-end flow-meter-end--out')
+  right.append(createNode('strong', '', model.outValue), createNode('small', '', model.outLabel))
+  section.append(left, middle, right)
+  if (model.takeaway) section.append(createNode('p', 'flow-takeaway', model.takeaway))
+  return section
+}
+
+function stepperCountText(step) {
+  const { input, output } = stageCounts(step)
+  if (output === undefined || output === null) return ''
+  const outText = countLabel(output, stageUnit(step))
+  return input !== undefined && input !== null && input !== output ? `${input} → ${outText}` : outText
+}
+
 function renderSteps(steps) {
   activeSteps = steps
   activeStepIndex = 0
+  activeSql = lastQuerySql
+  activeSegments = segmentSqlByClause(activeSql)
+  activePlanIsSandbox = steps.every((step) => String(step.kind || '').startsWith('sandbox'))
+  activePlanHasGroups = steps.some((step) => step.kind === 'groups')
   stepView.replaceChildren()
   stepsEmpty.hidden = true
   stepView.hidden = false
 
+  stepView.append(buildOverviewHeader(steps))
+  if (!activePlanIsSandbox) {
+    const card = buildOverviewCard(steps)
+    if (card) stepView.append(card)
+  }
+
   const stepper = createNode('div', 'stepper-track')
   stepper.setAttribute('aria-label', 'Logical query steps')
   stepper.setAttribute('role', 'list')
+  const maxCount = Math.max(1, ...steps.map((step) => step.result?.totalRows || 0))
   steps.forEach((step, index) => {
-    const button = createNode('button', 'stepper-item')
+    if (index > 0 && !activePlanIsSandbox) stepper.append(createNode('span', 'stepper-arrow', '›'))
+    const key = clauseKeyForStep(step)
+    const button = createNode('button', `stepper-item${clauseClass(key)}`)
     button.type = 'button'
     button.setAttribute('role', 'listitem')
-    button.setAttribute('aria-pressed', String(index === 0))
+    button.setAttribute('aria-pressed', 'false')
     button.dataset.stepIndex = String(index)
     button.append(createNode('span', 'stepper-number', String(index + 1).padStart(2, '0')))
-    button.append(createNode('span', 'stepper-label', step.title))
+    const text = createNode('span', 'stepper-text')
+    text.append(createNode('span', 'stepper-label', activePlanIsSandbox ? step.title : stageTag(step)))
+    if (!activePlanIsSandbox) text.append(createNode('span', 'stepper-count', stepperCountText(step)))
+    button.append(text)
+    if (!activePlanIsSandbox) {
+      const barTrack = createNode('span', 'stepper-bar')
+      const fill = createNode('span', 'stepper-bar-fill')
+      fill.style.width = `${Math.max(6, Math.round(((step.result?.totalRows || 0) / maxCount) * 100))}%`
+      barTrack.append(fill)
+      button.append(barTrack)
+    }
     button.addEventListener('click', () => showStep(index))
     stepper.append(button)
+  })
+  stepper.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+    const target = event.target.closest?.('.stepper-item')
+    if (!target) return
+    event.preventDefault()
+    const nextIndex = Math.max(0, Math.min(steps.length - 1, Number(target.dataset.stepIndex) + (event.key === 'ArrowRight' ? 1 : -1)))
+    showStep(nextIndex)
+    stepper.querySelector(`[data-step-index="${nextIndex}"]`)?.focus()
   })
   stepView.append(stepper)
 
@@ -986,41 +1517,55 @@ function renderSteps(steps) {
   autoplayButton.type = 'button'
   autoplayButton.dataset.stepControl = 'autoplay'
   autoplayButton.addEventListener('click', toggleAutoplay)
+  const focusButton = createNode('button', 'button button--quiet', 'Focus view')
+  focusButton.type = 'button'
+  focusButton.dataset.stepControl = 'focus'
+  focusButton.setAttribute('aria-pressed', String(outputPanel.classList.contains('is-focused')))
+  focusButton.addEventListener('click', () => setWalkthroughFocus(!outputPanel.classList.contains('is-focused')))
   const nextButton = createNode('button', 'button button--quiet', 'Next →')
   nextButton.type = 'button'
   nextButton.dataset.stepControl = 'next'
   nextButton.addEventListener('click', () => showStep(Math.min(activeSteps.length - 1, activeStepIndex + 1)))
-  navigation.append(previousButton, stepPosition, autoplayButton, nextButton)
+  navigation.append(previousButton, stepPosition, autoplayButton, focusButton, nextButton)
   stepView.append(navigation)
+
   const detail = createNode('article', 'step-detail')
   detail.setAttribute('aria-live', 'polite')
   detail.id = 'step-detail'
   stepView.append(detail)
+  // Always begin at stage 1 so the story reads from the first table to the final result.
   showStep(0)
 }
 
-function showStep(index) {
+function showStep(index, { fromAutoplay = false } = {}) {
   if (!activeSteps.length) return
+  if (autoplayTimer && !fromAutoplay) stopAutoplay()
   activeStepIndex = Math.max(0, Math.min(index, activeSteps.length - 1))
   const step = activeSteps[activeStepIndex]
 
   document.querySelectorAll('.stepper-item').forEach((button, buttonIndex) => {
     const active = buttonIndex === activeStepIndex
     button.classList.toggle('is-active', active)
+    button.classList.toggle('is-done', buttonIndex < activeStepIndex)
     button.setAttribute('aria-pressed', String(active))
+    if (active) button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
   })
   const previous = $('[data-step-control="previous"]')
   const next = $('[data-step-control="next"]')
   if (previous) previous.disabled = activeStepIndex === 0
   if (next) next.disabled = activeStepIndex === activeSteps.length - 1
   const position = $('.step-position')
-  if (position) position.textContent = `Step ${activeStepIndex + 1} of ${activeSteps.length}`
+  if (position) position.textContent = `Stage ${activeStepIndex + 1} of ${activeSteps.length} · ${step.title}`
+  syncOverviewHighlight()
 
   const detail = $('#step-detail')
   detail.replaceChildren()
+  const clauseKey = clauseKeyForStep(step)
+  detail.className = `step-detail${clauseClass(clauseKey)}`
   const header = createNode('div', 'step-detail-header')
   const titleGroup = createNode('div', '')
-  titleGroup.append(createNode('p', 'eyebrow eyebrow--small', `LOGICAL STEP ${String(activeStepIndex + 1).padStart(2, '0')}`))
+  const total = String(activeSteps.length).padStart(2, '0')
+  titleGroup.append(createNode('p', 'eyebrow eyebrow--small', `LOGICAL STEP ${String(activeStepIndex + 1).padStart(2, '0')} OF ${total}`))
   titleGroup.append(createNode('h3', '', step.title))
   header.append(titleGroup)
   const rowCounts = createNode('div', 'row-counts')
@@ -1032,7 +1577,33 @@ function showStep(index) {
   }
   rowCounts.append(createNode('span', 'count-chip count-chip--accent', `${outputCount} ${outputCount === 1 ? 'row' : 'rows'} out`))
   header.append(rowCounts)
-  detail.append(header, createNode('p', 'step-explanation', step.description))
+  detail.append(header)
+
+  if (activePlanIsSandbox) {
+    detail.append(createNode('p', 'step-explanation', step.description))
+  } else {
+    const intro = createNode('div', 'step-intro')
+    const plainCard = createNode('section', 'intro-card intro-card--plain')
+    plainCard.append(createNode('p', 'intro-label', 'IN PLAIN WORDS'), createNode('p', 'intro-plain', stepPlainText(step)))
+    intro.append(plainCard)
+    const snippet = getClauseSnippet(step)
+    if (snippet) {
+      const snippetCard = createNode('section', 'intro-card')
+      snippetCard.append(createNode('p', 'intro-label', 'THIS PART OF YOUR QUERY'))
+      const pre = createNode('pre', 'intro-snippet')
+      pre.append(createNode('code', '', snippet))
+      snippetCard.append(pre)
+      intro.append(snippetCard)
+    } else {
+      intro.classList.add('is-single')
+    }
+    detail.append(intro)
+    const meter = renderFlowMeter(step)
+    if (meter) detail.append(meter)
+    const technical = createNode('div', 'step-technical')
+    technical.append(createNode('p', 'intro-label', 'UNDER THE HOOD'), createNode('p', 'step-explanation', step.description))
+    detail.append(technical)
+  }
 
   if (step.kind === 'window') renderWindowVisual(detail, step)
   else if (step.kind === 'hierarchy') renderHierarchyVisual(detail, step)
@@ -1041,6 +1612,8 @@ function showStep(index) {
   else if (step.kind === 'sandbox-transaction') renderSandboxTransactionVisual(detail, step)
   else if (step.kind === 'sandbox-error') renderSandboxErrorVisual(detail, step)
   else if (step.kind === 'join') renderJoinVisual(detail, step)
+  else if (step.kind === 'subquery-membership') renderMembershipSubqueryVisual(detail, step)
+  else if (step.kind === 'subquery-exists') renderExistsSubqueryVisual(detail, step)
   else if (step.kind === 'subquery') renderSubqueryVisual(detail, step)
   else if (step.kind === 'groups') renderGroupVisual(detail, step)
   else if (step.id === 'where') renderWhereVisual(detail, step)
@@ -1056,6 +1629,18 @@ function showStep(index) {
   sqlBlock.append(createNode('code', '', step.sql))
   sqlNote.append(sqlSummary, sqlBlock)
   detail.append(sqlNote)
+
+  if (activeStepIndex === activeSteps.length - 1 && !activePlanIsSandbox) {
+    const done = createNode('section', 'final-callout')
+    const copy = createNode('div', 'final-callout-copy')
+    copy.append(createNode('strong', '', 'That is your final result.'))
+    copy.append(createNode('span', '', `The rows above are exactly what the Results tab shows: ${countLabel(step.result.totalRows, 'row')}.`))
+    const resultsButton = createNode('button', 'button button--primary', 'Open Results')
+    resultsButton.type = 'button'
+    resultsButton.addEventListener('click', () => activateTab('result'))
+    done.append(copy, resultsButton)
+    detail.append(done)
+  }
 }
 
 function renderWindowVisual(parent, step) {
@@ -1099,9 +1684,19 @@ function renderHierarchyVisual(parent, step) {
 }
 
 function renderSubqueryVisual(parent, step) {
+  const executions = step.executions || []
+  const isAverageExpression = /^AVG\s*\(/i.test(step.innerExpression || '')
+  const hasAggregateInputRows = isAverageExpression && executions.some((execution) => execution.innerRowsResult)
+  if (hasAggregateInputRows && executions.length) {
+    renderScalarExecutionSequence(parent, step, executions)
+    if (step.capped) {
+      parent.append(createNode('p', 'table-overflow-note', `The walkthrough can advance through the first ${executions.length} of ${step.result.totalRows} outer rows. The Results tab shows the complete output.`))
+    }
+    return
+  }
+
   parent.append(createNode('h4', 'visual-subheading', 'Follow the inner query one outer row at a time'))
   parent.append(createNode('p', 'visual-caption', 'A correlated subquery can read values from the current outer row. The inner result is calculated for that row, then the outer WHERE condition decides whether the row stays.'))
-  const executions = step.executions || []
   const result = renderTable(step.result, {
     rowLimit: 40,
     numbered: false,
@@ -1138,6 +1733,256 @@ function renderSubqueryVisual(parent, step) {
   if (step.capped) {
     parent.append(createNode('p', 'table-overflow-note', `To keep the explanation responsive, the inner query is expanded for the first ${executions.length} outer rows. The final query result is available separately.`))
   }
+}
+
+function renderScalarExecutionSequence(parent, step, executions) {
+  activeSubqueryExecutionIndex = 0
+  const sequence = createNode('section', 'correlated-walkthrough')
+  const navigation = createNode('div', 'correlated-walkthrough-navigation')
+  const previousButton = createNode('button', 'button button--quiet correlated-row-button', '← Previous outer row')
+  previousButton.type = 'button'
+  previousButton.addEventListener('click', () => {
+    if (autoplayTimer) stopAutoplay()
+    activeSubqueryExecutionIndex = Math.max(0, activeSubqueryExecutionIndex - 1)
+    updateScalarExecutionSequence(sequence, step, executions, previousButton, nextButton, counter, progressFill)
+  })
+  const counter = createNode('p', 'correlated-row-counter')
+  counter.setAttribute('aria-live', 'polite')
+  counter.setAttribute('aria-atomic', 'true')
+  const nextButton = createNode('button', 'button button--primary correlated-row-button', 'Next outer row →')
+  nextButton.type = 'button'
+  nextButton.addEventListener('click', () => {
+    if (autoplayTimer) stopAutoplay()
+    activeSubqueryExecutionIndex = Math.min(executions.length - 1, activeSubqueryExecutionIndex + 1)
+    updateScalarExecutionSequence(sequence, step, executions, previousButton, nextButton, counter, progressFill)
+  })
+  navigation.append(previousButton, counter, nextButton)
+
+  const progressTrack = createNode('div', 'correlated-row-progress')
+  progressTrack.setAttribute('role', 'progressbar')
+  progressTrack.setAttribute('aria-label', 'Outer rows checked by the correlated subquery')
+  progressTrack.setAttribute('aria-valuemin', '1')
+  progressTrack.setAttribute('aria-valuemax', String(step.result.totalRows || executions.length))
+  const progressFill = createNode('span', 'correlated-row-progress-fill')
+  progressTrack.append(progressFill)
+  const cards = createNode('div', 'correlated-row-flow')
+  sequence.append(navigation, progressTrack, cards)
+  parent.append(sequence)
+  updateScalarExecutionSequence(sequence, step, executions, previousButton, nextButton, counter, progressFill)
+}
+
+function updateScalarExecutionSequence(sequence, step, executions, previousButton, nextButton, counter, progressFill) {
+  const index = activeSubqueryExecutionIndex
+  const execution = executions[index]
+  const total = step.result.totalRows || executions.length
+  counter.textContent = `OUTER ROW ${execution.rowNumber} OF ${total}`
+  previousButton.disabled = index === 0
+  nextButton.disabled = index === executions.length - 1
+  progressFill.parentElement.setAttribute('aria-valuenow', String(execution.rowNumber))
+  progressFill.style.width = `${Math.round((execution.rowNumber / total) * 100)}%`
+
+  const flow = sequence.querySelector('.correlated-row-flow')
+  const outerCard = createNode('article', 'correlated-stage-card correlated-stage-card--outer')
+  outerCard.append(createNode('p', 'correlated-stage-label', '01 · CURRENT OUTER ROW'))
+  const outerNameIndex = execution.outerColumns.findIndex((column) => normalizeColumn(column).split('.').at(-1) === 'name')
+  const outerName = outerNameIndex >= 0 ? execution.sourceRow[outerNameIndex] : `Row ${execution.rowNumber}`
+  outerCard.append(createNode('h4', '', String(outerName)))
+  outerCard.append(createNode('p', 'correlated-stage-copy', 'This is the current outer row being tested by WHERE.'))
+  outerCard.append(renderTable({
+    columns: execution.outerColumns,
+    rows: [execution.sourceRow.slice(0, execution.outerColumns.length)],
+    totalRows: 1,
+  }, { compact: true }))
+  if (execution.correlatedValues.length) {
+    const keyList = createNode('div', 'correlated-key-list')
+    execution.correlatedValues.forEach((reference) => {
+      const key = createNode('div', 'correlated-key')
+      key.append(createNode('span', '', `Value passed in · ${reference.label}`))
+      const value = createNode('strong', '')
+      appendCorrelatedValue(value, reference.value)
+      key.append(value)
+      keyList.append(key)
+    })
+    outerCard.append(keyList)
+  }
+
+  const innerCard = createNode('article', 'correlated-stage-card correlated-stage-card--inner')
+  innerCard.append(createNode('p', 'correlated-stage-label', '02 · INNER QUERY RE-RUNS'))
+  const matchingRows = execution.innerRowsResult
+  const matchingCount = matchingRows.totalRows ?? matchingRows.rows.length
+  const relationName = step.inputRelation === 'employees' ? 'employees' : step.inputRelation === 'orders' ? 'orders' : 'matching rows'
+  const departmentReference = execution.correlatedValues.find((reference) => reference.label.toLowerCase().endsWith('department_id'))
+  const departmentContext = departmentReference ? ` in department ${formatCorrelatedValue(departmentReference.value)}` : ''
+  innerCard.append(createNode('h4', '', `AVG of ${matchingCount} ${relationName}${departmentContext}`))
+  innerCard.append(createNode('p', 'correlated-stage-copy', departmentReference
+    ? `The inner query finds employees where department_id = ${formatCorrelatedValue(departmentReference.value)}, then averages their salary values.`
+    : 'The inner query uses the current outer row’s correlated value to find the rows included in this average.'))
+  const average = createNode('div', 'correlated-average-result')
+  average.append(createNode('span', '', step.innerExpression))
+  const averageValue = createNode('strong', '')
+  appendCorrelatedValue(averageValue, execution.scalarValue)
+  average.append(averageValue)
+  innerCard.append(average)
+  innerCard.append(renderTable(matchingRows, { compact: true, numbered: true, rowLimit: 8 }))
+  const innerSql = createNode('details', 'step-sql correlated-inner-sql')
+  innerSql.append(createNode('summary', '', 'See the inner SQL for this employee'))
+  const innerSqlCode = createNode('pre', 'step-sql-code')
+  innerSqlCode.append(createNode('code', '', execution.innerSql))
+  innerSql.append(innerSqlCode)
+  innerCard.append(innerSql)
+
+  const decisionCard = createNode('article', `correlated-stage-card correlated-stage-card--decision${execution.passed ? ' is-kept' : ' is-dropped'}`)
+  decisionCard.append(createNode('p', 'correlated-stage-label', '03 · COMPARE WITH THE AVERAGE'))
+  decisionCard.append(createNode('h4', '', 'Does this row pass WHERE?'))
+  const equation = createNode('div', 'correlated-equation')
+  const comparison = execution.comparison
+  if (comparison) {
+    const leftValue = comparison.subqueryOnLeft ? execution.scalarValue : comparison.outerValue
+    const rightValue = comparison.subqueryOnLeft ? comparison.outerValue : execution.scalarValue
+    const leftLabel = comparison.subqueryOnLeft ? step.innerExpression : comparison.outerExpression
+    const rightLabel = comparison.subqueryOnLeft ? comparison.outerExpression : step.innerExpression
+    const leftTerm = createNode('div', 'correlated-equation-term')
+    leftTerm.append(createNode('span', '', leftLabel))
+    const leftNumber = createNode('strong', '')
+    appendCorrelatedValue(leftNumber, leftValue)
+    leftTerm.append(leftNumber)
+    const operator = createNode('span', 'correlated-equation-operator', formatComparisonOperator(comparison.operator))
+    const rightTerm = createNode('div', 'correlated-equation-term')
+    rightTerm.append(createNode('span', '', rightLabel))
+    const rightNumber = createNode('strong', '')
+    appendCorrelatedValue(rightNumber, rightValue)
+    rightTerm.append(rightNumber)
+    equation.append(leftTerm, operator, rightTerm)
+  } else {
+    equation.append(createNode('p', 'correlated-condition-text', execution.conditionText))
+  }
+  decisionCard.append(equation)
+  const decision = createNode('div', `correlated-decision-badge${execution.passed ? ' is-kept' : ' is-dropped'}`, execution.passed ? 'KEEP ROW' : 'DROP ROW')
+  decisionCard.append(decision)
+  decisionCard.append(createNode('p', 'correlated-stage-copy', execution.passed
+    ? 'The comparison is true, so this row appears in the query output.'
+    : execution.conditionValue === null
+      ? 'The comparison is UNKNOWN. WHERE keeps only rows where the condition is true.'
+      : 'The comparison is false, so this row is filtered out of the query output.'))
+
+  flow.replaceChildren(outerCard, createNode('span', 'correlated-flow-arrow', '→'), innerCard, createNode('span', 'correlated-flow-arrow', '→'), decisionCard)
+}
+
+function formatComparisonOperator(operator) {
+  return ({ '>': '>', '<': '<', '>=': '≥', '<=': '≤', '<>': '≠', '!=': '≠', '=': '=' })[operator] || operator
+}
+
+function formatCorrelatedValue(value) {
+  if (typeof value !== 'number') return value === null || value === undefined ? 'NULL' : String(value)
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+}
+
+function appendCorrelatedValue(parent, value) {
+  if (typeof value === 'number') parent.textContent = formatCorrelatedValue(value)
+  else appendValue(parent, value)
+}
+
+function renderMembershipSubqueryVisual(parent, step) {
+  const flow = createNode('div', 'subquery-flow')
+  const innerCard = createNode('section', 'subquery-flow-card')
+  innerCard.append(createNode('span', 'subquery-flow-number', '01 · INNER QUERY'))
+  innerCard.append(createNode('h4', '', 'Find the allowed values'))
+  innerCard.append(createNode('p', 'visual-caption', 'This query runs once and returns a one-column set.'))
+  innerCard.append(renderTable(step.innerResult, { compact: true, rowLimit: 16, numbered: true }))
+  const setCard = createNode('section', 'subquery-flow-card subquery-flow-card--set')
+  setCard.append(createNode('span', 'subquery-flow-number', '02 · VALUE SET'))
+  setCard.append(createNode('h4', '', `${step.membershipValues.length} values to check`))
+  const valueSet = createNode('div', 'query-value-set')
+  step.membershipValues.slice(0, 24).forEach((value) => {
+    const chip = createNode('span', 'query-value-chip')
+    appendValue(chip, value)
+    valueSet.append(chip)
+  })
+  if (!step.membershipValues.length) valueSet.append(createNode('span', 'visual-caption', 'The inner query returned no values.'))
+  setCard.append(valueSet)
+  flow.append(innerCard, createNode('span', 'subquery-flow-arrow', '→'), setCard)
+  parent.append(flow)
+
+  parent.append(createNode('h4', 'visual-subheading', `03 · Check each outer row against ${step.operator}`))
+  parent.append(createNode('p', 'visual-caption', `The highlighted value from each employee row is compared with the set above. A passing condition keeps the row; a non-match or UNKNOWN is filtered out.`))
+  parent.append(renderTable(step.result, {
+    rowLimit: 40,
+    rowStatus: (index) => step.filterFlags[index],
+    statusKept: 'Condition passed',
+    statusRemoved: 'Filtered out',
+    reason: 'No matching value, or the result was UNKNOWN',
+  }))
+  if (step.capped) parent.append(createNode('p', 'table-overflow-note', 'The visual set or row list is shortened to keep the walkthrough readable. The Results tab shows the complete query output.'))
+}
+
+function renderExistsSubqueryVisual(parent, step) {
+  const flow = createNode('div', 'subquery-flow subquery-flow--exists')
+  const outerCard = createNode('section', 'subquery-flow-card')
+  outerCard.append(createNode('span', 'subquery-flow-number', '01 · OUTER ROW'))
+  outerCard.append(createNode('h4', '', 'Take one employee'))
+  outerCard.append(createNode('p', 'visual-caption', step.executions[0]?.referenceValues.length
+    ? `Use ${step.executions[0].referenceValues.map((reference) => reference.label).join(', ')} from this employee as the lookup key.`
+    : 'The outer row is checked against the inner query.'))
+  const lookupCard = createNode('section', 'subquery-flow-card')
+  lookupCard.append(createNode('span', 'subquery-flow-number', '02 · INNER LOOKUP'))
+  lookupCard.append(createNode('h4', '', step.negated ? 'Look for any order' : 'Look for a matching order'))
+  lookupCard.append(createNode('p', 'visual-caption', step.negated
+    ? 'NOT EXISTS is true only when this lookup returns zero rows.'
+    : 'EXISTS becomes true as soon as this lookup returns at least one row.'))
+  if (step.executions[0]?.nestedValues.length) {
+    const average = step.executions[0].nestedValues[0]
+    lookupCard.append(createNode('p', 'subquery-average-note', `${average.label} for the example employee: ${average.value === null ? 'NULL' : String(average.value)}`))
+  }
+  const decisionCard = createNode('section', 'subquery-flow-card subquery-flow-card--decision')
+  decisionCard.append(createNode('span', 'subquery-flow-number', '03 · KEEP OR FILTER'))
+  decisionCard.append(createNode('h4', '', step.negated ? 'Keep rows with no matches' : 'Keep rows with a match'))
+  decisionCard.append(createNode('p', 'visual-caption', 'Each employee gets its own yes/no decision. The table below shows the actual lookup count.'))
+  flow.append(outerCard, createNode('span', 'subquery-flow-arrow', '→'), lookupCard, createNode('span', 'subquery-flow-arrow', '→'), decisionCard)
+  parent.append(flow)
+
+  parent.append(createNode('h4', 'visual-subheading', 'Employee-by-employee decisions'))
+  parent.append(renderTable(step.result, {
+    rowLimit: 40,
+    rowStatus: (index) => step.executions[index]?.passed,
+    statusKept: 'Kept by EXISTS',
+    statusRemoved: 'Filtered out',
+    reason: step.negated ? 'At least one matching row exists' : 'The inner lookup returned no rows',
+  }))
+
+  const executions = step.executions.slice(0, 8)
+  if (executions.length) {
+    parent.append(createNode('h4', 'visual-subheading', 'Open a row to inspect its inner lookup'))
+    const list = createNode('div', 'subquery-execution-list')
+    executions.forEach((execution) => {
+      const details = createNode('details', 'subquery-execution')
+      details.open = execution.rowNumber === 1
+      const correlations = execution.referenceValues.map((reference) => `${reference.label} = ${reference.value === null ? 'NULL' : String(reference.value)}`)
+      const label = correlations.length ? correlations.join(', ') : 'outer row'
+      details.append(createNode('summary', '', `Employee ${execution.rowNumber} · ${label} · ${execution.matchCount} inner ${execution.matchCount === 1 ? 'row' : 'rows'}`))
+      details.append(createNode('p', 'visual-caption', execution.decision + '.'))
+      execution.nestedValues.forEach((nested) => {
+        details.append(createNode('p', 'subquery-average-note', `${nested.label} = ${nested.value === null ? 'NULL' : String(nested.value)}`))
+      })
+      if (execution.matchingResult.rows.length) {
+        details.append(createNode('p', 'visual-caption', 'Matching order rows:'))
+        details.append(renderTable(execution.matchingResult, { compact: true, rowLimit: 8, numbered: true }))
+      } else {
+        details.append(createNode('p', 'visual-caption', 'No order rows matched this employee.'))
+      }
+      const code = createNode('details', 'step-sql')
+      code.append(createNode('summary', '', 'Inner SQL with this employee value'))
+      const pre = createNode('pre', 'step-sql-code')
+      pre.append(createNode('code', '', execution.innerSql))
+      code.append(pre)
+      details.append(code)
+      list.append(details)
+    })
+    parent.append(list)
+  }
+  if (executions.length < step.result.totalRows && !step.capped) {
+    parent.append(createNode('p', 'table-overflow-note', `The table above shows every employee decision. Detailed inner-query rows are expanded for the first ${executions.length} employees.`))
+  }
+  if (step.capped) parent.append(createNode('p', 'table-overflow-note', `The visual expands the first ${executions.length} outer rows. The Results tab still shows the full query result.`))
 }
 
 function renderSandboxWriteVisual(parent, step) {
@@ -1267,14 +2112,116 @@ function renderSchemaDiff(before, after) {
 
 function renderWhereVisual(parent, step) {
   const input = step.filterInput || step.input
-  parent.append(createNode('h4', 'visual-subheading', 'Rows checked by WHERE'))
-  parent.append(createNode('p', 'visual-caption', '✓ Kept rows match the condition. × Removed rows did not match it.'))
-  parent.append(renderTable(input, {
+  const rows = input?.rows || []
+  if (!rows.length) {
+    parent.append(createEmptyState('No input rows for WHERE', 'There are no rows to evaluate at this stage.'))
+    return
+  }
+
+  parent.append(createNode('h4', 'visual-subheading', 'Follow WHERE one input row at a time'))
+  parent.append(createNode('p', 'visual-caption', 'Use Next row to see the condition evaluated against each row. WHERE keeps TRUE and filters out FALSE or UNKNOWN.'))
+  const sequence = createNode('section', 'correlated-walkthrough')
+  const navigation = createNode('div', 'correlated-walkthrough-navigation')
+  const previousButton = createNode('button', 'button button--quiet correlated-row-button', '← Previous row')
+  previousButton.type = 'button'
+  previousButton.addEventListener('click', () => {
+    if (autoplayTimer) stopAutoplay()
+    activeWhereExecutionIndex = Math.max(0, activeWhereExecutionIndex - 1)
+    updateWhereExecutionSequence(sequence, step, input, previousButton, nextButton, counter, progressFill)
+  })
+  const counter = createNode('p', 'correlated-row-counter')
+  counter.setAttribute('aria-live', 'polite')
+  counter.setAttribute('aria-atomic', 'true')
+  const nextButton = createNode('button', 'button button--primary correlated-row-button', 'Next row →')
+  nextButton.type = 'button'
+  nextButton.addEventListener('click', () => {
+    if (autoplayTimer) stopAutoplay()
+    activeWhereExecutionIndex = Math.min(rows.length - 1, activeWhereExecutionIndex + 1)
+    updateWhereExecutionSequence(sequence, step, input, previousButton, nextButton, counter, progressFill)
+  })
+  navigation.append(previousButton, counter, nextButton)
+
+  const progressTrack = createNode('div', 'correlated-row-progress')
+  progressTrack.setAttribute('role', 'progressbar')
+  progressTrack.setAttribute('aria-label', 'Rows checked by WHERE')
+  progressTrack.setAttribute('aria-valuemin', '1')
+  progressTrack.setAttribute('aria-valuemax', String(input.totalRows || rows.length))
+  const progressFill = createNode('span', 'correlated-row-progress-fill')
+  progressTrack.append(progressFill)
+  const flow = createNode('div', 'where-row-flow')
+  sequence.append(navigation, progressTrack, flow)
+  parent.append(sequence)
+
+  const glance = createNode('section', 'where-glance')
+  glance.append(createNode('h4', 'visual-subheading', 'All rows at a glance'))
+  glance.append(createNode('p', 'visual-caption', 'Green rows pass the condition. Struck-through rows are removed. Click any row to inspect it in the walkthrough above.'))
+  const glanceTable = renderTable(input, {
+    compact: true,
+    rowLimit: 40,
     rowStatus: (index) => Boolean(step.filterFlags?.[index]),
-    statusKept: 'Kept',
-    statusRemoved: 'Filtered out',
-    reason: `Does not match: ${step.filterReason}`,
-  }))
+    statusKept: 'TRUE · kept',
+    statusRemoved: 'Removed',
+    reason: 'FALSE or UNKNOWN',
+  })
+  glance.append(glanceTable)
+  parent.append(glance)
+  glanceTable.querySelectorAll('tbody tr').forEach((tr, rowIndex) => {
+    tr.classList.add('is-clickable')
+    tr.addEventListener('click', () => {
+      if (autoplayTimer) stopAutoplay()
+      activeWhereExecutionIndex = rowIndex
+      updateWhereExecutionSequence(sequence, step, input, previousButton, nextButton, counter, progressFill)
+    })
+  })
+
+  activeWhereExecutionIndex = 0
+  updateWhereExecutionSequence(sequence, step, input, previousButton, nextButton, counter, progressFill)
+  if (input.totalRows > rows.length || input.truncated) {
+    parent.append(createNode('p', 'table-overflow-note', `This walkthrough can step through ${rows.length} of ${input.totalRows} input rows.`))
+  }
+}
+
+function updateWhereExecutionSequence(sequence, step, input, previousButton, nextButton, counter, progressFill) {
+  const rows = input.rows || []
+  const index = activeWhereExecutionIndex
+  const row = rows[index]
+  if (!row) return
+  const total = input.totalRows || rows.length
+  const passed = Boolean(step.filterFlags?.[index])
+  const rawResult = step.filterResults?.[index]
+  const truth = rawResult === null || rawResult === undefined ? 'UNKNOWN' : Boolean(rawResult) ? 'TRUE' : 'FALSE'
+  counter.textContent = `ROW ${index + 1} OF ${total}`
+  previousButton.disabled = index === 0
+  nextButton.disabled = index === rows.length - 1
+  progressFill.parentElement.setAttribute('aria-valuenow', String(index + 1))
+  progressFill.style.width = `${Math.round(((index + 1) / total) * 100)}%`
+
+  const nameIndex = input.columns.findIndex((column) => normalizeColumn(column).split('.').at(-1) === 'name')
+  const rowName = nameIndex >= 0 ? row[nameIndex] : `Input row ${index + 1}`
+  const inputCard = createNode('article', 'correlated-stage-card correlated-stage-card--outer')
+  inputCard.append(createNode('p', 'correlated-stage-label', '01 · INPUT ROW'))
+  inputCard.append(createNode('h4', '', String(rowName)))
+  inputCard.append(createNode('p', 'correlated-stage-copy', 'This row reaches the WHERE clause before any filtering happens.'))
+  inputCard.append(renderTable({ columns: input.columns, rows: [row], totalRows: 1 }, { compact: true }))
+
+  const checkCard = createNode('article', 'correlated-stage-card correlated-stage-card--inner')
+  checkCard.append(createNode('p', 'correlated-stage-label', '02 · EVALUATE WHERE'))
+  checkCard.append(createNode('code', 'where-condition-code', step.filterReason))
+  checkCard.append(createNode('p', 'correlated-stage-copy', 'SQL evaluates this condition using the values in the input row.'))
+  checkCard.append(createNode('div', `where-truth-result${truth === 'TRUE' ? ' is-true' : truth === 'FALSE' ? ' is-false' : ' is-unknown'}`, truth))
+
+  const decisionCard = createNode('article', `correlated-stage-card correlated-stage-card--decision${passed ? ' is-kept' : ' is-dropped'}`)
+  decisionCard.append(createNode('p', 'correlated-stage-label', '03 · ROW DECISION'))
+  decisionCard.append(createNode('h4', '', passed ? 'Keep this row' : 'Filter out this row'))
+  decisionCard.append(createNode('div', `correlated-decision-badge${passed ? ' is-kept' : ' is-dropped'}`, passed ? 'KEEP ROW' : 'DROP ROW'))
+  decisionCard.append(createNode('p', 'correlated-stage-copy', passed
+    ? 'The condition is TRUE, so the row moves on to the next query stage.'
+    : truth === 'UNKNOWN'
+      ? 'The condition is UNKNOWN. WHERE keeps only rows where the condition is TRUE.'
+      : 'The condition is FALSE, so the row is removed before the next query stage.'))
+
+  sequence.querySelector('.where-row-flow').replaceChildren(inputCard, createNode('span', 'correlated-flow-arrow', '→'), checkCard, createNode('span', 'correlated-flow-arrow', '→'), decisionCard)
+  sequence.parentElement?.querySelectorAll('.where-glance tbody tr').forEach((tr, rowIndex) => tr.classList.toggle('is-current-row', rowIndex === index))
 }
 
 function renderJoinVisual(parent, step) {
@@ -1312,12 +2259,18 @@ function renderGroupVisual(parent, step) {
   if (!step.buckets.length) {
     groupGrid.append(createNode('p', 'empty-inline', 'No groups were created from these rows.'))
   }
+  const largestBucket = Math.max(1, ...step.buckets.map((bucket) => bucket.count))
   step.buckets.slice(0, 40).forEach((bucket, index) => {
     const card = createNode('article', 'group-card')
     const cardHead = createNode('div', 'group-card-head')
     cardHead.append(createNode('span', 'group-number', `Group ${index + 1}`))
     cardHead.append(createNode('span', 'group-size', `${bucket.count} ${bucket.count === 1 ? 'row' : 'rows'}`))
     card.append(cardHead)
+    const sizeBar = createNode('span', 'group-bar')
+    const sizeFill = createNode('span', 'group-bar-fill')
+    sizeFill.style.width = `${Math.max(6, Math.round((bucket.count / largestBucket) * 100))}%`
+    sizeBar.append(sizeFill)
+    card.append(sizeBar)
     bucket.keys.forEach((value, keyIndex) => {
       const key = createNode('p', 'group-key')
       key.append(createNode('span', 'group-key-label', `${bucket.labels[keyIndex]} = `))
@@ -1414,6 +2367,10 @@ function renderLimitVisual(parent, step) {
 
 function renderStandardVisual(parent, step) {
   if (step.kind === 'order') return renderOrderVisual(parent, step)
+  if (step.id === 'from') {
+    parent.append(createNode('h4', 'visual-subheading', 'Starting rows'))
+    parent.append(createNode('p', 'visual-caption', 'Every row of the table enters the pipeline. Later stages filter, group or reshape these rows.'))
+  }
   if (!step.result.rows.length) {
     parent.append(createEmptyState('No rows at this step', 'The query is valid, but no rows remain after the previous clauses.'))
   } else {
@@ -1583,7 +2540,7 @@ function toggleAutoplay() {
       stopAutoplay()
       return
     }
-    showStep(activeStepIndex + 1)
+    showStep(activeStepIndex + 1, { fromAutoplay: true })
   }, 1500)
 }
 
@@ -1592,6 +2549,45 @@ function stopAutoplay() {
   autoplayTimer = null
   const button = $('[data-step-control="autoplay"]')
   if (button) button.textContent = '▶ Auto-play'
+}
+
+function updateWalkthroughFocusState(focused) {
+  const isFocused = Boolean(focused)
+  outputPanel.classList.toggle('is-focused', isFocused)
+  document.body.classList.toggle('walkthrough-focused', isFocused)
+  const button = $('[data-step-control="focus"]')
+  if (button) {
+    button.setAttribute('aria-pressed', String(isFocused))
+    button.textContent = isFocused ? 'Exit focus view' : 'Focus view'
+  }
+}
+
+async function setWalkthroughFocus(focused) {
+  const isFocused = Boolean(focused)
+  if (isFocused) {
+    if (typeof outputPanel.requestFullscreen === 'function') {
+      try {
+        await outputPanel.requestFullscreen()
+        outputPanel.classList.add('uses-native-fullscreen')
+        updateWalkthroughFocusState(true)
+        return
+      } catch {
+        // Keep the expanded in-page view available when fullscreen is blocked.
+      }
+    }
+    updateWalkthroughFocusState(true)
+    return
+  }
+
+  if (document.fullscreenElement === outputPanel) {
+    outputPanel.classList.remove('uses-native-fullscreen')
+    try {
+      await document.exitFullscreen()
+    } catch {
+      // The in-page focus view still closes if fullscreen exit is unavailable.
+    }
+  }
+  updateWalkthroughFocusState(false)
 }
 
 function rowAppearsIn(row, candidates) {
