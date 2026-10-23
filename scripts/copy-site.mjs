@@ -25,7 +25,7 @@ for (const directory of ['css', 'js', 'team']) {
   await cp(resolve(webRoot, directory), resolve(outputRoot, directory), { recursive: true })
 }
 
-for (const lab of ['linux-lab', 'sql-visual-lab']) {
+for (const lab of ['linux-lab', 'sql-visual-lab', 'git-lab']) {
   const target = resolve(outputRoot, 'courses', lab)
   await mkdir(dirname(target), { recursive: true })
   await cp(resolve(webRoot, 'courses', lab), target, { recursive: true })

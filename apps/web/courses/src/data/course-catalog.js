@@ -76,8 +76,10 @@ const COURSE_CONTENT = {
     curriculumTitle: '34 lessons in four learning parts',
     parts: EXPRESS_PARTS,
     resources: [
-      { title: 'Express documentation', kind: 'Official reference', href: 'https://expressjs.com/en/4x/api.html', description: 'API reference for Express applications, requests, responses, routers, and middleware.' },
+      { title: 'Express 5 API reference', kind: 'Official reference', href: 'https://expressjs.com/en/5x/api.html', description: 'Express 5 API reference for applications, requests, responses, routers, and middleware.' },
       { title: 'Express guide', kind: 'Official reference', href: 'https://expressjs.com/en/guide/routing.html', description: 'Learn routing, middleware, error handling, and common Express application patterns.' },
+      { title: 'Express 5 error handling', kind: 'Official reference', href: 'https://expressjs.com/en/5x/guide/error-handling.html', description: 'Learn Express 5 error middleware and automatic forwarding of rejected route-handler promises.' },
+      { title: 'Express middleware guide', kind: 'Official reference', href: 'https://expressjs.com/en/guide/using-middleware.html', description: 'Understand ordered middleware, next(), routers, and request-response flow.' },
       { title: 'Node.js environment variables', kind: 'Official reference', href: 'https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs', description: 'Understand how Node.js reads environment variables and local configuration.' },
       { title: 'EJS documentation', kind: 'Official reference', href: 'https://ejs.co/', description: 'Reference for EJS tags, includes, and rendering templates.' },
       { title: 'Postman Learning Center', kind: 'Tutorial', href: 'https://learning.postman.com/docs/getting-started/first-steps/sending-the-first-request/', description: 'Learn to configure and send HTTP requests while practising the API lessons.' },
@@ -135,6 +137,7 @@ const COURSE_CONTENT = {
     contentNote: 'The concepts apply across platforms. Implementation examples use Node.js built-in crypto, bcrypt, and argon2id. The final lab only cracks toy hashes created by the learner.',
     resources: [
       { title: 'OWASP Password Storage Cheat Sheet', kind: 'Security guidance', href: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html', description: 'Recommended password hashing approaches, parameters, migration, and pepper handling.' },
+      { title: 'RFC 9106 · Argon2', kind: 'IETF research RFC', href: 'https://www.rfc-editor.org/rfc/rfc9106', description: 'Specification and parameter guidance for the Argon2 memory-hard function, including Argon2id.' },
       { title: 'Node.js crypto documentation', kind: 'Official reference', href: 'https://nodejs.org/api/crypto.html', description: 'Reference for randomBytes, pbkdf2, scrypt, timingSafeEqual, and cryptographic APIs.' },
       { title: 'NIST SP 800-63B', kind: 'Standard', href: 'https://pages.nist.gov/800-63-4/sp800-63b.html', description: 'Digital identity guidance for memorized secrets, authentication, and verifier requirements.' },
     ],
@@ -164,6 +167,9 @@ const COURSE_CONTENT = {
     contentNoteTitle: 'Build-along backend course',
     contentNote: 'Lessons use Express, Node.js, bcrypt, JWT, and MySQL with mysql2/promise. Follow the examples with a local development database and never commit secrets.',
     resources: [
+      { title: 'RFC 7519 · JSON Web Token', kind: 'IETF standard', href: 'https://www.rfc-editor.org/rfc/rfc7519', description: 'The JWT claims format, registered claims, and signed or encrypted representations.' },
+      { title: 'RFC 8725 · JWT Best Current Practice', kind: 'IETF security guidance', href: 'https://www.rfc-editor.org/rfc/rfc8725', description: 'Security recommendations for selecting algorithms, validating claims, and preventing JWT implementation mistakes.' },
+      { title: 'RFC 9068 · JWT Profile for OAuth Access Tokens', kind: 'IETF standard', href: 'https://www.rfc-editor.org/rfc/rfc9068', description: 'A specific interoperable profile for JWT-formatted OAuth 2.0 access tokens.' },
       { title: 'JSON Web Token introduction', kind: 'Reference', href: 'https://jwt.io/introduction', description: 'Understand JWT structure, claims, signing, and common use cases.' },
       { title: 'OWASP Password Storage Cheat Sheet', kind: 'Security guidance', href: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html', description: 'Guidance for securely storing password verifiers.' },
       { title: 'MySQL2 documentation', kind: 'Library reference', href: 'https://sidorares.github.io/node-mysql2/docs', description: 'Connection pools and promise-based prepared queries for MySQL in Node.js.' },

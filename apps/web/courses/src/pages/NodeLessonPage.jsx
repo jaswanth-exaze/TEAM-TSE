@@ -62,6 +62,8 @@ export default function NodeLessonPage() {
   const previousTopic = NODE_TOPICS[topicIndex - 1]
   const nextTopic = NODE_TOPICS[topicIndex + 1]
   const isComplete = completed.includes(topicId)
+  const hasRuntimeActivity = [7, 12, 14, 16, 17, 18, 19, 20, 25].includes(lesson?.number)
+  const runtimeUrl = '/course/node-js/lab'
   const markdownBody = useMemo(() => lesson?.markdown?.replace(/^#[^\r\n]*\r?\n+/, '') || '', [lesson])
   const readMinutes = lesson ? Math.max(1, Math.ceil(lesson.markdown.trim().split(/\s+/).length / 200)) : 0
 
@@ -125,6 +127,11 @@ export default function NodeLessonPage() {
         <article className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.015] px-4 py-5 sm:px-7 sm:py-8 xl:px-9">
           <CourseMarkdown content={markdownBody} />
         </article>
+
+        {hasRuntimeActivity && <section className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200/15 bg-emerald-200/[0.045] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="Interactive Node.js practice">
+          <div><p className="text-xs font-semibold uppercase tracking-[0.13em] text-emerald-200">Try the concept in motion</p><p className="mt-1 text-sm leading-6 text-white/70">{lesson.number === 25 ? 'Create an employee or attendance record and watch the server emit an event to its listeners.' : 'Send a company request through authentication, RBAC middleware, a service, and the data store.'}</p></div>
+          <Link to={runtimeUrl} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:-translate-y-0.5 hover:bg-emerald-100">Play Company Network Ops <span aria-hidden="true">→</span></Link>
+        </section>}
 
         <section className="mt-6 rounded-xl border border-emerald-200/15 bg-emerald-200/[0.04] p-4 sm:p-5" aria-label="Lesson progress">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

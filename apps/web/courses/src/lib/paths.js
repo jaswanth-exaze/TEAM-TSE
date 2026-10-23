@@ -23,3 +23,7 @@ export function getSqlVisualLabHref() {
 export function getLinuxLabHref() {
   return new URL('linux-lab/', getCourseAppBaseUrl()).pathname
 }
+
+export function getGitLabHref() {
+  return new URL('git-lab/', getCourseAppBaseUrl()).pathname
+}

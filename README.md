@@ -1,6 +1,6 @@
 # TSE Learning Hub
 
-A single Node/Vite app for the TSE home page, team directory, course library, quizzes, and practice labs. Course and quiz routes share one React interface; SQL and Linux labs stay focused on their editors while sharing the Learning Hub navigation and design tokens.
+A single Node/Vite app for the TSE home page, team directory, course library, quizzes, and practice labs. Course and quiz routes share one React interface; Git, SQL, and Linux labs use focused practice controls while sharing the Learning Hub navigation and visual language.
 
 ## Run locally
 
@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open the URL printed by Vite (normally <http://localhost:5173/>). The same server serves:
+Open the URL printed by Vite (normally <http://localhost:5173/>). The same server serves `/courses/git-lab/` for interactive local Git, branching, and merge practice, along with:
 
 - `/` — Home, About, and Team pages
 - `/courses/` — course library, lessons, quizzes, and exams
@@ -38,9 +38,10 @@ apps/web/
   team/members/                         Member-owned pages and directory data
   courses/
     index.html, src/                    Course and quiz app
+    git-lab/                            Local Git and branching simulator
     sql-visual-lab/                     SQL practice lab source
     linux-lab/                          Linux practice lab source
-    tests/                              Node checks for both labs
+    tests/                              SQL and Linux lab Node checks
 scripts/
   copy-site.mjs                         Adds static pages and labs to dist/
 package.json, package-lock.json         Shared dependencies and commands

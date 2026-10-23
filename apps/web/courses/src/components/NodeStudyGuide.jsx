@@ -32,6 +32,9 @@ export default function NodeStudyGuide({ module, course }) {
     <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
       <Link to="/" className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-medium text-white/70 transition hover:bg-white/[0.05] hover:text-white">← Course library</Link>
       <nav aria-label="Course links" className="flex flex-wrap items-center gap-4">
+        <Link to="/course/node-js/lab" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-200/30 bg-emerald-200/[0.08] px-4 py-2.5 text-sm font-semibold text-emerald-100 transition hover:-translate-y-0.5 hover:bg-emerald-200/[0.14] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200 sm:px-5 sm:text-base">
+          <span aria-hidden="true">◉</span> Play Company Network Ops <span aria-hidden="true">→</span>
+        </Link>
         <Link to={`/quiz/${module.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:px-5 sm:text-base">
           <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
         </Link>

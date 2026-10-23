@@ -16,6 +16,7 @@
 6. PUT – Replace (Full Update)
 7. PATCH – Partial Update
 8. DELETE – Remove
+8A. QUERY - Structured Read (RFC 10008)
 9. Complete CRUD Examples for a Resource
 10. Idempotency Revisited in Context of CRUD
 11. Safety Revisited
@@ -67,11 +68,14 @@ Deviating from the standard mapping creates confusion.
 | Create         | POST        | `/resources`                 | 201 Created              |
 | Read (one)     | GET         | `/resources/{id}`            | 200 OK                   |
 | Read (many)    | GET         | `/resources`                 | 200 OK                   |
+| Structured read | QUERY      | `/resources` with query content | 200 OK                |
 | Update (full)  | PUT         | `/resources/{id}`            | 200 OK or 204 No Content |
 | Update (partial)| PATCH      | `/resources/{id}`            | 200 OK or 204 No Content |
 | Delete         | DELETE      | `/resources/{id}`            | 200 OK or 204 No Content |
 
 This table is the foundation of most REST APIs.
+
+`QUERY` is an additional HTTP method for the Read operation in CRUD. It carries structured query input and leaves CRUD's four data operations unchanged.
 
 ---
 
@@ -293,6 +297,56 @@ Calling DELETE again on the same resource should still return success (idempoten
 
 ---
 
+## 8A. QUERY - Structured Read (RFC 10008)
+
+`QUERY` is a standardized HTTP method for asking a target resource to process query instructions carried in the request content. The target URI identifies the resource being queried; the JSON body below carries the filter and page options.
+
+### How it differs from GET
+
+- Use `GET` with query parameters for simple filters and pagination.
+- Use `QUERY` when the query needs structured input or would be awkward to express in a URI.
+- `QUERY` is safe and idempotent: its intended purpose is to read, and repeating the same request has the same intended effect.
+- A `QUERY` request needs a body and a `Content-Type` header. This example uses `application/json`.
+- The server must support `QUERY`. A client should not assume every API, proxy, or server accepts it.
+- `QUERY` responses can be cached, but a cache must include the request content in its cache key. This simulator sends `Cache-Control: no-store` and does not demonstrate QUERY caching.
+
+The method is specified by [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html), published in June 2026. A server can advertise query formats it accepts with the `Accept-Query` response header.
+
+### Example
+
+**Request**
+```
+QUERY /api/v1/employees HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Accept: application/json
+
+{
+  "filter": { "department": "Engineering" },
+  "page": 1,
+  "limit": 5
+}
+```
+
+**Response**
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Accept-Query: application/json
+
+{
+  "data": [
+    { "id": "E-101", "name": "Dev Patel" },
+    { "id": "E-110", "name": "Vikram Rao" }
+  ],
+  "meta": { "total": 2, "page": 1, "limit": 5 }
+}
+```
+
+`Accept-Query: application/json` tells clients that this target accepts query documents in JSON. The exact query document is part of the API contract and must be documented by the server.
+
+---
+
 ## 9. Complete CRUD Examples for a Resource
 
 Let’s take the resource `/products`.
@@ -313,6 +367,7 @@ Let’s take the resource `/products`.
 | Method  | Idempotent? | Practical Meaning                                      |
 |---------|-------------|--------------------------------------------------------|
 | GET     | Yes         | Calling multiple times returns the same result         |
+| QUERY   | Yes         | Repeating the same query has the same intended effect   |
 | PUT     | Yes         | Sending the same full representation multiple times is safe |
 | DELETE  | Yes         | Deleting an already-deleted resource is safe           |
 | POST    | No          | Each call may create a new resource                    |
@@ -327,6 +382,7 @@ Idempotency is especially important when network failures cause clients to retry
 | Method  | Safe? | Meaning                                              |
 |---------|-------|------------------------------------------------------|
 | GET     | Yes   | Does not change server state                         |
+| QUERY   | Yes   | Reads using request content; does not change state    |
 | POST    | No    | Creates or triggers side effects                     |
 | PUT     | No    | Changes resource state                               |
 | PATCH   | No    | Changes resource state                               |
@@ -393,6 +449,8 @@ UPDATE   →  PATCH  /collection/{id}     (partial)
 DELETE   →  DELETE /collection/{id}
 ```
 
+`QUERY /collection` is another way to read a collection when the criteria belong in a structured JSON request body.
+
 ### Status Code Cheat Sheet for CRUD
 
 | Operation | Success          | Client Error     | Not Found     |
@@ -409,6 +467,7 @@ DELETE   →  DELETE /collection/{id}
 
 - CRUD maps cleanly onto HTTP methods.
 - GET = Read, POST = Create, PUT = Full Update, PATCH = Partial Update, DELETE = Delete.
+- QUERY is a safe, idempotent read method for structured query input in a request body; it complements CRUD and requires server support.
 - Respect safety and idempotency properties.
 - Use the correct success status codes (especially 201 for creation).
 - Consistency in method usage makes APIs predictable and pleasant to use.
@@ -427,12 +486,15 @@ DELETE   →  DELETE /collection/{id}
 8. When would you choose PATCH over PUT?
 9. What header is commonly returned with a 201 response?
 10. Map the following to HTTP methods: List all items, Get one item, Create, Full replace, Partial update, Remove.
+11. What does QUERY carry in its request body, and which header declares that body's format?
 
 ---
 
 ## 18. Summary
 
 The HTTP method + URI combination tells both humans and machines what operation is being performed on which resource.  
+
+For structured read criteria, QUERY can carry a query document in the request body. The target must support it, and the client identifies the body format with Content-Type.
 
 Mastering this mapping is one of the fastest ways to become productive with REST APIs — both as a consumer and as a designer.
 

@@ -21,9 +21,19 @@ import { ThemeProvider } from './components/ThemeContext'
 import { getModule } from './data/modules'
 
 const HtmlJavaScriptPracticeExams = lazy(() => import('./pages/HtmlJavaScriptPracticeExams'))
+const NodeRuntimeStudio = lazy(() => import('./pages/NodeRuntimeStudio'))
+const RestApiStudio = lazy(() => import('./pages/RestApiStudio'))
+const ExpressRequestStudio = lazy(() => import('./pages/ExpressRequestStudio'))
+const JwtVisualStudio = lazy(() => import('./pages/JwtVisualStudio'))
+const PasswordHashVisualStudio = lazy(() => import('./pages/PasswordHashVisualStudio'))
 
 function getRouteTitle(pathname) {
   if (pathname === '/') return 'Course library'
+  if (pathname === '/course/node-js/lab') return 'Company Network Ops'
+  if (pathname === '/course/rest-api-fundamentals/lab') return 'Northstar API Operations'
+  if (pathname === '/course/express/lab') return 'Express Request Studio'
+  if (pathname === '/course/jwt-authentication/lab') return 'JWT Visual Studio'
+  if (pathname === '/course/password-salt-hash-fundamenta/lab') return 'Password Hash Visual Studio'
   const moduleId = pathname.match(/^\/(?:course|study|quiz|results)\/([^/]+)/)?.[1]
   const module = moduleId ? getModule(moduleId) : null
   if (moduleId && !module) return 'Page not found'
@@ -72,6 +82,11 @@ export default function App() {
               <Route path="/quiz/:moduleId" element={<Quiz />} />
               <Route path="/results/:moduleId" element={<Results />} />
               <Route path="/course/:moduleId" element={<StudyGuide />} />
+              <Route path="/course/node-js/lab" element={<Suspense fallback={<p className="px-6 py-12 text-center text-sm text-white/60">Loading Company Network Ops...</p>}><NodeRuntimeStudio /></Suspense>} />
+              <Route path="/course/rest-api-fundamentals/lab" element={<Suspense fallback={<p className="px-6 py-12 text-center text-sm text-white/60">Loading Northstar API Operations...</p>}><RestApiStudio /></Suspense>} />
+              <Route path="/course/express/lab" element={<Suspense fallback={<p className="px-6 py-12 text-center text-sm text-white/60">Loading Express Request Studio...</p>}><ExpressRequestStudio /></Suspense>} />
+              <Route path="/course/jwt-authentication/lab" element={<Suspense fallback={<p className="px-6 py-12 text-center text-sm text-white/60">Loading JWT Visual Studio...</p>}><JwtVisualStudio /></Suspense>} />
+              <Route path="/course/password-salt-hash-fundamenta/lab" element={<Suspense fallback={<p className="px-6 py-12 text-center text-sm text-white/60">Loading Password Hash Visual Studio...</p>}><PasswordHashVisualStudio /></Suspense>} />
               <Route path="/course/node-js/topic/:topicId" element={<NodeLessonPage />} />
               <Route path="/course/express/topic/:topicId" element={<ExpressLessonPage />} />
               <Route path="/course/unit-testing-fundamentals/topic/:topicId" element={<UnitTestingLessonPage />} />

@@ -3,7 +3,7 @@ import ModuleCard from '../components/ModuleCard'
 import { TRACKS } from '../data/modules'
 import { COURSE_MODULES, getCourseSyllabus } from '../data/course-catalog'
 import { getAllProgress } from '../lib/progress'
-import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
+import { getGitLabHref, getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 
 function readCompletedLessons(moduleId, topics) {
@@ -37,8 +37,10 @@ export default function Landing() {
           ? getLinuxLabHref()
           : module.id === 'mysql'
             ? getSqlVisualLabHref()
-            : null,
-        labLabel: module.id === 'mysql' ? 'Visual SQL lab' : 'Practice lab',
+            : module.id === 'git'
+              ? getGitLabHref()
+              : null,
+        labLabel: module.id === 'mysql' ? 'Visual SQL lab' : module.id === 'git' ? 'Git interactive lab' : 'Practice lab',
         courseReady: topics.length > 0,
         syllabusAvailable,
         lessonCount: topics.length,

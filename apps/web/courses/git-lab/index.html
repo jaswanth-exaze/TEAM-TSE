@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f3ed" />
+    <meta name="description" content="Learn version control by building and exploring a local Git history in an interactive simulator." />
+    <title>Git Lab | TSE Learning Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to the Git workspace</a>
+
+    <header class="topbar">
+      <a class="brand" href="../../" aria-label="TSE Learning Hub home">
+        <span class="brand-mark" aria-hidden="true">G<span>·</span></span>
+        <span class="brand-name">TSE <b>LEARNING</b></span>
+      </a>
+      <nav class="top-nav" aria-label="Site navigation">
+        <a href="../../">Home</a>
+        <a href="../">Courses</a>
+        <a href="../course/git" aria-current="page">Git course</a>
+      </nav>
+      <div class="topbar-tools">
+        <span class="local-indicator"><i aria-hidden="true"></i>Local practice</span>
+        <button class="theme-toggle" id="theme-toggle" type="button">Use dark theme</button>
+      </div>
+    </header>
+
+    <main class="app-shell" id="main-content">
+      <section class="studio-intro" aria-labelledby="journey-title">
+        <div class="intro-copy">
+          <p class="kicker"><span class="kicker-mark" aria-hidden="true">01</span> GIT FOUNDATIONS <span class="kicker-divider">/</span> LOCAL REPOSITORY</p>
+          <h1 id="journey-title">Build a history you can understand.</h1>
+          <p>Make a change. Choose what to save. Give it a checkpoint. Then follow how branches grow from that history.</p>
+        </div>
+        <div class="progress-card" aria-live="polite">
+          <div class="progress-card-label"><span>LEARNING PATH</span><strong id="progress-count">0 of 14 steps</strong></div>
+          <div class="progress-track"><span id="progress-fill"></span></div>
+          <div class="progress-card-foot"><span>Version control → branches</span><span>14 steps</span></div>
+        </div>
+      </section>
+
+      <div class="studio-layout">
+        <aside class="learning-rail panel" aria-labelledby="mission-title">
+          <div class="panel-heading">
+            <div><p class="eyebrow">YOUR ROUTE</p><h2 id="mission-title">Learning path</h2></div>
+            <button class="icon-button" id="reset-lab" type="button" aria-label="Reset the Git practice repository" title="Reset practice">↺</button>
+          </div>
+          <div class="mission-list" id="mission-list"></div>
+          <div class="rail-note"><span class="rail-note-icon" aria-hidden="true">✓</span><p><strong>Safe sandbox</strong><br />Commands run in this page. Your computer files stay untouched.</p></div>
+        </aside>
+
+        <div class="studio-main">
+          <section class="task-card panel" id="task-card" aria-labelledby="task-title">
+            <div class="task-card-top">
+              <div><p class="eyebrow" id="task-chapter">CHAPTER 1 · SETUP</p><h2 id="task-title">Your next move</h2></div>
+              <span class="task-step" id="task-step">Step 1 of 14</span>
+            </div>
+            <p class="task-instruction" id="task-instruction"></p>
+            <div class="task-commands" id="task-commands" aria-label="Suggested task actions"></div>
+            <div class="task-card-actions">
+              <button class="button button--primary" id="check-step" type="button">Check my step</button>
+              <button class="button button--quiet" id="next-step" type="button" hidden>Continue path <span aria-hidden="true">→</span></button>
+              <p class="task-feedback" id="task-feedback" role="status" aria-live="polite">Follow the instruction, then check your work.</p>
+            </div>
+          </section>
+
+          <section class="repository-panel panel" aria-labelledby="repo-heading">
+            <div class="repository-heading">
+              <div class="repo-title-group">
+                <span class="repo-avatar" aria-hidden="true">⌘</span>
+                <div><p class="eyebrow">PRACTICE REPOSITORY</p><h2 id="repo-heading">Task Tracker <code>~/practice/task-tracker</code></h2></div>
+              </div>
+              <span class="repo-state" id="repo-state"><i aria-hidden="true"></i><span>Not initialized</span></span>
+            </div>
+
+            <div class="git-flow" role="group" aria-label="How Git saves project changes">
+              <article class="state-card state-card--working" aria-labelledby="working-title">
+                <div class="state-card-heading"><span class="state-symbol" aria-hidden="true">01</span><div><p>YOUR PROJECT</p><h3 id="working-title">Working tree</h3></div></div>
+                <p class="state-summary" id="working-summary"></p>
+                <ul class="state-file-list" id="working-files"></ul>
+              </article>
+              <div class="flow-transition"><span class="flow-caption">Select changes</span><button class="flow-command flow-command--stage" id="flow-add-command" type="button">git add</button><span class="flow-arrow" aria-hidden="true">→</span></div>
+              <article class="state-card state-card--staging" aria-labelledby="staging-title">
+                <div class="state-card-heading"><span class="state-symbol" aria-hidden="true">02</span><div><p>PREVIEW THE SAVE</p><h3 id="staging-title">Staging area</h3></div></div>
+                <p class="state-summary" id="staging-summary"></p>
+                <ul class="state-file-list" id="staged-files"></ul>
+              </article>
+              <div class="flow-transition"><span class="flow-caption">Save a checkpoint</span><button class="flow-command flow-command--commit" id="flow-commit-command" type="button">git commit</button><span class="flow-arrow" aria-hidden="true">→</span></div>
+              <article class="state-card state-card--history" aria-labelledby="history-title">
+                <div class="state-card-heading"><span class="state-symbol" aria-hidden="true">03</span><div><p>YOUR TIMELINE</p><h3 id="history-title">Local history</h3></div></div>
+                <p class="state-summary" id="history-summary"></p>
+                <ul class="state-file-list" id="history-files"></ul>
+              </article>
+            </div>
+
+            <div class="workbench-grid">
+              <section class="file-panel" aria-labelledby="files-title">
+                <div class="subpanel-heading"><div><p class="eyebrow">MAKE A CHANGE</p><h3 id="files-title">Project files</h3></div><span class="file-count" id="file-count">2 files</span></div>
+                <div class="file-explorer" id="file-explorer" role="list" aria-label="Practice project files"></div>
+                <div class="editor-heading"><label for="file-editor">Selected file</label><span id="selected-file-label">README.md</span></div>
+                <textarea id="file-editor" spellcheck="false" aria-label="Edit selected practice file"></textarea>
+                <div class="editor-actions"><span id="editor-message" role="status" aria-live="polite">Edit the file, then save it.</span><button class="button button--small button--primary" id="save-file" type="button">Save edit</button></div>
+              </section>
+
+              <section class="terminal-panel" aria-labelledby="terminal-title">
+                <div class="subpanel-heading"><div><p class="eyebrow">TRY A COMMAND</p><h3 id="terminal-title">Git terminal</h3></div><button class="text-button" id="clear-terminal" type="button">Clear</button></div>
+                <div class="terminal-window" id="terminal-window">
+                  <div class="terminal-output" id="terminal-output" role="log" aria-live="polite" aria-relevant="additions text">
+                    <div class="terminal-welcome"><p class="terminal-welcome-title">This is your local practice repository.</p><p>Begin with <code>git init</code>. Nothing runs in your system terminal.</p></div>
+                  </div>
+                  <form class="terminal-form" id="terminal-form" autocomplete="off">
+                    <label for="terminal-input"><span class="prompt-mark">$</span><span class="prompt-path">~/practice/task-tracker</span></label>
+                    <input id="terminal-input" name="command" list="git-command-hints" type="text" spellcheck="false" autocapitalize="off" aria-label="Enter a simulated Git command" aria-describedby="terminal-hint" placeholder="git init" />
+                    <datalist id="git-command-hints"></datalist>
+                    <button type="submit" aria-label="Run command">Run <span aria-hidden="true">↵</span></button>
+                    <span class="terminal-hint" id="terminal-hint">Press Enter to run</span>
+                  </form>
+                </div>
+                <div class="quick-commands" id="quick-commands" aria-label="Commands for the current task"></div>
+              </section>
+            </div>
+
+            <section class="command-feedback" id="command-feedback" aria-live="polite" aria-atomic="true">
+              <span class="feedback-icon" id="feedback-icon" aria-hidden="true">i</span><p class="feedback-line" id="feedback-line">Run git init to create this repository's local metadata.</p>
+              <details class="feedback-details" id="feedback-details"><summary id="feedback-summary">Details</summary><p id="feedback-detail">Git stores this practice repository in the browser simulator. Your computer files are not changed.</p></details>
+            </section>
+
+            <section class="conflict-panel" id="conflict-panel" aria-labelledby="conflict-title" hidden>
+              <div class="conflict-header"><div><p class="eyebrow">MERGE IN PROGRESS</p><h3 id="conflict-title">Git needs you to resolve this conflict</h3><p id="conflict-summary"></p></div><span class="conflict-status" id="conflict-status"></span></div>
+              <div class="conflict-files" id="conflict-files"></div>
+              <p class="conflict-instruction">Edit the conflicted file above. Keep the result you want, remove every <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>, <code>=======</code>, and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> marker, save, then stage and commit it.</p>
+            </section>
+
+            <div class="branch-history-grid" aria-label="Local branches and commit history">
+              <article class="state-card state-card--refs" aria-labelledby="refs-title"><div class="state-card-heading"><span class="state-symbol state-symbol--branch" aria-hidden="true">⑂</span><div><p>BRANCH POINTERS</p><h3 id="refs-title">Branches &amp; HEAD</h3></div></div><p class="state-summary" id="refs-summary"></p><ul class="branch-list" id="branch-list"></ul></article>
+              <article class="state-card state-card--graph" aria-labelledby="graph-title"><div class="state-card-heading"><span class="state-symbol state-symbol--history" aria-hidden="true">↗</span><div><p>FOLLOW THE CHECKPOINTS</p><h3 id="graph-title">Commit timeline</h3></div></div><div class="history-graph" id="history-graph"></div><p class="remote-note"><span class="remote-dot" aria-hidden="true"></span> Local only · no remote connected</p></article>
+            </div>
+
+            <details class="activity-panel" id="activity-panel"><summary><span>What you’ve done</span><span id="activity-count">0 actions</span></summary><div class="activity-stream" id="activity-stream" aria-live="polite"><p class="activity-empty">Commands and saved edits will appear here.</p></div></details>
+          </section>
+        </div>
+      </div>
+
+      <details class="concept-details">
+        <summary>What is version control?</summary>
+        <div class="concept-details-body">
+          <p>Version control records chosen snapshots of a project so you can inspect how it changed and why. Git keeps this history locally first; a local commit does not upload anything.</p>
+          <div class="concept-mini-flow"><span>edit files</span><b>→</b><span>stage a selection</span><b>→</b><span>commit a snapshot</span></div>
+          <button class="button button--quiet" id="mark-concept" type="button">Mark concept understood</button>
+        </div>
+      </details>
+
+      <footer class="app-footer"><span>Local Git simulator · Practice state stays in this browser.</span><a href="../course/git">Back to the Git course <span aria-hidden="true">→</span></a></footer>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

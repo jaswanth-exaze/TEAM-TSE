@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getModule } from '../data/modules'
 import { getCourseSyllabus } from '../data/course-catalog'
-import { getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
+import { getGitLabHref, getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
 import NodeStudyGuide from '../components/NodeStudyGuide'
 import HashAnchorLink from '../components/HashAnchorLink'
@@ -78,6 +78,11 @@ function CourseReader({ module, course }) {
         <nav aria-label="Course tools" className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {course.examRoute && <Link to={course.examRoute} className="text-sm text-white/75 hover:text-white">Practice exams</Link>}
           {module.id === 'mysql' && <a href={getSqlVisualLabHref()} className="text-sm font-medium text-amber-200 hover:text-amber-100">Visual SQL lab</a>}
+          {module.id === 'git' && <a href={getGitLabHref()} className="text-sm font-medium text-amber-200 hover:text-amber-100">Git interactive lab</a>}
+          {module.id === 'rest-api-fundamentals' && <Link to="/course/rest-api-fundamentals/lab" className="text-sm font-semibold text-orange-200 hover:text-orange-100">Open API Operations lab</Link>}
+          {module.id === 'express' && <Link to="/course/express/lab" className="text-sm font-semibold text-cyan-200 hover:text-cyan-100">Open Express Request Studio</Link>}
+          {module.id === 'jwt-authentication' && <Link to="/course/jwt-authentication/lab" className="text-sm font-semibold text-violet-200 hover:text-violet-100">Open JWT Visual Studio</Link>}
+          {module.id === 'password-salt-hash-fundamenta' && <Link to="/course/password-salt-hash-fundamenta/lab" className="text-sm font-semibold text-emerald-200 hover:text-emerald-100">Open Password Hash Visual Studio</Link>}
           {course.hasQuiz !== false && <Link to={`/quiz/${module.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200/30 bg-indigo-300 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-lg shadow-indigo-950/20 transition hover:-translate-y-0.5 hover:bg-indigo-200 hover:shadow-indigo-950/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200 sm:px-5 sm:text-base">
             <span aria-hidden="true">✦</span> Take the quiz <span aria-hidden="true">→</span>
           </Link>}
@@ -335,6 +340,9 @@ function SyllabusOnlyReader({ module, course }) {
               {module.id === 'linux-commands' && <a href={getLinuxLabHref()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-200/25 bg-amber-200/[0.08] px-4 py-3 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-200/40 hover:bg-amber-200/[0.13] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200">
                 Open Linux practice lab <span aria-hidden="true">↗</span>
               </a>}
+              {module.id === 'express' && <Link to="/course/express/lab" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-200/25 bg-cyan-200/[0.08] px-4 py-3 text-sm font-semibold text-cyan-100 transition-colors hover:border-cyan-200/40 hover:bg-cyan-200/[0.13] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200">
+                Open Express Request Studio <span aria-hidden="true">↗</span>
+              </Link>}
               <HashAnchorLink targetId={course.parts[0]?.id} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white/85 transition hover:border-white/25 hover:bg-white/[0.08] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200">
                 Browse {course.parts[0]?.label || 'syllabus'} <span aria-hidden="true">↓</span>
               </HashAnchorLink>

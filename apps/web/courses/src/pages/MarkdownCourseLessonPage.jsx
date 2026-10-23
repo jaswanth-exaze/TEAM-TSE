@@ -157,6 +157,26 @@ export default function MarkdownCourseLessonPage({ moduleId, parts, topics, load
           <CourseMarkdown content={markdownBody} />
         </article>
 
+        {moduleId === 'rest-api-fundamentals' && <section className="mt-5 flex flex-col gap-4 rounded-2xl border border-orange-200/15 bg-orange-200/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="Visual explanation for this REST API lesson">
+          <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-orange-100">See this REST concept in motion</p><p className="mt-1 text-sm leading-6 text-white/65">Follow a visual, animated walkthrough for this lesson, then explore the request in the API lab.</p></div>
+          <Link to={`/course/rest-api-fundamentals/lab?topic=${lesson.number}`} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-orange-100">View lesson animation <span aria-hidden="true">→</span></Link>
+        </section>}
+
+        {moduleId === 'jwt-authentication' && <section className="mt-5 flex flex-col gap-4 rounded-2xl border border-violet-200/15 bg-violet-200/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="Interactive JWT visual studio">
+          <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-violet-100">See authentication in motion</p><p className="mt-1 text-sm leading-6 text-white/65">Build a token, follow the API verification checks, and explore claims, threats, storage, and expiry.</p></div>
+          <Link to="/course/jwt-authentication/lab" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-violet-100">Open JWT Visual Studio <span aria-hidden="true">→</span></Link>
+        </section>}
+
+        {moduleId === 'password-salt-hash-fundamenta' && <section className="mt-5 flex flex-col gap-4 rounded-2xl border border-emerald-200/15 bg-emerald-200/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="Interactive password hashing visual studio">
+          <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-100">Watch password storage in motion</p><p className="mt-1 text-sm leading-6 text-white/65">Generate a random salt, derive a real local PBKDF2 verifier, then animate how login verification works.</p></div>
+          <Link to="/course/password-salt-hash-fundamenta/lab" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-emerald-100">Open Password Hash Visual Studio <span aria-hidden="true">→</span></Link>
+        </section>}
+
+        {moduleId === 'express' && <section className="mt-5 flex flex-col gap-4 rounded-2xl border border-cyan-200/15 bg-cyan-200/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="Interactive Express request studio">
+          <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-cyan-100">See Express handle a request</p><p className="mt-1 text-sm leading-6 text-white/65">Trace middleware and route matching, inspect request data, follow error handling, and compare JSON with server-rendered pages.</p></div>
+          <Link to="/course/express/lab" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-100">Open Express Request Studio <span aria-hidden="true">→</span></Link>
+        </section>}
+
         <section className="mt-6 rounded-xl border border-emerald-200/15 bg-emerald-200/[0.04] p-4 sm:p-5" aria-label="Lesson progress">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
