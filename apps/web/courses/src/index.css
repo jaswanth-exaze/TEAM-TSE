@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../../css/design-tokens.css";
+@import "./styles/visual-studio-theme.css";
 
 @theme {
   --font-display: var(--tse-font-display);

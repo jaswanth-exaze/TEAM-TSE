@@ -859,3 +859,142 @@ body.walkthrough-focused::before { position: fixed; z-index: 110; inset: 0; back
   .window-logic-flow, .cte-process, .cte-pass-panels { grid-template-columns: minmax(0, 1fr); }
   .window-logic-arrow, .cte-process-arrow { min-height: 18px; transform: rotate(90deg); }
 }
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --lab-bg: #f1f4f8;
+  --lab-panel: #ffffff;
+  --lab-panel-raised: #f7f9fc;
+  --lab-border: #cbd5e1;
+  --lab-border-strong: #aab7c8;
+  --lab-text: #1b2a40;
+  --lab-muted: #506076;
+  --lab-faint: #66758a;
+  --lab-amber: #8a5a0a;
+  --lab-amber-soft: #76500a;
+  --lab-green: #176b4b;
+  --lab-red: #a32f43;
+  --lab-blue: #245f9f;
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(ellipse at 80% 1%, rgb(76 116 175 / 8%), transparent 31rem),
+    radial-gradient(ellipse at 5% 47%, rgb(53 139 101 / 6%), transparent 29rem),
+    var(--lab-bg);
+}
+:root[data-theme="light"] .site-header {
+  border-color: #d2dbe6;
+  background: rgb(248 250 252 / 95%);
+  color: var(--lab-muted);
+}
+:root[data-theme="light"] .panel {
+  border-color: var(--lab-border);
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  box-shadow: 0 10px 28px rgb(31 46 68 / 7%);
+}
+:root[data-theme="light"] .challenge-bar {
+  background: linear-gradient(105deg, rgb(228 167 47 / 10%), #ffffff 45%);
+}
+:root[data-theme="light"] .select-control,
+:root[data-theme="light"] .select-control option,
+:root[data-theme="light"] .script-policy select {
+  border-color: var(--lab-border-strong);
+  background: #ffffff;
+  color: var(--lab-text);
+}
+:root[data-theme="light"] .header-meta { color: var(--lab-muted); }
+.theme-toggle {
+  min-height: 34px;
+  border: 1px solid var(--lab-border-strong);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--lab-text);
+  background: var(--lab-panel);
+  cursor: pointer;
+  font: 600 11px var(--font-ui);
+}
+.theme-toggle:hover { border-color: var(--lab-amber); background: var(--lab-panel-raised); }
+:root[data-theme="light"] .theme-toggle {
+  background: #ffffff;
+}
+:root[data-theme="light"] .theme-toggle:hover { border-color: #8b6a2c; background: #fffaf0; }
+:root[data-theme="light"] .button--quiet,
+:root[data-theme="light"] .icon-button {
+  border-color: var(--lab-border-strong);
+  background: #ffffff;
+  color: var(--lab-muted);
+}
+:root[data-theme="light"] .button--quiet:hover:not(:disabled),
+:root[data-theme="light"] .icon-button:hover {
+  border-color: #9a6a19;
+  background: #fffaf0;
+  color: #553c0e;
+}
+:root[data-theme="light"] .mode-switch { border-color: var(--lab-border); background: #e8edf3; }
+:root[data-theme="light"] .mode-button.is-active {
+  background: #ffffff;
+  color: var(--lab-text);
+  box-shadow: inset 0 0 0 1px #bdc8d6, 0 1px 3px rgb(31 46 68 / 8%);
+}
+:root[data-theme="light"] .data-table-wrap { scrollbar-color: #9ba9ba #e5eaf0; }
+:root[data-theme="light"] .data-table th { border-color: #cbd5e1; background: #e8edf3; color: #25364b; }
+:root[data-theme="light"] .data-table td.row-status-cell { border-color: var(--lab-border); background: #f4f7fa; color: #46566b; }
+:root[data-theme="light"] .cheatsheet-dialog,
+:root[data-theme="light"] .confirm-write-dialog {
+  border-color: var(--lab-border-strong);
+  background: #ffffff;
+  color: var(--lab-text);
+  box-shadow: 0 28px 100px rgb(24 38 57 / 22%);
+}
+:root[data-theme="light"] .output-panel.is-focused,
+:root[data-theme="light"] .output-panel:fullscreen {
+  border-color: #c4ceda;
+  background: #f7f9fc;
+  box-shadow: 0 26px 100px rgb(24 38 57 / 25%);
+}
+:root[data-theme="light"] .output-panel.is-focused .data-table th,
+:root[data-theme="light"] .output-panel:fullscreen .data-table th { background: #e8edf3; }
+:root[data-theme="light"] .data-table { color: #1b2a40; }
+:root[data-theme="light"] .data-table td { border-color: #dbe2ea; color: #26364b; }
+:root[data-theme="light"] .row-filtered { color: #5b6779; }
+:root[data-theme="light"] .row-filtered > td:not(.row-status-cell) { opacity: .72; }
+:root[data-theme="light"] .reason-tag { color: #8d3e4a; }
+:root[data-theme="light"] .numeric-value { color: #245f9f; }
+:root[data-theme="light"] .comparison-heading { color: #35455b; }
+:root[data-theme="light"] .query-value-chip { color: #6c4c0a; }
+:root[data-theme="light"] .self-join-condition code,
+:root[data-theme="light"] .join-scan-condition code { color: #5f4610; }
+:root[data-theme="light"] .overview-badge--advanced { color: #59408e; }
+:root[data-theme="light"] .stepper-item.is-active { color: #684a0b; }
+:root[data-theme="light"] .stepper-item.is-active .stepper-number { color: #684a0b; }
+:root[data-theme="light"] .stepper-item.is-done .stepper-number,
+:root[data-theme="light"] .story-item.is-done .story-number { color: #174b34; }
+:root[data-theme="light"] .clause--from { --clause: #245f9f; }
+:root[data-theme="light"] .clause--join { --clause: #12677c; }
+:root[data-theme="light"] .clause--where { --clause: #805800; }
+:root[data-theme="light"] .clause--group { --clause: #6947a8; }
+:root[data-theme="light"] .clause--having { --clause: #a03d70; }
+:root[data-theme="light"] .clause--select { --clause: #176b4b; }
+:root[data-theme="light"] .clause--order { --clause: #9a4f21; }
+:root[data-theme="light"] .clause--limit { --clause: #4c6d10; }
+:root[data-theme="light"] .query-message[data-tone="error"],
+:root[data-theme="light"] .script-error,
+:root[data-theme="light"] .join-candidate-decision,
+:root[data-theme="light"] .correlated-decision-badge,
+:root[data-theme="light"] .where-truth-result.is-false,
+:root[data-theme="light"] .script-result-badge.is-error { color: #8f2c39; }
+:root[data-theme="light"] .button--primary { border-color: #6b4808; background: #805800; color: #ffffff; }
+:root[data-theme="light"] .button--primary:hover:not(:disabled) { border-color: #684700; background: #684700; color: #ffffff; }
+:root[data-theme="light"] :focus-visible { outline-color: #344d89; }
+
+/* Keep the SQL editor and query walkthrough as dark code surfaces in either theme. */
+:root[data-theme="light"] .editor-frame,
+:root[data-theme="light"] .CodeMirror,
+:root[data-theme="light"] .CodeMirror-gutters,
+:root[data-theme="light"] #sql-editor,
+:root[data-theme="light"] .solution-copy,
+:root[data-theme="light"] .query-map,
+:root[data-theme="light"] .cte-sql {
+  color-scheme: dark;
+}

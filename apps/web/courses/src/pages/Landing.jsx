@@ -2,9 +2,25 @@ import { useMemo, useState } from 'react'
 import ModuleCard from '../components/ModuleCard'
 import { TRACKS } from '../data/modules'
 import { COURSE_MODULES, getCourseSyllabus } from '../data/course-catalog'
-import { getAllProgress } from '../lib/progress'
 import { getGitLabHref, getLinuxLabHref, getSqlVisualLabHref } from '../lib/paths'
 import { appStorageKey } from '../lib/storage'
+
+const COURSE_STUDIOS = {
+  'html-css-javascript': { href: '/course/html-css-javascript/lab', label: 'Frontend Mission Studio' },
+  'node-js': { href: '/course/node-js/lab', label: 'Company Network Ops' },
+  express: { href: '/course/express/lab', label: 'Express Request Studio' },
+  'rest-api-fundamentals': { href: '/course/rest-api-fundamentals/lab', label: 'API Operations Studio' },
+  'unit-testing-fundamentals': { href: '/course/unit-testing-fundamentals/lab', label: 'Unit Testing Studio' },
+  'jwt-authentication': { href: '/course/jwt-authentication/lab', label: 'JWT Visual Studio' },
+  'password-salt-hash-fundamenta': { href: '/course/password-salt-hash-fundamenta/lab', label: 'Password Hash Studio' },
+}
+
+function getStudioLink(moduleId) {
+  if (moduleId === 'mysql') return { href: getSqlVisualLabHref(), label: 'Visual SQL Lab' }
+  if (moduleId === 'linux-commands') return { href: getLinuxLabHref(), label: 'Linux Visual Lab' }
+  if (moduleId === 'git') return { href: getGitLabHref(), label: 'Git Interactive Lab' }
+  return COURSE_STUDIOS[moduleId] || null
+}
 
 function readCompletedLessons(moduleId, topics) {
   try {
@@ -30,17 +46,12 @@ export default function Landing() {
       const completedIds = new Set(completed)
       const nextTopic = topics.find((topic) => !completedIds.has(topic.id))
       const allComplete = topics.length > 0 && completed.length === topics.length
+      const studio = getStudioLink(module.id)
 
       return {
         ...module,
-        labHref: module.id === 'linux-commands'
-          ? getLinuxLabHref()
-          : module.id === 'mysql'
-            ? getSqlVisualLabHref()
-            : module.id === 'git'
-              ? getGitLabHref()
-              : null,
-        labLabel: module.id === 'mysql' ? 'Visual SQL lab' : module.id === 'git' ? 'Git interactive lab' : 'Practice lab',
+        labHref: studio?.href || null,
+        labLabel: studio?.label || 'Practice lab',
         courseReady: topics.length > 0,
         syllabusAvailable,
         lessonCount: topics.length,
@@ -54,7 +65,6 @@ export default function Landing() {
         continueLabel: completed.length
           ? allComplete ? 'Review lessons' : 'Continue learning'
           : 'Start learning',
-        quizProgress: getAllProgress()[module.id],
       }
     }),
   })), [])
@@ -133,7 +143,7 @@ export default function Landing() {
                 <span className="text-sm text-white/65">{modules.length} courses</span>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {modules.map((module) => <ModuleCard key={module.id} mod={module} {...module} progress={module.quizProgress} />)}
+                {modules.map((module) => <ModuleCard key={module.id} mod={module} {...module} />)}
               </div>
             </section>
           })}

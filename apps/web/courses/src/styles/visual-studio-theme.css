@@ -1,0 +1,860 @@
+/* React visual studios inherit the course theme instead of forcing their own dark shell.
+   Network scenes and code-like surfaces stay dark so the animated data remains legible. */
+:root[data-theme="light"] .rest-ops,
+:root[data-theme="light"] .jwt-studio,
+:root[data-theme="light"] .password-hash-studio,
+:root[data-theme="light"] .node-studio,
+:root[data-theme="light"] .express-request-studio {
+  --visual-ink: #1b2a40;
+  --visual-muted: #506076;
+  --visual-line: #cad4e1;
+  --visual-card: #ffffff;
+  --visual-soft: #edf2f7;
+  --visual-accent: #7352b4;
+  --panel-bg: #ffffff;
+  --color-white: #172338;
+  --color-black: #e8edf4;
+  color-scheme: light;
+  color: var(--visual-ink);
+  background:
+    radial-gradient(ellipse at 8% 0%, rgb(91 126 175 / 9%), transparent 34rem),
+    radial-gradient(ellipse at 95% 12%, rgb(137 108 184 / 7%), transparent 32rem),
+    #f1f4f8 !important;
+}
+
+:root[data-theme="light"] .rest-ops {
+  --rest-muted: #526176;
+  --rest-line: #cbd5e1;
+}
+:root[data-theme="light"] .jwt-studio {
+  --jwt-panel: #ffffff;
+  --jwt-panel-soft: #f5f7fa;
+  --jwt-line: #cad4e1;
+  --jwt-muted: #4f5f74;
+  --jwt-dim: #637187;
+  --jwt-purple: #6947a8;
+  --jwt-cyan: #12677c;
+  --jwt-green: #176b4b;
+  --jwt-amber: #805800;
+  --jwt-red: #9d3044;
+}
+:root[data-theme="light"] .password-hash-studio {
+  --ph-line: #cad4e1;
+  --ph-muted: #4f5f74;
+  --ph-dim: #637187;
+  --ph-purple: #6947a8;
+}
+:root[data-theme="light"] .node-studio {
+  --node-mint: #176b4b;
+  --node-cyan: #12677c;
+  --node-violet: #6947a8;
+  --node-amber: #805800;
+}
+:root[data-theme="light"] .express-request-studio {
+  --ex-bg: #f1f4f8;
+  --ex-panel: #ffffff;
+  --ex-panel-raised: #f7f9fc;
+  --ex-line: #cad4e1;
+  --ex-text: #1b2a40;
+  --ex-muted: #506076;
+  --ex-cyan: #12677c;
+  --ex-blue: #245f9f;
+  --ex-violet: #6947a8;
+  --ex-green: #176b4b;
+  --ex-amber: #805800;
+  --ex-red: #9d3044;
+}
+
+/* Recolor pale Tailwind text only in the light UI. Dark diagrams, wire payloads,
+   and code examples keep their own contrast and syntax colors. */
+:root[data-theme="light"] .rest-ops :is([class*="text-white"], [class*="text-"][class*="-100"], [class*="text-"][class*="-200"]):not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *),
+:root[data-theme="light"] .jwt-studio :is([class*="text-white"], [class*="text-"][class*="-100"], [class*="text-"][class*="-200"]):not(.jwt-hero *):not(.jwt-wire-example *):not(.jwt-token-full *):not(.jwt-request-lines *):not(.jwt-decoded-grid pre *),
+:root[data-theme="light"] .password-hash-studio :is([class*="text-white"], [class*="text-"][class*="-100"], [class*="text-"][class*="-200"]):not(.ph-hero *):not(.ph-wire *):not(.ph-stored-salt *):not(.ph-concept-wire *),
+:root[data-theme="light"] .node-studio :is([class*="text-white"], [class*="text-"][class*="-100"], [class*="text-"][class*="-200"]):not(.node-command-center *):not(.node-network-scene *):not(.node-terminal *):not(.node-request-preview *) {
+  color: var(--visual-muted) !important;
+}
+:root[data-theme="light"] .rest-ops [class*="text-emerald-"]:not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *),
+:root[data-theme="light"] .node-studio [class*="text-emerald-"]:not(.node-command-center *):not(.node-network-scene *):not(.node-terminal *):not(.node-request-preview *) { color: #176b4b !important; }
+:root[data-theme="light"] .rest-ops :is([class*="text-amber-"], [class*="text-orange-"]):not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *),
+:root[data-theme="light"] .node-studio :is([class*="text-amber-"], [class*="text-orange-"]):not(.node-command-center *):not(.node-network-scene *):not(.node-terminal *):not(.node-request-preview *) { color: #805800 !important; }
+:root[data-theme="light"] .rest-ops :is([class*="text-cyan-"], [class*="text-sky-"], [class*="text-blue-"]):not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *),
+:root[data-theme="light"] .node-studio :is([class*="text-cyan-"], [class*="text-sky-"], [class*="text-blue-"]):not(.node-command-center *):not(.node-network-scene *):not(.node-terminal *):not(.node-request-preview *) { color: #12677c !important; }
+:root[data-theme="light"] .rest-ops :is([class*="text-violet-"], [class*="text-indigo-"]):not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *),
+:root[data-theme="light"] .node-studio :is([class*="text-violet-"], [class*="text-indigo-"]):not(.node-command-center *):not(.node-network-scene *):not(.node-terminal *):not(.node-request-preview *) { color: #6947a8 !important; }
+:root[data-theme="light"] .rest-ops :is([class*="text-rose-"], [class*="text-red-"]):not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *),
+:root[data-theme="light"] .node-studio :is([class*="text-rose-"], [class*="text-red-"]):not(.node-command-center *):not(.node-network-scene *):not(.node-terminal *):not(.node-request-preview *) { color: #9d3044 !important; }
+
+/* JWT uses explicit named teaching panels so code, claims, and status states do
+   not get recolored merely because their class contains a word like "token". */
+:root[data-theme="light"] .jwt-studio .jwt-tab-strip {
+  border-color: var(--visual-line);
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgb(25 42 65 / 6%);
+}
+:root[data-theme="light"] .jwt-studio .jwt-tab-strip button { color: #4b5c72; }
+:root[data-theme="light"] .jwt-studio .jwt-tab-strip button:hover { color: #1b2a40; background: #edf2f7; }
+:root[data-theme="light"] .jwt-studio .jwt-tab-strip button.active { border-color: #c8b8e5; color: #49317a; background: #f0eaff; }
+:root[data-theme="light"] .jwt-studio .jwt-tab-strip button span { color: #6947a8; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-back-link, .jwt-reference-link, .jwt-footer) { color: #506076; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-back-link, .jwt-reference-link, .jwt-footer a):hover { color: #6947a8; }
+:root[data-theme="light"] .jwt-studio .jwt-footer { border-color: #cbd5e1; }
+:root[data-theme="light"] .jwt-studio .jwt-view {
+  border-color: var(--visual-line);
+  background: linear-gradient(150deg, #ffffff, #f7f9fc);
+  box-shadow: 0 14px 38px rgb(25 42 65 / 8%);
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-journey-card, .jwt-workbench-card, .jwt-token-output, .jwt-verifier-request, .jwt-verification-steps, .jwt-claim-detail, .jwt-storage-card, .jwt-expiry-card, .jwt-challenge-case, .jwt-challenge-pipeline, .jwt-two-definitions article, .jwt-decoded-grid article, .jwt-key-models article, .jwt-claim-note-grid article, .jwt-check-row, .jwt-challenge-trace-row, .jwt-challenge-response, .jwt-challenge-feedback, .jwt-challenge-rule, .jwt-segment, .jwt-claim-live-value, .jwt-attack-workbench, .jwt-security-rules, .jwt-storage-options button, .jwt-challenge-prediction button, .jwt-challenge-facts > div, .jwt-attack-grid button, .jwt-claim-list button) {
+  border-color: #d4deea;
+  background-color: #f7f9fc;
+  box-shadow: 0 4px 14px rgb(25 42 65 / 4%);
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-journey-card, .jwt-workbench-card, .jwt-token-output, .jwt-verifier-request, .jwt-verification-steps, .jwt-claim-detail, .jwt-storage-card, .jwt-expiry-card, .jwt-challenge-case, .jwt-challenge-pipeline, .jwt-two-definitions article, .jwt-decoded-grid article, .jwt-key-models article, .jwt-claim-note-grid article, .jwt-check-row, .jwt-challenge-trace-row, .jwt-challenge-response, .jwt-challenge-feedback, .jwt-challenge-rule, .jwt-segment, .jwt-claim-live-value, .jwt-attack-workbench, .jwt-security-rules, .jwt-storage-options button, .jwt-challenge-prediction button, .jwt-challenge-facts > div, .jwt-attack-grid button, .jwt-claim-list button) :where(*) {
+  color: var(--visual-ink) !important;
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-workbench-card textarea, .jwt-select-label select, .jwt-range-label select) {
+  border-color: #bdc9d8;
+  color: #1b2a40;
+  background: #ffffff;
+  color-scheme: light;
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-primary-button, .jwt-journey-controls button.primary, .jwt-attack-actions button.primary) {
+  border-color: #604195;
+  color: #ffffff !important;
+  background: #6947a8;
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-wire-example, .jwt-token-full, .jwt-request-lines, .jwt-decoded-grid pre) {
+  border-color: #263a50;
+  background: #09121e;
+  color: #dceafa !important;
+  color-scheme: dark;
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-wire-example, .jwt-token-full, .jwt-request-lines, .jwt-decoded-grid pre) :where(*) { color: #dceafa !important; }
+:root[data-theme="light"] .jwt-studio .jwt-wire-example pre,
+:root[data-theme="light"] .jwt-studio .jwt-token-full code,
+:root[data-theme="light"] .jwt-studio .jwt-request-lines code,
+:root[data-theme="light"] .jwt-studio .jwt-decoded-grid pre { color: #9fe7df !important; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-status-tag, .jwt-step-count, .jwt-https-lock) { border-color: #d3dce7; color: #3f526a !important; background: #edf2f7; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-status-tag.violet, .jwt-step-count) { color: #59408e !important; background: #f1ecfb; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-status-tag.cyan, .jwt-https-lock) { color: #12677c !important; background: #eaf6f7; }
+:root[data-theme="light"] .jwt-studio .jwt-status-tag.green { color: #176b4b !important; background: #eaf6ef; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-status-tag.amber, .jwt-expiry-note) { color: #805800 !important; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-status-tag.rose, .jwt-challenge-response.status-401, .jwt-challenge-response.status-403) { color: #9d3044 !important; background: #fff0f2; }
+:root[data-theme="light"] .jwt-studio .jwt-flow-rail { background: #cbd5e1; }
+:root[data-theme="light"] .jwt-studio .jwt-flow-node > span {
+  border-color: #c5d1df;
+  background: #edf2f7;
+  color: #35455b !important;
+}
+:root[data-theme="light"] .jwt-studio .jwt-flow-node:hover > span,
+:root[data-theme="light"] .jwt-studio .jwt-flow-node.selected > span {
+  border-color: #8d73bb;
+  background: #f0eaff;
+  color: #604195 !important;
+  box-shadow: 0 0 16px rgb(105 71 168 / 12%);
+}
+:root[data-theme="light"] .jwt-studio .jwt-flow-node.passed > span { border-color: #82b49b; color: #176b4b !important; }
+:root[data-theme="light"] .jwt-studio :is(.jwt-journey-controls button, .jwt-text-button, .jwt-attack-actions button) {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #34445a !important;
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-journey-controls button, .jwt-text-button, .jwt-attack-actions button):hover:not(:disabled) {
+  border-color: #9aaabe;
+  background: #e6edf5;
+  color: #1b2a40 !important;
+}
+:root[data-theme="light"] .jwt-studio :is(.jwt-journey-controls button.primary, .jwt-attack-actions button.primary) {
+  border-color: #604195;
+  background: #6947a8;
+  color: #ffffff !important;
+}
+:root[data-theme="light"] .jwt-studio .jwt-lifetime-track > div { background: #e1e7ef; }
+:root[data-theme="light"] .jwt-studio .jwt-radio { border-color: #718096; }
+:root[data-theme="light"] .jwt-studio .jwt-storage-options button.selected .jwt-radio { border-color: #6947a8; }
+
+:root[data-theme="light"] .password-hash-studio .ph-view :where(*) {
+  color: var(--visual-ink) !important;
+}
+
+/* Password hashing keeps its hero and verifier wires dark, while the lesson
+   workbench and its named cards become genuine light surfaces. */
+:root[data-theme="light"] .password-hash-studio .ph-tabs {
+  border-color: var(--visual-line);
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgb(25 42 65 / 6%);
+}
+:root[data-theme="light"] .password-hash-studio .ph-tabs button { color: #4b5c72; }
+:root[data-theme="light"] .password-hash-studio .ph-tabs button:hover { color: #1b2a40; background: #edf2f7; }
+:root[data-theme="light"] .password-hash-studio .ph-tabs button.active { border-color: #c8b8e5; color: #49317a; background: #f0eaff; }
+:root[data-theme="light"] .password-hash-studio .ph-tabs button span { color: #6947a8; }
+:root[data-theme="light"] .password-hash-studio :is(.ph-back-link, .ph-course-link, .ph-footer) { color: #506076; }
+:root[data-theme="light"] .password-hash-studio :is(.ph-back-link, .ph-course-link, .ph-footer a):hover { color: #6947a8; }
+:root[data-theme="light"] .password-hash-studio .ph-footer { border-color: #cbd5e1; }
+:root[data-theme="light"] .password-hash-studio .ph-view {
+  border-color: var(--visual-line);
+  background: linear-gradient(150deg, #ffffff, #f7f9fc);
+  box-shadow: 0 14px 38px rgb(25 42 65 / 8%);
+}
+:root[data-theme="light"] .password-hash-studio :is(.ph-flow-detail, .ph-principle-grid article, .ph-register-panel, .ph-record-panel, .ph-login-panel, .ph-verify-pipeline, .ph-challenge-question, .ph-challenge-trace-panel, .ph-algorithm-detail, .ph-salt-card, .ph-pepper-card, .ph-record-row, .ph-check-row, .ph-challenge-trace article, .ph-algorithm-list button, .ph-parameter-box, .ph-safety-banner) {
+  border-color: #d4deea;
+  background-color: #f7f9fc;
+  box-shadow: 0 4px 14px rgb(25 42 65 / 4%);
+}
+:root[data-theme="light"] .password-hash-studio :is(.ph-flow-detail, .ph-principle-grid article, .ph-register-panel, .ph-record-panel, .ph-login-panel, .ph-verify-pipeline, .ph-challenge-question, .ph-challenge-trace-panel, .ph-algorithm-detail, .ph-salt-card, .ph-pepper-card, .ph-record-row, .ph-check-row, .ph-challenge-trace article, .ph-algorithm-list button, .ph-parameter-box, .ph-safety-banner) :where(*) {
+  color: var(--visual-ink) !important;
+}
+:root[data-theme="light"] .password-hash-studio :is(.ph-wire, .ph-stored-salt, .ph-concept-wire) {
+  border-color: #263a50;
+  background: #09121e;
+  color: #dceafa !important;
+  color-scheme: dark;
+}
+:root[data-theme="light"] .password-hash-studio :is(.ph-wire, .ph-stored-salt, .ph-concept-wire) :where(*) { color: #dceafa !important; }
+:root[data-theme="light"] .password-hash-studio :is(.ph-wire code, .ph-stored-salt code) { color: #9fe7df !important; }
+:root[data-theme="light"] .password-hash-studio .ph-concept-wire code { color: #cdbaff !important; }
+:root[data-theme="light"] .password-hash-studio .ph-primary-button {
+  border-color: #604195;
+  color: #ffffff !important;
+  background: #6947a8;
+}
+:root[data-theme="light"] .password-hash-studio .ph-challenge-question fieldset button.selected {
+  border-color: #a58acb;
+  color: #49317a !important;
+  background: #f0eaff;
+}
+:root[data-theme="light"] .password-hash-studio .ph-flow-orb {
+  border-color: #cfc4e7;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #eee8f8 72%);
+  box-shadow: 0 8px 28px rgb(68 48 106 / 10%), inset 0 0 22px rgb(197 165 255 / 20%);
+}
+:root[data-theme="light"] .password-hash-studio .ph-flow-orb span { color: #604195 !important; }
+
+/* Node's server-room animation and outgoing request remain dark; the mission,
+   request controls, results, and learning cards use the light palette. */
+:root[data-theme="light"] .node-studio .node-mission-card {
+  border-color: #e3d2aa;
+  background: linear-gradient(110deg, #fff8e8, #ffffff 60%);
+}
+:root[data-theme="light"] .node-studio .node-mission-card :where(*) { color: var(--visual-ink); }
+:root[data-theme="light"] .node-studio .node-command-center {
+  border-color: #263a50;
+  background: #09121e;
+  color: #dceafa;
+  color-scheme: dark;
+}
+:root[data-theme="light"] .node-studio .node-xp-badge {
+  border-color: #e5d4aa;
+  background: #fff8e8;
+  color: #805800;
+}
+:root[data-theme="light"] .node-studio .node-xp-badge small { color: #66758a; }
+:root[data-theme="light"] .node-studio .node-mission-emblem {
+  border-color: #dfc98f;
+  background: #fff6df;
+  color: #805800;
+}
+:root[data-theme="light"] .node-studio .node-send-button {
+  border-color: #14553d;
+  background: #176b4b;
+  color: #ffffff;
+}
+:root[data-theme="light"] .node-studio .node-mission-card button {
+  border-color: #6b4808;
+  background: #805800;
+  color: #ffffff;
+}
+:root[data-theme="light"] .node-studio .node-response-box {
+  border-color: #d4deea;
+  background: #f7f9fc;
+  color: var(--visual-ink);
+}
+:root[data-theme="light"] .node-studio .node-status-code {
+  border-color: #a9cfbb;
+  background: #eaf6ef;
+  color: #176b4b;
+}
+:root[data-theme="light"] .node-studio .node-status-code small { color: #506076; }
+:root[data-theme="light"] .node-studio .node-status-code.status-created {
+  border-color: #add4dc;
+  background: #eaf6f7;
+  color: #12677c;
+}
+:root[data-theme="light"] .node-studio .node-status-code.status-error {
+  border-color: #e0aab5;
+  background: #fff0f2;
+  color: #9d3044;
+}
+:root[data-theme="light"] .node-studio .node-response-icon,
+:root[data-theme="light"] .node-studio .node-response-icon.response-ok { border-color: #a9cfbb; color: #176b4b; }
+:root[data-theme="light"] .node-studio .node-response-icon.response-deny { border-color: #e0aab5; color: #9d3044; }
+:root[data-theme="light"] .node-studio .node-response-placeholder { border-color: #add4dc; color: #12677c; }
+:root[data-theme="light"] .node-studio .node-rbac-hint {
+  border-color: #d7cdee;
+  background: #f6f2fc;
+}
+:root[data-theme="light"] .node-studio .node-rbac-hint :where(*) { color: #3b3155; }
+:root[data-theme="light"] .node-studio :is(h1, h2, h3):not(.node-command-center *):not(.node-network-scene *) { color: var(--visual-ink) !important; }
+
+/* REST's traffic window, HTTP wire panels, and concept boards stay dark. These
+   named controls and lesson cards sit on the light request and course panels. */
+:root[data-theme="light"] .rest-ops .rest-score-badge {
+  border-color: #e2d2aa;
+  background: #fff8e8;
+}
+:root[data-theme="light"] .rest-ops :is(h1, h2, h3):not(.rest-network-window *):not(.rest-3d-scene *):not(.rest-raw-request *):not(.rest-response-panel *):not(.rest-concept-layout *):not(.rest-reference-card *) { color: var(--visual-ink) !important; }
+:root[data-theme="light"] .rest-ops .rest-score-badge > span,
+:root[data-theme="light"] .rest-ops .rest-score-badge b { color: #805800; }
+:root[data-theme="light"] .rest-ops .rest-score-badge small { color: #66758a; }
+:root[data-theme="light"] .rest-ops .rest-mission-number {
+  border-color: #e2c98d;
+  background: #fff5dc;
+  color: #805800;
+}
+:root[data-theme="light"] .rest-ops .rest-briefing button {
+  border-color: #6b4808;
+  background: #805800;
+  color: #ffffff;
+}
+:root[data-theme="light"] .rest-ops .rest-request-composer :is(h2, label) { color: var(--visual-ink) !important; }
+:root[data-theme="light"] .rest-ops .rest-response-inspector h2 { color: var(--visual-ink) !important; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-quick-request {
+  border-color: #cbd5e1;
+  background: #f7f9fc;
+  color: #43536a;
+}
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-quick-request:hover,
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-quick-request.active {
+  border-color: #c6a46b;
+  background: #fff5e4;
+  color: #5f4610;
+}
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-method-badge.tone-blue { border-color: #b8d1e0; background: #edf5fa; color: #245f82; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-method-badge.tone-green { border-color: #afd3bf; background: #eaf6ef; color: #176b4b; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-method-badge.tone-amber { border-color: #e2c98d; background: #fff5dc; color: #805800; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-method-badge.tone-violet { border-color: #cfc1e7; background: #f2edfa; color: #6947a8; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-method-badge.tone-cyan { border-color: #aed7dd; background: #eaf6f7; color: #12677c; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-method-badge.tone-rose { border-color: #e0aab5; background: #fff0f2; color: #9d3044; }
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-secondary-button {
+  border-color: #d7c49f;
+  background: #fff8ed;
+  color: #59451f;
+}
+:root[data-theme="light"] .rest-ops .rest-request-composer .rest-secondary-button:hover:not(:disabled) {
+  border-color: #ad8c52;
+  background: #fff1d9;
+  color: #49370f;
+}
+:root[data-theme="light"] .rest-ops .rest-response-inspector > div:first-child > .rest-status-badge {
+  border-color: #a9cfbb;
+  background: #eaf6ef;
+  color: #176b4b;
+}
+:root[data-theme="light"] .rest-ops .rest-response-inspector > div:first-child > .rest-status-badge small { color: #4f695c; }
+:root[data-theme="light"] .rest-ops .rest-response-inspector > div:first-child > .rest-status-badge.created { border-color: #add4dc; background: #eaf6f7; color: #12677c; }
+:root[data-theme="light"] .rest-ops .rest-response-inspector > div:first-child > .rest-status-badge.bad { border-color: #e0aab5; background: #fff0f2; color: #9d3044; }
+:root[data-theme="light"] .rest-ops :is(.rest-method-card, .rest-code-scenario, .rest-constraint-card, .rest-quality-row, .rest-constraint-explainer, .rest-method-detail, .rest-mission-row, .rest-topic-row, .rest-check-option, .rest-check-question, .rest-rule-chip, .resource-tree-node) {
+  border-color: #d4deea;
+  background-color: #f7f9fc;
+  color: var(--visual-ink);
+}
+:root[data-theme="light"] .rest-ops :is(.rest-method-card, .rest-code-scenario, .rest-constraint-card, .rest-quality-row, .rest-constraint-explainer, .rest-method-detail, .rest-mission-row, .rest-topic-row, .rest-check-option, .rest-check-question, .rest-rule-chip, .resource-tree-node) :where(*) {
+  color: var(--visual-ink);
+}
+:root[data-theme="light"] .rest-ops :is(.rest-method-card, .rest-code-scenario, .rest-constraint-card, .rest-check-option, .resource-tree-node):is(:hover, .selected, .opened, .chosen) {
+  border-color: #b8a3d9;
+  background-color: #f3effa;
+}
+:root[data-theme="light"] .rest-ops .rest-method-card > span:last-child,
+:root[data-theme="light"] .rest-ops .rest-code-scenario small,
+:root[data-theme="light"] .rest-ops .rest-constraint-card > small,
+:root[data-theme="light"] .rest-ops .rest-mission-row small,
+:root[data-theme="light"] .rest-ops .rest-topic-row small,
+:root[data-theme="light"] .rest-ops .rest-check-explanation,
+:root[data-theme="light"] .rest-ops .resource-tree-node small,
+:root[data-theme="light"] .rest-ops .resource-node-type { color: #5d6b7d; }
+:root[data-theme="light"] .rest-ops :is(.rest-code-scenario b, .rest-constraint-card > span, .resource-folder, .resource-root > span) { color: #12677c; }
+:root[data-theme="light"] .rest-ops .rest-method-card.selected > span:last-child { color: #805800; }
+:root[data-theme="light"] .rest-ops .rest-code-scenario.code-bad b { color: #9d3044; }
+:root[data-theme="light"] .rest-ops .uri-part.protocol { border-color: #add4dc; background: #eaf6f7; color: #12677c; }
+:root[data-theme="light"] .rest-ops .uri-part.version { border-color: #cfc1e7; background: #f2edfa; color: #6947a8; }
+:root[data-theme="light"] .rest-ops .uri-part.collection { border-color: #e2c98d; background: #fff5dc; color: #805800; }
+:root[data-theme="light"] .rest-ops .uri-part.identifier { border-color: #afd3bf; background: #eaf6ef; color: #176b4b; }
+:root[data-theme="light"] .rest-ops .rest-semantics-pill.yes,
+:root[data-theme="light"] .rest-ops .rest-rule-chip.positive { border-color: #afd3bf; background: #eaf6ef; color: #176b4b; }
+:root[data-theme="light"] .rest-ops .rest-semantics-pill.no,
+:root[data-theme="light"] .rest-ops .rest-rule-chip.negative { border-color: #e0aab5; background: #fff0f2; color: #9d3044; }
+:root[data-theme="light"] .rest-ops .rest-semantics-pill.maybe { border-color: #e2c98d; background: #fff5dc; color: #805800; }
+:root[data-theme="light"] .rest-ops .rest-check-option.correct { border-color: #9ccbb4; background: #edf8f1; color: #205b43; }
+:root[data-theme="light"] .rest-ops .rest-check-option.incorrect { border-color: #e1aab5; background: #fff1f3; color: #8f3042; }
+:root[data-theme="light"] .rest-ops .rest-check-option :is(i, span) { color: #59408e; }
+:root[data-theme="light"] .rest-ops .rest-check-option.correct i { color: #176b4b; }
+:root[data-theme="light"] .rest-ops .rest-check-option.incorrect i { color: #9d3044; }
+:root[data-theme="light"] .rest-ops .rest-mission-row.current { border-color: #d8c79f; background: #fff8e8; }
+:root[data-theme="light"] .rest-ops .rest-mission-row > span:first-child { border-color: #cbd5e1; color: #4f5f74; }
+:root[data-theme="light"] .rest-ops .rest-mission-row > span.mission-done { border-color: #a9cfbb; background: #eaf6ef; color: #176b4b; }
+:root[data-theme="light"] .rest-ops .rest-mission-row button { border-color: #cbd5e1; background: #ffffff; color: #43536a; }
+:root[data-theme="light"] .rest-ops .rest-mission-row button:hover { border-color: #c6a46b; color: #5f4610; }
+:root[data-theme="light"] .rest-ops .rest-topic-num { background: #fff5e4; color: #805800; }
+:root[data-theme="light"] .rest-ops .rest-lesson-link { color: #355f9a; }
+:root[data-theme="light"] .rest-ops :is(.resource-root, .rest-resource-tree) { color: var(--visual-ink); }
+:root[data-theme="light"] .rest-ops .resource-branch,
+:root[data-theme="light"] .rest-ops .resource-node-type { color: #5d6b7d; }
+
+/* Restore Tailwind's bright foreground colors inside the dark learning scenes.
+   The app's global light palette intentionally changes those colors on normal
+   surfaces; these explicit scene scopes keep dark code and packet diagrams bright. */
+:root[data-theme="light"] :is(.rest-network-window, .rest-3d-scene, .rest-raw-request, .rest-response-panel, .rest-concept-layout, .jwt-hero, .jwt-wire-example, .jwt-token-full, .jwt-request-lines, .jwt-decoded-grid pre, .ph-hero, .ph-wire, .ph-stored-salt, .ph-concept-wire, .node-command-center, .node-request-preview) {
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-sky-100: #e0f2fe;
+  --color-sky-200: #bae6fd;
+  --color-violet-100: #ede9fe;
+  --color-violet-200: #ddd6fe;
+  --color-rose-100: #ffe4e6;
+  --color-rose-200: #fecdd3;
+}
+
+/* Editors keep a clear input surface and do not rely on browser dark-mode defaults. */
+:root[data-theme="light"] :is(.rest-ops, .jwt-studio, .password-hash-studio, .node-studio, .express-request-studio) :is(input, textarea, select) {
+  border-color: #bdc9d8;
+  color: #1b2a40;
+  background-color: #ffffff;
+  color-scheme: light;
+}
+:root[data-theme="light"] :is(.rest-ops, .jwt-studio, .password-hash-studio, .node-studio, .express-request-studio) :is(input, textarea, select)::placeholder {
+  color: #68788e;
+  opacity: 1;
+}
+
+/* Primary actions retain a strong accent and contrast on the light surface. */
+:root[data-theme="light"] .rest-ops [class*="primary-button"],
+:root[data-theme="light"] .rest-ops [class*="send-button"],
+:root[data-theme="light"] .jwt-studio [class*="primary-button"],
+:root[data-theme="light"] .password-hash-studio [class*="primary-button"],
+:root[data-theme="light"] .node-studio [class*="primary-button"],
+:root[data-theme="light"] .express-request-studio [class*="primary-button"] {
+  border-color: #604195;
+  color: #ffffff;
+  background: #6947a8;
+  box-shadow: 0 5px 16px rgb(72 48 118 / 16%);
+}
+:root[data-theme="light"] :is(.rest-ops, .jwt-studio, .password-hash-studio, .node-studio, .express-request-studio) :is(button, a):focus-visible {
+  outline-color: #59408e;
+}
+
+/* Dark teaching surfaces: source editors, terminals, and packet-flow scenes. */
+:root[data-theme="light"] .rest-ops .rest-3d-scene,
+:root[data-theme="light"] .rest-ops .rest-raw-request,
+:root[data-theme="light"] .rest-ops .rest-response-panel,
+:root[data-theme="light"] .jwt-studio .jwt-request-lines,
+:root[data-theme="light"] .jwt-studio .jwt-token-full,
+:root[data-theme="light"] .node-studio .node-network-scene,
+:root[data-theme="light"] .node-studio .node-terminal,
+:root[data-theme="light"] .express-request-studio .ex-route-scene,
+:root[data-theme="light"] .express-request-studio .ex-render-scene,
+:root[data-theme="light"] .express-request-studio .ex-hero-diagram {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] .rest-ops .rest-raw-request {
+  border-color: #334155;
+  background: #111a25 !important;
+  color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .rest-ops .rest-response-panel {
+  border-color: #334155;
+  background: #080e14 !important;
+  color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .express-request-studio .ex-hero { color: #f1f5fb; }
+:root[data-theme="light"] .node-studio .node-request-preview {
+  color-scheme: dark;
+  color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-code-panel, .ex-error-code, .ex-route-code, .ex-render-wire, .ex-wire-example) {
+  color-scheme: dark;
+  color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .password-hash-studio :is(.ph-wire, .ph-stored-salt, .ph-concept-wire) {
+  color-scheme: dark;
+  color: #e2e8f0 !important;
+}
+:root[data-theme="light"] .password-hash-studio .ph-wire span,
+:root[data-theme="light"] .password-hash-studio .ph-stored-salt > span,
+:root[data-theme="light"] .password-hash-studio .ph-concept-wire b {
+  color: #a9b7c8 !important;
+}
+:root[data-theme="light"] .password-hash-studio .ph-wire code,
+:root[data-theme="light"] .password-hash-studio .ph-stored-salt code {
+  color: #9fe7e9 !important;
+}
+:root[data-theme="light"] .password-hash-studio .ph-concept-wire code {
+  color: #cdbaff !important;
+}
+:root[data-theme="light"] .password-hash-studio .ph-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgb(197 165 255 / 22%);
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgb(197 165 255 / 7%);
+  color: #d6c3ff !important;
+}
+:root[data-theme="light"] .password-hash-studio .ph-view :is(.ph-verify-pipeline, .ph-challenge-question, .ph-flow-detail, .ph-principle-grid article, .ph-algorithm-list button) {
+  border-color: #d5deea;
+  background: #f7f9fc;
+  box-shadow: 0 4px 12px rgb(25 42 65 / 4%);
+}
+:root[data-theme="light"] .password-hash-studio .ph-flow-orb {
+  border-color: #cfc4e7;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #eee8f8 72%);
+  box-shadow: 0 8px 28px rgb(68 48 106 / 10%), inset 0 0 22px rgb(197 165 255 / 20%);
+}
+:root[data-theme="light"] .password-hash-studio .ph-flow-orb span { color: #604195 !important; }
+:root[data-theme="light"] .password-hash-studio .ph-flow-node > span {
+  border-color: #cbd5e1;
+  background: #eef2f7;
+  color: #35455b;
+}
+:root[data-theme="light"] .password-hash-studio .ph-flow-node.selected > span { border-color: #8d73bb; background: #f0eaff; color: #604195; }
+:root[data-theme="light"] .password-hash-studio .ph-flow-node.passed > span { border-color: #82b49b; color: #176b4b; }
+:root[data-theme="light"] .password-hash-studio .ph-tabs button.active { border-color: #c8b8e5; background: #f0eaff; color: #49317a; }
+:root[data-theme="light"] .password-hash-studio .ph-tabs button.active span { color: #604195; }
+:root[data-theme="light"] .password-hash-studio .ph-concept-icon { color: #12677c; }
+:root[data-theme="light"] .password-hash-studio .ph-pepper-card .ph-concept-icon { color: #805800; }
+
+/* Express studio: style named teaching surfaces explicitly. Class-name substring
+   matching used to turn words such as "eyebrow" and "request" into cards. */
+:root[data-theme="light"] .express-request-studio {
+  color: var(--ex-text);
+}
+:root[data-theme="light"] .express-request-studio .ex-topnav :is(.ex-back-link, .ex-course-link) {
+  color: #35577e;
+}
+:root[data-theme="light"] .express-request-studio .ex-topnav :is(.ex-back-link, .ex-course-link):hover {
+  color: #6947a8;
+}
+:root[data-theme="light"] .express-request-studio .ex-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgb(126 221 236 / 24%);
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgb(4 14 27 / 45%);
+}
+:root[data-theme="light"] .express-request-studio .ex-view-tabs {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgb(25 42 65 / 8%);
+}
+:root[data-theme="light"] .express-request-studio .ex-view-tabs button {
+  color: #43536a;
+}
+:root[data-theme="light"] .express-request-studio .ex-view-tabs button:hover {
+  color: #1b2a40;
+  background: #edf2f7;
+}
+:root[data-theme="light"] .express-request-studio .ex-view-tabs button.selected {
+  border-color: #9bc5cc;
+  color: #164e5b;
+  background: #e5f5f6;
+  box-shadow: inset 0 0 0 1px rgb(18 103 124 / 5%);
+}
+:root[data-theme="light"] .express-request-studio .ex-view-tabs button span {
+  color: #12677c;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-view-panel, .ex-request-composer, .ex-request-object, .ex-response-panel, .ex-trace-panel, .ex-pipeline-builder, .ex-stack-explainer, .ex-error-scenarios, .ex-error-trace, .ex-render-output, .ex-mission-card, .ex-mission-trace) {
+  border-color: var(--visual-line);
+  background: #ffffff;
+  color: var(--visual-ink);
+  box-shadow: 0 5px 18px rgb(25 42 65 / 5%);
+}
+:root[data-theme="light"] .express-request-studio .ex-view-panel {
+  background: linear-gradient(150deg, #ffffff, #f8fafc);
+  box-shadow: 0 14px 38px rgb(25 42 65 / 8%);
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-journey-detail, .ex-journey-node, .ex-principle-strip article, .ex-trace-row, .ex-pipeline-list article, .ex-error-lanes > div, .ex-render-output, .ex-book-cards article, .ex-ejs-preview, .ex-mission-progress) {
+  border-color: #d4deea;
+  background: #f7f9fc;
+  color: var(--visual-ink);
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-detail {
+  background: linear-gradient(120deg, #ffffff, #f5f8fc);
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node.selected {
+  border-color: #9bc5cc;
+  background: #eaf6f7;
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node > span {
+  border-color: #c5d1df;
+  color: #34445a;
+  background: #e8edf4;
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node.selected > span {
+  border-color: #7ab8c1;
+  color: #164e5b;
+  background: #d9f0f2;
+  box-shadow: 0 0 12px rgb(18 103 124 / 14%);
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node {
+  color: #43536a;
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node b {
+  color: #26364b;
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node small {
+  color: #5d6b7d;
+}
+:root[data-theme="light"] .express-request-studio .ex-journey-node.passed > span {
+  border-color: #82b49b;
+  color: #176b4b;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-section-heading h2, .ex-journey-detail h3, .ex-stack-explainer h3, .ex-mission-card h3) {
+  color: #1b2a40;
+}
+:root[data-theme="light"] .express-request-studio .ex-card-heading h3:not(.ex-code-panel *):not(.ex-error-code *) {
+  color: #1b2a40;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-section-heading p, .ex-journey-detail p, .ex-principle-strip p, .ex-local-note, .ex-explanation, .ex-lesson-callout p, .ex-mission-footer-note) {
+  color: #506076;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-section-heading > div:first-child > span, .ex-kicker, .ex-lesson-callout > span, .ex-studio-footer > span) {
+  color: #12677c;
+}
+:root[data-theme="light"] .express-request-studio .ex-card-heading > div > span:not(.ex-code-panel *):not(.ex-error-code *) {
+  color: #12677c;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-version-pill, .ex-count-chip, .ex-lock-chip) {
+  border-color: #cbd8e4;
+  color: #3c526c;
+  background: #f1f5f9;
+}
+:root[data-theme="light"] .express-request-studio .ex-form-label,
+:root[data-theme="light"] .express-request-studio .ex-version-select {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-form-label input, .ex-form-label select, .ex-form-label textarea, .ex-version-select select) {
+  border-color: #bdc9d8;
+  color: #1b2a40;
+  background: #ffffff;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-request-shortcuts button, .ex-quiet-button, .ex-journey-controls > button, .ex-pipeline-actions button) {
+  border-color: #c5d1df;
+  color: #34445a;
+  background: #f1f5f9;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-request-shortcuts button, .ex-quiet-button, .ex-journey-controls > button, .ex-pipeline-actions button):hover:not(:disabled) {
+  border-color: #8ea4bd;
+  color: #1b2a40;
+  background: #e6edf5;
+}
+:root[data-theme="light"] .express-request-studio .ex-primary-button {
+  border-color: #604195;
+  color: #ffffff !important;
+  background: #6947a8;
+  box-shadow: 0 5px 16px rgb(72 48 118 / 16%);
+}
+:root[data-theme="light"] .express-request-studio .ex-data-pill {
+  border-color: #d6e0eb;
+  background: #f2f6fa;
+}
+:root[data-theme="light"] .express-request-studio .ex-data-pill span,
+:root[data-theme="light"] .express-request-studio .ex-response-code {
+  color: #176b72;
+}
+:root[data-theme="light"] .express-request-studio .ex-data-pill code {
+  color: #25364b;
+}
+:root[data-theme="light"] .express-request-studio .ex-response-code {
+  border-color: #a7d1be;
+  background: #eaf7f0;
+}
+:root[data-theme="light"] .express-request-studio .ex-response-code.error {
+  border-color: #e0aab5;
+  color: #9d3044;
+  background: #fff0f2;
+}
+:root[data-theme="light"] .express-request-studio .ex-response-headers code {
+  border-color: #d5deea;
+  color: #34445a;
+  background: #f4f7fa;
+}
+:root[data-theme="light"] .express-request-studio .ex-trace-row > span {
+  border-color: #c4d0df;
+  color: #34445a;
+  background: #e8edf4;
+}
+:root[data-theme="light"] .express-request-studio .ex-response-panel pre,
+:root[data-theme="light"] .express-request-studio :is(.ex-code-panel, .ex-error-code, .ex-route-code, .ex-wire-example) {
+  border-color: #263a50;
+  color: #dceafa !important;
+  background: #09121e;
+  color-scheme: dark;
+}
+:root[data-theme="light"] .express-request-studio .ex-response-panel pre {
+  border: 1px solid #263a50;
+}
+:root[data-theme="light"] .express-request-studio .ex-placeholder {
+  color: #637187;
+}
+:root[data-theme="light"] .express-request-studio .ex-trace-row.active {
+  border-color: #84b9c0;
+  background: #e9f6f7;
+}
+:root[data-theme="light"] .express-request-studio .ex-trace-row :is(b, p, small),
+:root[data-theme="light"] .express-request-studio .ex-trace-row > span {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio .ex-trace-row.pass > span {
+  color: #176b4b;
+}
+:root[data-theme="light"] .express-request-studio .ex-trace-row.fail > span {
+  color: #9d3044;
+}
+:root[data-theme="light"] .express-request-studio .ex-trace-row.blocked > span {
+  color: #805800;
+}
+:root[data-theme="light"] .express-request-studio .ex-pipeline-copy :is(b, small, code),
+:root[data-theme="light"] .express-request-studio .ex-pipeline-index,
+:root[data-theme="light"] .express-request-studio .ex-signal :is(b, span) {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio .ex-signal {
+  border-color: #d8e0e9;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-warning-callout, .ex-error-outcome, .ex-error-handler-note) {
+  border-color: #e4c99f;
+  color: #664a1d;
+  background: #fff8e9;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-error-outcome b, .ex-error-outcome p, .ex-error-handler-note b, .ex-error-handler-note code) {
+  color: #664a1d;
+}
+:root[data-theme="light"] .express-request-studio .ex-error-scenarios > button:not(.ex-primary-button) {
+  border-color: #d4deea;
+  color: #26364b;
+  background: #f7f9fc;
+}
+:root[data-theme="light"] .express-request-studio .ex-error-scenarios > button.selected {
+  border-color: #d7a2ad;
+  background: #fff1f3;
+}
+:root[data-theme="light"] .express-request-studio .ex-error-scenarios small {
+  color: #5d6b7d;
+}
+:root[data-theme="light"] .express-request-studio .ex-error-scenarios > button > span,
+:root[data-theme="light"] .express-request-studio .ex-error-lanes span {
+  color: #506076;
+}
+:root[data-theme="light"] .express-request-studio .ex-error-lanes small {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio .ex-render-controls button {
+  border-color: #d0dbe7;
+  color: #25364b;
+  background: #f7f9fc;
+}
+:root[data-theme="light"] .express-request-studio .ex-render-controls button.selected {
+  border-color: #91bdc5;
+  background: #eaf6f7;
+  box-shadow: inset 0 0 0 1px rgb(18 103 124 / 8%);
+}
+:root[data-theme="light"] .express-request-studio .ex-render-controls button small {
+  color: #506076;
+}
+:root[data-theme="light"] .express-request-studio .ex-render-output {
+  background: #ffffff;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-book-cards article, .ex-ejs-preview) {
+  border-color: #d4deea;
+  background: #f7f9fc;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-book-cards article span, .ex-book-cards article b, .ex-book-cards article small, .ex-ejs-preview > span, .ex-ejs-preview article b, .ex-ejs-preview article small, .ex-ejs-preview > small) {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio .ex-lesson-callout {
+  border-color: #c5dbe0;
+  background: #eef8f9;
+}
+:root[data-theme="light"] .express-request-studio .ex-score-badge {
+  border-color: #b8d4c6;
+  background: #eff8f2;
+}
+:root[data-theme="light"] .express-request-studio .ex-score-badge :is(span, b, small),
+:root[data-theme="light"] .express-request-studio .ex-mission-meta,
+:root[data-theme="light"] .express-request-studio .ex-mission-meta span:last-child {
+  color: #176b4b;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-progress {
+  color: #506076;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button {
+  border-color: #d2dce8;
+  color: #25364b;
+  background: #f7f9fc;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button :is(i, span) {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button i {
+  border-color: #c4d0df;
+  background: #edf2f7;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button > b {
+  color: #176b4b;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button.selected {
+  border-color: #8ebdc5;
+  background: #eaf6f7;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button.correct,
+:root[data-theme="light"] .express-request-studio .ex-mission-feedback.correct {
+  border-color: #9ccbb4;
+  color: #205b43;
+  background: #edf8f1;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-choices button.incorrect,
+:root[data-theme="light"] .express-request-studio .ex-mission-feedback.incorrect {
+  border-color: #e1aab5;
+  color: #8f3042;
+  background: #fff1f3;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-feedback :is(b, p),
+:root[data-theme="light"] .express-request-studio .ex-mission-footer-note :is(b, *) {
+  color: #34445a;
+}
+:root[data-theme="light"] .express-request-studio .ex-mission-footer-note {
+  border-color: #b9a6dc;
+  background: #f5f1fc;
+}
+:root[data-theme="light"] .express-request-studio .ex-studio-footer {
+  border-color: #cbd5e1;
+}
+:root[data-theme="light"] .express-request-studio .ex-studio-footer p {
+  color: #637187;
+}
+:root[data-theme="light"] .express-request-studio .ex-studio-footer a,
+:root[data-theme="light"] .express-request-studio a,
+:root[data-theme="light"] .express-request-studio :is(.ex-lesson-link, .ex-card-heading > a, .ex-render-controls > a, .ex-mission-footer > a) {
+  color: #355f9a;
+}
+:root[data-theme="light"] .express-request-studio :is(.ex-code-panel, .ex-error-code, .ex-route-code) a {
+  color: #92dffa;
+}
+
+@media (prefers-contrast: more) {
+  :root[data-theme="light"] :is(.rest-ops, .jwt-studio, .password-hash-studio, .node-studio, .express-request-studio) {
+    --visual-line: #8291a4;
+    --visual-muted: #34445a;
+  }
+}

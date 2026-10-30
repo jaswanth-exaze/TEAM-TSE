@@ -33,6 +33,30 @@
 }
 
 * { box-sizing: border-box; }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f1f4f8;
+  --side: #e6ebf2;
+  --panel: #ffffff;
+  --panel2: #f4f7fa;
+  --inset: #edf2f6;
+  --terminal: #080f1b;
+  --chip-bg: #f5f7fa;
+  --badge-bg: #ffffff;
+  --line: #cbd5e1;
+  --amber: #805600;
+  --amber-bg: #fff4d6;
+  --amber-bd: #d9bd76;
+  --amber-tx: #563d10;
+  --on-amber: #ffffff;
+  --mint: #176b4b;
+  --mint-bg: #e4f4eb;
+  --rose: #a32f43;
+  --remote: #245f9f;
+  --text: #1b2a40;
+  --muted: #4e5e73;
+  --faint: #68778b;
+}
 [hidden] { display: none !important; }
 html { min-width: 320px; min-height: 100%; background: var(--bg); }
 body { margin: 0; min-height: 100vh; background: var(--bg); }
@@ -42,6 +66,8 @@ button, a { color: inherit; }
 a { text-decoration: none; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
+.theme-toggle { min-height: 34px; border: 1px solid var(--line); border-radius: 9px; padding: 5px 10px; color: var(--text); background: var(--panel); font-size: 12px; font-weight: 600; }
+.theme-toggle:hover { border-color: var(--amber); background: var(--amber-bg); }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--amber);
   outline-offset: 2px;
@@ -276,12 +302,33 @@ code, kbd, .terminal-output, .terminal-input-row input, .filesystem-map {
 .terminal-line.command-output { color: #B9C3DD; }
 .terminal-line.command-error { color: var(--rose); }
 .terminal-line.terminal-muted { color: var(--muted); }
+.terminal .terminal-line.command-line { color: #79e1b1; }
+.terminal .terminal-line.command-error { color: #ff9eaa; }
+.terminal .terminal-line.terminal-muted { color: #aab8cc; }
 .feedback { flex: 0 0 auto; margin: 0; padding: 9px 12px; border: 1px solid var(--amber-bd); border-radius: 10px; color: var(--amber-tx); background: var(--amber-bg); font-size: 12.5px; line-height: 1.5; animation: feedback-in 150ms ease both; }
 .feedback strong { margin-right: 4px; color: var(--amber); font-weight: 600; }
 .feedback.correct { border-color: #1F5A40; color: #BFF5DC; background: var(--mint-bg); }
 .feedback.correct strong { color: var(--mint); }
 .feedback.wrong { border-color: #6B2A2E; color: #FFC9C9; background: #2A1416; }
 .feedback.wrong strong { color: var(--rose); }
+:root[data-theme="light"] .feedback.correct { border-color: #76b697; color: #174b34; background: #e4f4eb; }
+:root[data-theme="light"] .feedback.correct strong { color: #176b4b; }
+:root[data-theme="light"] .feedback.wrong { border-color: #d49aa4; color: #762c3a; background: #fff0f1; }
+:root[data-theme="light"] .feedback.wrong strong { color: #8d253a; }
+:root[data-theme="light"] .button.primary:hover:not(:disabled) { border-color: #684700; color: #ffffff; background: #684700; }
+:root[data-theme="light"] .topic-card:hover,
+:root[data-theme="light"] .step-pill:hover,
+:root[data-theme="light"] .button.secondary:hover:not(:disabled) {
+  border-color: #aab8c9;
+  background: #f1f5f9;
+}
+:root[data-theme="light"] .topic-card.is-complete { border-color: #80b49a; }
+:root[data-theme="light"] .load-error { border-color: #d49aa4; color: #762c3a; background: #fff0f1; }
+:root[data-theme="light"] .step-pill.is-complete .step-number,
+:root[data-theme="light"] .checklist li.is-done .check-mark { color: #ffffff; }
+:root[data-theme="light"] .terminal { color-scheme: dark; }
+:root[data-theme="light"] .terminal-input-row input { color: #172338; }
+:root[data-theme="light"] .terminal-input-row input::placeholder { color: #68778b; opacity: 1; }
 .terminal-input-row { display: flex; min-height: 62px; flex: 0 0 auto; align-items: center; gap: 10px; padding: 9px 12px 9px 15px; border-top: 1px solid var(--line); background: var(--inset); }
 .terminal-prompt { flex: 0 0 auto; color: var(--mint); font-family: var(--tse-font-code); font-size: 12.5px; white-space: nowrap; }
 .terminal-input-row input { min-width: 0; height: 40px; flex: 1 1 auto; padding: 0; border: 0; border-radius: 0; outline: 0; color: var(--text); background: transparent; caret-color: var(--amber); font-size: 13px; }

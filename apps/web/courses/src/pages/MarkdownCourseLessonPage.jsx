@@ -177,6 +177,11 @@ export default function MarkdownCourseLessonPage({ moduleId, parts, topics, load
           <Link to="/course/express/lab" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-100">Open Express Request Studio <span aria-hidden="true">→</span></Link>
         </section>}
 
+        {moduleId === 'unit-testing-fundamentals' && <section className="mt-5 flex flex-col gap-4 rounded-2xl border border-violet-200/15 bg-violet-200/[0.035] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="Interactive unit testing studio">
+          <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-violet-100">Turn this idea into test evidence</p><p className="mt-1 text-sm leading-6 text-white/65">Explore a visual model, make a testing decision, and run a local simulation for each of 15 unit testing concepts.</p></div>
+          <Link to="/course/unit-testing-fundamentals/lab" className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-200 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-violet-100">Open Unit Testing Studio <span aria-hidden="true">→</span></Link>
+        </section>}
+
         <section className="mt-6 rounded-xl border border-emerald-200/15 bg-emerald-200/[0.04] p-4 sm:p-5" aria-label="Lesson progress">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

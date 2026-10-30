@@ -4,8 +4,32 @@ import { evaluateQuestion, previewCommand } from './validator.js'
 const PROGRESS_KEY = 'tse_linux_progress'
 const FILESYSTEM_KEY = 'tse_linux_fs'
 const LEGACY_KEYS = ['tse-learning-hub:linux-lab:v2', 'tse-learning-hub:linux-lab:v1', 'tse-linux-lab:v1']
+const THEME_STORAGE_KEY = 'tse-learning-theme'
 const $ = (selector, root = document) => root.querySelector(selector)
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector))
+
+function applyTheme(theme) {
+  const selected = theme === 'light' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = selected
+  const button = $('#themeToggle')
+  const nextTheme = selected === 'dark' ? 'light' : 'dark'
+  button.textContent = 'Use ' + nextTheme + ' mode'
+  button.setAttribute('aria-label', 'Switch to ' + nextTheme + ' mode')
+  button.setAttribute('aria-pressed', String(selected === 'light'))
+  const themeColor = document.querySelector('meta[name="theme-color"]')
+  if (themeColor) themeColor.content = selected === 'light' ? '#f1f4f8' : '#0a0f1e'
+}
+
+try {
+  applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'dark')
+} catch {
+  applyTheme('dark')
+}
+$('#themeToggle').addEventListener('click', () => {
+  const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+  applyTheme(nextTheme)
+  try { localStorage.setItem(THEME_STORAGE_KEY, nextTheme) } catch { /* Theme still applies for this page. */ }
+})
 
 async function start() {
   const page = document.body.dataset.page

@@ -99,7 +99,7 @@ const COURSE_CONTENT = {
   },
   'unit-testing-fundamentals': {
     title: 'Unit Testing Fundamentals',
-    subtitle: 'Learn to design fast, trustworthy tests, isolate dependencies, and improve code through small TDD cycles.',
+    subtitle: 'Learn to design fast, trustworthy tests, isolate dependencies, and improve code through small TDD cycles. The interactive studio adds 15 visual missions for hands-on practice.',
     curriculumTitle: '11 lessons in four learning parts',
     parts: UNIT_TESTING_PARTS,
     resources: [

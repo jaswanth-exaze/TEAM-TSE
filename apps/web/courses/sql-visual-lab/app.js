@@ -40,6 +40,32 @@ const undoButton = $('#undo-sandbox')
 const redoButton = $('#redo-sandbox')
 const writeConfirmDialog = $('#confirm-write-dialog')
 const writeConfirmCopy = $('#confirm-write-copy')
+const themeToggle = $('#theme-toggle')
+const THEME_STORAGE_KEY = 'tse-learning-theme'
+
+function applyTheme(theme) {
+  const selected = theme === 'light' ? 'light' : 'dark'
+  document.documentElement.dataset.theme = selected
+  if (themeToggle) {
+    const nextTheme = selected === 'dark' ? 'light' : 'dark'
+    themeToggle.textContent = 'Use ' + nextTheme + ' mode'
+    themeToggle.setAttribute('aria-label', 'Switch to ' + nextTheme + ' mode')
+    themeToggle.setAttribute('aria-pressed', String(selected === 'light'))
+  }
+  const themeColor = document.querySelector('meta[name="theme-color"]')
+  if (themeColor) themeColor.content = selected === 'light' ? '#f1f4f8' : '#0b0e1a'
+}
+
+try {
+  applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'dark')
+} catch {
+  applyTheme('dark')
+}
+themeToggle?.addEventListener('click', () => {
+  const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+  applyTheme(nextTheme)
+  try { localStorage.setItem(THEME_STORAGE_KEY, nextTheme) } catch { /* Theme still applies for this page. */ }
+})
 
 const examples = {
   where: `SELECT name, salary

@@ -184,7 +184,8 @@ let toastTimer = 0
 let taskFeedback = null
 let renderedCommitIds = new Set()
 
-const THEME_STORAGE_KEY = 'tse-learning-hub:git-foundations-lab:theme'
+const THEME_STORAGE_KEY = 'tse-learning-theme'
+const LEGACY_THEME_STORAGE_KEY = 'tse-learning-hub:git-foundations-lab:theme'
 const missionChapters = [
   { title: 'Setup', start: 0, end: 3 },
   { title: 'Save', start: 3, end: 6 },
@@ -206,7 +207,11 @@ function applyTheme(theme) {
   button.textContent = selected === 'dark' ? 'Use light theme' : 'Use dark theme'
 }
 
-try { applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'light') } catch { applyTheme('light') }
+try {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_THEME_STORAGE_KEY) || 'dark'
+  applyTheme(savedTheme)
+  localStorage.setItem(THEME_STORAGE_KEY, savedTheme)
+} catch { applyTheme('dark') }
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
